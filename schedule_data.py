@@ -137,18 +137,24 @@ SCHEDULE = {
             "teacher": "Щербакова М.А."
         },
         4: {
-            "split": False,
-            "subject": "Психология общения",
-            "room": "609",
-            "teacher": "Ерошкина М.Ю."
+            "split": True,
+            "chislitel": None,  # Только по знаменателям
+            "znamenatel": {
+                "subject": "Психология общения",
+                "room": "609",
+                "teacher": "Ерошкина М.Ю."
+            }
         }
     },
     4: {  # Пятница
         1: {
-            "split": False,
-            "subject": "Экономика отрасли",
-            "room": "711",
-            "teacher": "Петрова Е.А."
+            "split": True,
+            "chislitel": None,  # Только по знаменателям
+            "znamenatel": {
+                "subject": "Экономика отрасли",
+                "room": "711",
+                "teacher": "Петрова Е.А."
+            }
         },
         2: {
             "split": False,

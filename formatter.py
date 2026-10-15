@@ -40,10 +40,10 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
             "🎉 <b>Пар нет!</b> Отличный день для отдыха или самоподготовки 🏖️"
         )
     
-    lines = [header]
+    pair_items = []
     sorted_pair_nums = sorted(day_pairs.keys())
     
-    for i, num in enumerate(sorted_pair_nums):
+    for num in sorted_pair_nums:
         pair = day_pairs[num]
         time_slot = BELL_SCHEDULE.get(num, "")
         emoji_num = NUMBER_EMOJIS.get(num, f"[{num}]")
@@ -55,20 +55,37 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
             current_info = pair
             parity_tag = ""
             
+        if not current_info:
+            continue
+            
         subject = current_info.get("subject", "Не указан")
         room = current_info.get("room", "—")
         teacher = current_info.get("teacher", "—")
         
-        # Если между 2 и 3 парой — добавляем отметку обеда
-        if num == 3 and 2 in sorted_pair_nums:
-            lines.append("🍽 <i>Обед: 12:20 — 12:55</i>\n")
-            
-        lines.append(
-            f"{emoji_num} <b>{time_slot}</b>{parity_tag}\n"
-            f"📚 <b>{subject}</b>\n"
-            f"📍 Кабинет: <code>{room}</code>\n"
-            f"👨‍🏫 Преподаватель: {teacher}\n"
+        pair_items.append({
+            "num": num,
+            "text": (
+                f"{emoji_num} <b>{time_slot}</b>{parity_tag}\n"
+                f"📚 <b>{subject}</b>\n"
+                f"📍 Кабинет: <code>{room}</code>\n"
+                f"👨‍🏫 Преподаватель: {teacher}\n"
+            )
+        })
+        
+    if not pair_items:
+        return (
+            f"{header}\n"
+            "🎉 <b>Пар нет!</b> Отличный день для отдыха или самоподготовки 🏖️"
         )
+        
+    lines = [header]
+    existing_nums = [item["num"] for item in pair_items]
+    
+    for item in pair_items:
+        # Если между 2 и 3 парой — добавляем отметку обеда
+        if item["num"] == 3 and any(n <= 2 for n in existing_nums):
+            lines.append("🍽 <i>Обед: 12:20 — 12:55</i>\n")
+        lines.append(item["text"])
         
     return "\n".join(lines).strip()
 
@@ -99,6 +116,7 @@ def format_week_schedule(target_monday: date) -> str:
             res.append("  <i>Пар нет</i>\n")
             continue
             
+        day_lines = []
         for num in sorted(day_pairs.keys()):
             pair = day_pairs[num]
             time_slot = BELL_SCHEDULE.get(num, "")
@@ -108,7 +126,15 @@ def format_week_schedule(target_monday: date) -> str:
             else:
                 info = pair
                 
-            res.append(f"  {num}. <b>{info['subject']}</b> | {time_slot} (каб. {info['room']})")
+            if not info:
+                continue
+                
+            day_lines.append(f"  {num}. <b>{info['subject']}</b> | {time_slot} (каб. {info['room']})")
+            
+        if day_lines:
+            res.extend(day_lines)
+        else:
+            res.append("  <i>Пар нет</i>")
         res.append("")
         
     return "\n".join(res).strip()

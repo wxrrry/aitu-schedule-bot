@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: aitu-schedule-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: CHAT_ID
+        sync: false
+      - key: TIMEZONE
+        value: Europe/Moscow
+      - key: ANCHOR_DATE
+        value: "2026-10-12"
+      - key: ANCHOR_PARITY
+        value: chislitel
