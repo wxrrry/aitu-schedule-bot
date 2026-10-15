@@ -149,7 +149,7 @@ async def handle_test_broadcast(message: types.Message):
 
 # Простой HTTP health-check сервер для Koyeb / Render
 async def start_http_server():
-    port = int(os.getenv("PORT", "8080"))
+    preferred_port = int(os.getenv("PORT", "8000"))
     
     async def health_handler(request):
         return web.Response(text="AITU Schedule Bot is running! 200 OK")
@@ -160,9 +160,18 @@ async def start_http_server():
     
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    logger.info(f"Healthcheck HTTP server запущен на порту {port} (для Koyeb/Render)")
+    
+    # Пробуем указанный порт или запасные
+    for port in [preferred_port, 8000, 8081, 8888, 9090]:
+        try:
+            site = web.TCPSite(runner, "0.0.0.0", port)
+            await site.start()
+            logger.info(f"Healthcheck HTTP server запущен на порту {port} (для Koyeb/Render)")
+            return
+        except OSError:
+            continue
+            
+    logger.warning("Не удалось привязать HTTP healthcheck порт (все порты заняты). Продолжаем работу бота.")
 
 
 async def main():
