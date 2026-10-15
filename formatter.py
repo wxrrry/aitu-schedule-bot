@@ -45,7 +45,14 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     
     for num in sorted_pair_nums:
         pair = day_pairs[num]
-        time_slot = BELL_SCHEDULE.get(num, "")
+        time_info = BELL_SCHEDULE.get(num, {})
+        if isinstance(time_info, dict):
+            time_range = time_info.get("range", "")
+            breakdown = time_info.get("breakdown", "")
+        else:
+            time_range = str(time_info)
+            breakdown = ""
+            
         emoji_num = NUMBER_EMOJIS.get(num, f"[{num}]")
         
         if pair.get("split"):
@@ -62,14 +69,18 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         room = current_info.get("room", "—")
         teacher = current_info.get("teacher", "—")
         
+        card_lines = [
+            f"{emoji_num} <b>{time_range}</b>{parity_tag}",
+            f"⏱ <i>{breakdown}</i>" if breakdown else "",
+            f"📚 <b>{subject}</b>",
+            f"📍 Кабинет: <code>{room}</code>",
+            f"👨‍🏫 Преподаватель: {teacher}\n"
+        ]
+        formatted_card = "\n".join([line for line in card_lines if line])
+        
         pair_items.append({
             "num": num,
-            "text": (
-                f"{emoji_num} <b>{time_slot}</b>{parity_tag}\n"
-                f"📚 <b>{subject}</b>\n"
-                f"📍 Кабинет: <code>{room}</code>\n"
-                f"👨‍🏫 Преподаватель: {teacher}\n"
-            )
+            "text": formatted_card
         })
         
     if not pair_items:
@@ -84,7 +95,7 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     for item in pair_items:
         # Если между 2 и 3 парой — добавляем отметку обеда
         if item["num"] == 3 and any(n <= 2 for n in existing_nums):
-            lines.append("🍽 <i>Обед: 12:20 — 12:55</i>\n")
+            lines.append("🍽 <i>Обед: 12:20 — 12:55 (35 минут)</i>\n")
         lines.append(item["text"])
         
     return "\n".join(lines).strip()
@@ -119,7 +130,8 @@ def format_week_schedule(target_monday: date) -> str:
         day_lines = []
         for num in sorted(day_pairs.keys()):
             pair = day_pairs[num]
-            time_slot = BELL_SCHEDULE.get(num, "")
+            time_info = BELL_SCHEDULE.get(num, {})
+            time_range = time_info.get("range", time_info) if isinstance(time_info, dict) else str(time_info)
             
             if pair.get("split"):
                 info = pair["chislitel"] if parity_code == "chislitel" else pair["znamenatel"]
@@ -129,7 +141,7 @@ def format_week_schedule(target_monday: date) -> str:
             if not info:
                 continue
                 
-            day_lines.append(f"  {num}. <b>{info['subject']}</b> | {time_slot} (каб. {info['room']})")
+            day_lines.append(f"  {num}. <b>{info['subject']}</b> | {time_range} (каб. {info['room']})")
             
         if day_lines:
             res.extend(day_lines)
