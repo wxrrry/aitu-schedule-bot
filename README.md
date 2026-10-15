@@ -10,6 +10,8 @@ pinned: false
 
 # 🎓 Telegram Бот расписания занятий (9ПО-43к · AITU)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/wxrrry/aitu-schedule-bot)
+
 Telegram-бот, который каждый день в **00:00** (по Московскому времени) автоматически присылает актуальное расписание занятий на наступающий день с учётом **числителя и знаменателя** (чётности недели).
 
 ---
