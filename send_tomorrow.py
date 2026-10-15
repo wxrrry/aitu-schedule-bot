@@ -47,14 +47,23 @@ def main():
         sys.exit(1)
         
     now = datetime.now(BOT_TZ)
-    tomorrow = now.date() + timedelta(days=1)
+    is_morning = "--morning" in sys.argv
     
     print(f"Текущее время ({BOT_TZ}): {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Формирование расписания на завтра: {tomorrow.strftime('%Y-%m-%d')}")
     
-    text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+    if is_morning:
+        from formatter import format_morning_alert
+        print(f"Формирование утреннего напоминания на сегодня: {now.strftime('%Y-%m-%d')}")
+        text = format_morning_alert(now.date())
+        if not text:
+            print("Сегодня выходной день. Утреннее напоминание пропущено.")
+            sys.exit(0)
+    else:
+        tomorrow = now.date() + timedelta(days=1)
+        print(f"Формирование расписания на завтра: {tomorrow.strftime('%Y-%m-%d')}")
+        text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+        
     success = send_telegram_message(BOT_TOKEN, CHAT_ID, text)
-    
     if not success:
         sys.exit(1)
 

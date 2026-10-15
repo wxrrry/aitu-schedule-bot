@@ -2,9 +2,20 @@ name: Daily Schedule Dispatcher
 
 on:
   schedule:
-    # 21:00 UTC = 00:00 по Московскому времени (UTC+3)
+    # 21:00 UTC = 00:00 по Москве (полночная рассылка на завтра)
     - cron: '0 21 * * *'
-  workflow_dispatch: # Возможность ручного запуска из интерфейса GitHub
+    # 05:00 UTC = 08:00 по Москве (утреннее напоминание по будням)
+    - cron: '0 5 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Тип рассылки'
+        required: true
+        default: 'midnight'
+        type: choice
+        options:
+          - midnight
+          - morning
 
 jobs:
   send-schedule:
@@ -31,4 +42,8 @@ jobs:
           ANCHOR_DATE: "2026-10-12"
           ANCHOR_PARITY: "chislitel"
         run: |
-          python send_tomorrow.py
+          if [ "${{ github.event.inputs.type }}" = "morning" ] || [ "$(date -u +%H)" = "05" ]; then
+            python send_tomorrow.py --morning
+          else
+            python send_tomorrow.py
+          fi

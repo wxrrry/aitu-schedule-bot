@@ -9,12 +9,21 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiohttp import web
+from aiohttp import web, ClientSession
 
 from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID
-from formatter import format_day_schedule, format_week_schedule
+from formatter import (
+    format_day_schedule,
+    format_week_schedule,
+    format_weekday_by_index,
+    format_morning_alert
+)
 from parity import get_week_parity
-from keyboards import main_keyboard
+from keyboards import (
+    main_keyboard,
+    get_days_inline_keyboard,
+    get_back_to_days_keyboard
+)
 
 # Настройка логирования
 logging.basicConfig(
@@ -76,14 +85,42 @@ async def send_midnight_schedule():
         logger.error(f"Ошибка при отправке расписания в чат {CHAT_ID}: {e}", exc_info=True)
 
 
+async def send_morning_alert():
+    """
+    Задача, запускаемая по будням в 08:00:
+    короткое бодрое напоминание о первой паре на сегодня.
+    """
+    if not bot or not CHAT_ID:
+        return
+
+    now = datetime.now(BOT_TZ)
+    text = format_morning_alert(now.date())
+    if not text:
+        return  # На выходных пропускаем
+        
+    logger.info(f"Запуск утреннего напоминания на {now.date()} в чат {CHAT_ID}")
+    try:
+        await bot.send_message(
+            chat_id=CHAT_ID,
+            text=text,
+            reply_markup=main_keyboard,
+            disable_web_page_preview=True
+        )
+        logger.info("Утреннее напоминание успешно доставлено.")
+    except Exception as e:
+        logger.error(f"Ошибка при отправке утреннего напоминания: {e}", exc_info=True)
+
+
 @dp.message(CommandStart())
 async def handle_start(message: types.Message):
     parity_code, parity_name = get_week_parity(datetime.now(BOT_TZ).date())
     welcome_text = (
         f"👋 <b>Привет! Я бот расписания для группы 9ПО-43к (AITU).</b>\n\n"
         f"Текущая неделя: <b>{parity_name}</b>\n\n"
-        f"⏰ <b>Каждый день в 00:00</b> я автоматически отправляю расписание на день.\n\n"
-        f"👇 <b>Для просмотра расписания нажимайте удобные кнопки внизу:</b>"
+        f"⏰ <b>Рассылки:</b>\n"
+        f"• В <b>00:00</b> — подробное расписание на день\n"
+        f"• В <b>08:00</b> — утреннее напоминание о первой паре\n\n"
+        f"👇 <b>Для просмотра расписания нажимайте кнопки меню:</b>"
     )
     await message.answer(welcome_text, reply_markup=main_keyboard)
 
@@ -122,6 +159,66 @@ async def handle_next_week(message: types.Message):
     await message.answer(text, reply_markup=main_keyboard)
 
 
+@dp.message(Command("days"))
+@dp.message(F.text == "📆 Выбрать день")
+async def handle_choose_day(message: types.Message):
+    today = datetime.now(BOT_TZ).date()
+    curr_parity, parity_name = get_week_parity(today)
+    kb = get_days_inline_keyboard(curr_parity)
+    await message.answer(
+        f"🗓 <b>Выберите день недели:</b>\n"
+        f"Отображаются пары для: <b>{parity_name}</b>",
+        reply_markup=kb
+    )
+
+
+@dp.callback_query(F.data.startswith("showday_"))
+async def handle_show_day_callback(call: types.CallbackQuery):
+    parts = call.data.split("_")
+    day_idx = int(parts[1])
+    parity_code = parts[2]
+    
+    text = format_weekday_by_index(day_idx, parity_code)
+    kb = get_back_to_days_keyboard(parity_code)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("toggleweek_"))
+async def handle_toggle_week_callback(call: types.CallbackQuery):
+    new_parity = call.data.split("_")[1]
+    parity_name = "Числитель 🔺" if new_parity == "chislitel" else "Знаменатель 🔻"
+    kb = get_days_inline_keyboard(new_parity)
+    try:
+        await call.message.edit_text(
+            f"🗓 <b>Выберите день недели:</b>\n"
+            f"Отображаются пары для: <b>{parity_name}</b>",
+            reply_markup=kb
+        )
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("backtodays_"))
+async def handle_back_to_days_callback(call: types.CallbackQuery):
+    parity_code = call.data.split("_")[1]
+    parity_name = "Числитель 🔺" if parity_code == "chislitel" else "Знаменатель 🔻"
+    kb = get_days_inline_keyboard(parity_code)
+    try:
+        await call.message.edit_text(
+            f"🗓 <b>Выберите день недели:</b>\n"
+            f"Отображаются пары для: <b>{parity_name}</b>",
+            reply_markup=kb
+        )
+    except Exception:
+        pass
+    await call.answer()
+
+
 @dp.message(Command("parity"))
 @dp.message(F.text == "🏷 Чётность недели")
 async def handle_parity(message: types.Message):
@@ -156,6 +253,7 @@ async def handle_test_broadcast(message: types.Message):
         
     await message.answer("⏳ Тестирую отправку рассылки...")
     await send_midnight_schedule()
+    await send_morning_alert()
     await message.answer("✅ Тест отправки завершён (проверьте целевой чат или логи).")
 
 
@@ -186,6 +284,31 @@ async def start_http_server():
     logger.warning("Не удалось привязать HTTP healthcheck порт (все порты заняты). Продолжаем работу бота.")
 
 
+async def render_keep_alive():
+    """
+    Фоновый анти-сон для Render: раз в 10 минут шлёт запрос на /health.
+    Render автоматически определяет URL через RENDER_EXTERNAL_URL.
+    """
+    render_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("RENDER_URL", "").strip()
+    if not render_url:
+        logger.info("RENDER_EXTERNAL_URL не задан (активен локальный режим). Анти-сон отключен.")
+        return
+
+    ping_target = f"{render_url.rstrip('/')}/health"
+    logger.info(f"🛡 Автопинг Render (анти-сон) включен! Цель: {ping_target}")
+    
+    # Небольшая пауза перед первым пингом
+    await asyncio.sleep(45)
+    while True:
+        try:
+            async with ClientSession() as session:
+                async with session.get(ping_target, timeout=20) as resp:
+                    logger.info(f"Keep-Alive пинг Render выполнен: статус {resp.status}")
+        except Exception as e:
+            logger.debug(f"Keep-Alive пинг: {e}")
+        await asyncio.sleep(600)  # Пинг раз в 10 минут (Render спит после 15 минут)
+
+
 async def main():
     global bot
     if not BOT_TOKEN:
@@ -202,7 +325,10 @@ async def main():
     # Запуск легковесного HTTP сервера для Health Check в облаке (Koyeb/Render)
     await start_http_server()
     
-    # Расписание: ежедневно в 00:00:00 по времени часового пояса BOT_TZ
+    # Запуск фонового анти-сна для Render
+    asyncio.create_task(render_keep_alive())
+    
+    # Расписание 1: ежедневно в 00:00:00 (подробное расписание на день)
     scheduler.add_job(
         send_midnight_schedule,
         trigger="cron",
@@ -212,9 +338,22 @@ async def main():
         id="midnight_schedule_job",
         replace_existing=True
     )
+    
+    # Расписание 2: по будням в 08:00:00 (утреннее напоминание о 1-й паре)
+    scheduler.add_job(
+        send_morning_alert,
+        trigger="cron",
+        day_of_week="mon-fri",
+        hour=8,
+        minute=0,
+        second=0,
+        id="morning_alert_job",
+        replace_existing=True
+    )
+    
     scheduler.start()
     
-    logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Следующий запуск рассылки в 00:00.")
+    logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00 и 08:00.")
     
     # Удаляем вебхуки если были, и запускаем опрос
     await bot.delete_webhook(drop_pending_updates=True)
