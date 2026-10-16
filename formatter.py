@@ -1,7 +1,18 @@
 import html
 from datetime import date, timedelta
 from parity import get_week_parity
-from schedule_data import SCHEDULE, BELL_SCHEDULE, BELL_TIMES, DAYS_RU, GROUP_NAME, NUMBER_EMOJIS
+from schedule_data import (
+    SCHEDULE,
+    BELL_SCHEDULE,
+    BELL_TIMES,
+    DAYS_RU,
+    GROUP_NAME,
+    NUMBER_EMOJIS,
+    get_course_from_group_name,
+    get_bell_schedule,
+    get_bell_times,
+    get_course_lunch_info,
+)
 from replacements import get_replacements_for_date
 
 MONTHS_RU = [
@@ -28,6 +39,10 @@ def format_day_schedule(
     day_name = DAYS_RU[weekday]
     date_str = f"{target_date.day} {MONTHS_RU[target_date.month]} {target_date.year}"
     target_group = group_name or GROUP_NAME
+    course = get_course_from_group_name(target_group)
+    bell_sched = get_bell_schedule(course)
+    bell_times = get_bell_times(course)
+    lunch_info = get_course_lunch_info(course)
 
     if custom_replacements is not None:
         replacements = custom_replacements
@@ -41,7 +56,7 @@ def format_day_schedule(
     header = (
         f"📅 <b>{title_prefix} · {day_name}</b> (<code>{date_str}</code>)\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
-        f"👥 <b>Группа:</b> <code>{target_group}</code>\n"
+        f"👥 <b>Группа:</b> <code>{target_group}</code> <i>({course} курс)</i>\n"
         + rep_notice
         + "──────────────────────\n"
     )
@@ -62,7 +77,7 @@ def format_day_schedule(
     
     for num in all_pair_nums:
         pair = day_pairs.get(num)
-        time_info = BELL_SCHEDULE.get(num, {})
+        time_info = bell_sched.get(num, {})
         if isinstance(time_info, dict):
             time_range = time_info.get("range", "")
             breakdown = time_info.get("breakdown", "")
@@ -97,8 +112,8 @@ def format_day_schedule(
             
         # Индикатор статуса пары (идёт сейчас / завершена)
         badge = ""
-        if current_time_str and num in BELL_TIMES:
-            start_t, end_t = BELL_TIMES[num]
+        if current_time_str and num in bell_times:
+            start_t, end_t = bell_times[num]
             if start_t <= current_time_str <= end_t:
                 badge = " · 🟢 <b>Идёт сейчас</b>"
             elif current_time_str > end_t:
@@ -159,12 +174,20 @@ def format_day_schedule(
     existing_nums = [item["num"] for item in pair_items]
     
     for item in pair_items:
-        # Если между 2 и 3 парой — добавляем отметку обеда
-        if item["num"] == 3 and any(n <= 2 for n in existing_nums):
+        # 1 курс: обед после 1 пары (перед 2 парой)
+        if course == 1 and item["num"] == 2 and any(n <= 1 for n in existing_nums):
             lunch_badge = ""
-            if current_time_str and "12:20" <= current_time_str <= "12:55":
+            if current_time_str and lunch_info["start"] <= current_time_str <= lunch_info["end"]:
                 lunch_badge = " · 🟢 <b>Сейчас перерыв</b>"
-            lines.append(f"🍽 <b>Обед: 12:20 — 12:55</b> <i>(35 минут)</i>{lunch_badge}\n")
+            lines.append(f"🍽 <b>Обед: {lunch_info['start']} — {lunch_info['end']}</b> <i>({lunch_info['duration']})</i>{lunch_badge}\n")
+
+        # 3 и 4 курс: обед после 2 пары (перед 3 парой)
+        elif course in (3, 4) and item["num"] == 3 and any(n <= 2 for n in existing_nums):
+            lunch_badge = ""
+            if current_time_str and lunch_info["start"] <= current_time_str <= lunch_info["end"]:
+                lunch_badge = " · 🟢 <b>Сейчас перерыв</b>"
+            lines.append(f"🍽 <b>Обед: {lunch_info['start']} — {lunch_info['end']}</b> <i>({lunch_info['duration']})</i>{lunch_badge}\n")
+
         lines.append(item["text"])
         
     return "\n".join(lines).strip()
@@ -182,13 +205,15 @@ def format_week_schedule(
     parity_code, parity_name = get_week_parity(target_monday)
     sunday = target_monday + timedelta(days=6)
     target_group = group_name or GROUP_NAME
+    course = get_course_from_group_name(target_group)
+    bell_sched = get_bell_schedule(course)
     
     range_str = f"{target_monday.day} {MONTHS_RU[target_monday.month]} — {sunday.day} {MONTHS_RU[sunday.month]}"
     
     res = [
         f"🗓 <b>Расписание на неделю ({range_str})</b>",
         f"🏷 <b>Неделя:</b> {parity_name}",
-        f"👥 <b>Группа:</b> {target_group}",
+        f"👥 <b>Группа:</b> {target_group} <i>({course} курс)</i>",
         "══════════════════\n"
     ]
     
@@ -216,7 +241,7 @@ def format_week_schedule(
         day_lines = []
         for num in all_nums:
             pair = day_pairs.get(num)
-            time_info = BELL_SCHEDULE.get(num, {})
+            time_info = bell_sched.get(num, {})
             time_range = time_info.get("range", time_info) if isinstance(time_info, dict) else str(time_info)
             
             info = None
@@ -264,11 +289,13 @@ def format_weekday_by_index(
     day_name = DAYS_RU[day_idx]
     parity_name = "Числитель 🔺" if parity_code == "chislitel" else "Знаменатель 🔻"
     target_group = group_name or GROUP_NAME
+    course = get_course_from_group_name(target_group)
+    bell_sched = get_bell_schedule(course)
     
     header = (
         f"📅 <b>{day_name}</b>\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
-        f"👥 <b>Группа:</b> {target_group}\n"
+        f"👥 <b>Группа:</b> {target_group} <i>({course} курс)</i>\n"
         "──────────────────\n"
     )
     
@@ -283,7 +310,7 @@ def format_weekday_by_index(
     pair_items = []
     for num in sorted(day_pairs.keys()):
         pair = day_pairs[num]
-        time_info = BELL_SCHEDULE.get(num, {})
+        time_info = bell_sched.get(num, {})
         time_range = time_info.get("range", "") if isinstance(time_info, dict) else str(time_info)
         breakdown = time_info.get("breakdown", "") if isinstance(time_info, dict) else ""
         emoji_num = NUMBER_EMOJIS.get(num, f"[{num}]")
@@ -352,6 +379,8 @@ def format_morning_alert(
     day_name = DAYS_RU[weekday]
     date_str = f"{today_date.day} {MONTHS_RU[today_date.month]}"
     target_group = group_name or GROUP_NAME
+    course = get_course_from_group_name(target_group)
+    bell_sched = get_bell_schedule(course)
     
     if custom_replacements is not None:
         replacements = custom_replacements
@@ -398,13 +427,13 @@ def format_morning_alert(
             
     if not first_pair_num or (not first_pair_info and not first_pair_rep):
         return (
-            f"☀️ <b>Доброе утро, {target_group}!</b>\n"
+            f"☀️ <b>Доброе утро, {target_group}!</b> <i>({course} курс)</i>\n"
             f"🗓 <b>{day_name}, {date_str}</b> · {parity_name}\n\n"
             f"{rep_badge}"
             f"🎉 <b>Сегодня пар нет (или все отменены)!</b> Отличного дня и хорошего отдыха ☕️"
         )
         
-    time_info = BELL_SCHEDULE.get(first_pair_num, {})
+    time_info = bell_sched.get(first_pair_num, {})
     time_range = time_info.get("range", "") if isinstance(time_info, dict) else str(time_info)
     breakdown = time_info.get("breakdown", "") if isinstance(time_info, dict) else ""
     

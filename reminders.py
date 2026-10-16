@@ -9,7 +9,15 @@ from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 
 from config import BOT_TZ
 from parity import get_week_parity
-from schedule_data import SCHEDULE, BELL_SCHEDULE, NUMBER_EMOJIS, DAYS_RU, GROUP_NAME
+from schedule_data import (
+    SCHEDULE,
+    BELL_SCHEDULE,
+    NUMBER_EMOJIS,
+    DAYS_RU,
+    GROUP_NAME,
+    get_course_from_group_name,
+    get_bell_schedule,
+)
 from replacements import get_replacements_for_date
 
 logger = logging.getLogger(__name__)
@@ -62,11 +70,12 @@ def toggle_subscription(user_id: int) -> bool:
         return True
 
 
-async def send_pair_reminder(bot: Bot, pair_num: int):
+async def send_pair_reminder(bot: Bot, pair_num: int, target_courses: list[int] | None = None):
     """
     Рассылает личное напоминание за 10 минут до начала пары.
     Проверяет расписание КАЖДОЙ группы в БД и отправляет уведомления только тем студентам,
-    у которых реально есть пара. Соблюдает лимиты Telegram API (asyncio.sleep).
+    у которых реально есть пара. Поддерживает фильтрацию по целевым курсам target_courses.
+    Соблюдает лимиты Telegram API (asyncio.sleep).
     """
     from db.crud import get_users_for_notification, get_lessons_for_day, get_replacements_for_date_and_group, get_user
 
@@ -77,9 +86,6 @@ async def send_pair_reminder(bot: Bot, pair_num: int):
         return  # Выходные дни
 
     parity_code, parity_name = get_week_parity(today)
-    time_info = BELL_SCHEDULE.get(pair_num, {})
-    time_range = time_info.get("range", "") if isinstance(time_info, dict) else str(time_info)
-    breakdown = time_info.get("breakdown", "") if isinstance(time_info, dict) else ""
     emoji_num = NUMBER_EMOJIS.get(pair_num, f"[{pair_num}]")
 
     # Получаем пользователей с включенным колокольчиком из БД
@@ -104,6 +110,15 @@ async def send_pair_reminder(bot: Bot, pair_num: int):
     dead_users = []
 
     for uid, grp in user_map.items():
+        u_course = get_course_from_group_name(grp)
+        if target_courses is not None and u_course not in target_courses:
+            continue
+
+        bell_sched = get_bell_schedule(u_course)
+        time_info = bell_sched.get(pair_num, {})
+        time_range = time_info.get("range", "") if isinstance(time_info, dict) else str(time_info)
+        breakdown = time_info.get("breakdown", "") if isinstance(time_info, dict) else ""
+
         if grp not in group_cache:
             lessons = await get_lessons_for_day(grp, weekday, parity_code)
             reps = await get_replacements_for_date_and_group(today, grp)

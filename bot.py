@@ -18,7 +18,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS
-from schedule_data import SCHEDULE, DAYS_RU
+from schedule_data import (
+    SCHEDULE,
+    DAYS_RU,
+    get_course_from_group_name,
+    get_bell_schedule,
+    get_course_lunch_info,
+    COURSE_BELL_SCHEDULE,
+)
 from formatter import (
     format_day_schedule,
     format_week_schedule,
@@ -216,22 +223,57 @@ BELLS_IMG = os.path.join(ASSETS_DIR, "bells.jpg")
 WEEKEND_IMG = os.path.join(ASSETS_DIR, "weekend.jpg")
 MAKET_DOCX = os.path.join(ASSETS_DIR, "maket_titul_pz_lr.docx")
 
-BELLS_TEXT = (
-    "🔔 <b>Расписание звонков · 4 курс (9ПО-43к)</b>\n"
-    "──────────────────────\n"
-    "<blockquote>"
-    "1️⃣ пара: <b>09:00 — 10:35</b>\n"
-    "⏱ <i>09:00–09:45 • перерыв 5 мин • 09:50–10:35</i>\n\n"
-    "2️⃣ пара: <b>10:45 — 12:20</b>\n"
-    "⏱ <i>10:45–11:30 • перерыв 5 мин • 11:35–12:20</i>\n\n"
-    "🍽 <b>Обед: 12:20 — 12:55 (35 минут)</b>\n\n"
-    "3️⃣ пара: <b>12:55 — 14:30</b>\n"
-    "⏱ <i>12:55–13:40 • перерыв 5 мин • 13:45–14:30</i>\n\n"
-    "4️⃣ пара: <b>14:40 — 16:15</b>\n"
-    "⏱ <i>14:40–15:25 • перерыв 5 мин • 15:30–16:15</i>"
-    "</blockquote>\n"
-    "💡 <i>Перерывы между парами: 10 минут. Обед после 2-й пары.</i>"
-)
+def get_bells_text(course: int = 4) -> str:
+    """Генерирует текст расписания звонков для указанного курса (1..4)."""
+    sched = get_bell_schedule(course)
+    lunch = get_course_lunch_info(course)
+
+    text = (
+        f"🔔 <b>Расписание звонков · {course} курс</b>\n"
+        f"──────────────────────\n"
+        f"<blockquote>"
+        f"1️⃣ пара: <b>{sched[1]['range']}</b>\n"
+        f"⏱ <i>{sched[1]['breakdown']}</i>\n\n"
+    )
+    if course == 1:
+        text += f"🍽 <b>Обед: {lunch['start']} — {lunch['end']} ({lunch['duration']})</b>\n\n"
+
+    text += (
+        f"2️⃣ пара: <b>{sched[2]['range']}</b>\n"
+        f"⏱ <i>{sched[2]['breakdown']}</i>\n\n"
+    )
+    if course == 2:
+        text += f"🍽 <b>Обед: {lunch['start']} — {lunch['end']} ({lunch['duration']}, внутри 2-й пары)</b>\n\n"
+    elif course in (3, 4):
+        text += f"🍽 <b>Обед: {lunch['start']} — {lunch['end']} ({lunch['duration']})</b>\n\n"
+
+    text += (
+        f"3️⃣ пара: <b>{sched[3]['range']}</b>\n"
+        f"⏱ <i>{sched[3]['breakdown']}</i>\n\n"
+        f"4️⃣ пара: <b>{sched[4]['range']}</b>\n"
+        f"⏱ <i>{sched[4]['breakdown']}</i>"
+        f"</blockquote>\n"
+    )
+    if course == 1:
+        text += "💡 <i>Обед после 1-й пары (10:35–11:10). Перерывы между парами: 10 минут.</i>"
+    elif course == 2:
+        text += "💡 <i>Обед внутри 2-й пары (11:30–12:00, 30 мин). Перерывы между парами: 10 минут.</i>"
+    else:
+        text += "💡 <i>Обед после 2-й пары (12:20–12:55). Перерывы между парами: 10 минут.</i>"
+
+    return text
+
+
+def get_bells_course_keyboard(active_course: int = 4) -> types.InlineKeyboardMarkup:
+    """Создаёт инлайн-клавиатуру для быстрого переключения между звонками 1..4 курсов."""
+    buttons = []
+    for c in [1, 2, 3, 4]:
+        label = f"• {c} курс •" if c == active_course else f"{c} курс"
+        buttons.append(types.InlineKeyboardButton(text=label, callback_data=f"bells_course_{c}"))
+    return types.InlineKeyboardMarkup(inline_keyboard=[buttons])
+
+
+BELLS_TEXT = get_bells_text(4)
 
 async def send_midnight_schedule():
     """
@@ -297,42 +339,138 @@ async def send_morning_alert():
                 pass
 
 
-FIVE_MIN_BREAKS = {
+COURSE_FIVE_MIN_BREAKS = {
     1: {
-        "start": "09:45",
-        "end": "09:50",
-        "resume": "09:50",
-        "pair_end": "10:35",
-        "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+        1: {
+            "start": "09:45",
+            "end": "09:50",
+            "resume": "09:50",
+            "pair_end": "10:35",
+            "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+        },
+        2: {
+            "start": "11:55",
+            "end": "12:00",
+            "resume": "12:00",
+            "pair_end": "12:45",
+            "tip": "Вторая половина пары продлится до 12:45 ☕️"
+        },
+        3: {
+            "start": "13:40",
+            "end": "13:45",
+            "resume": "13:45",
+            "pair_end": "14:30",
+            "tip": "Вторая половина пары продлится до 14:30 ☕️"
+        },
+        4: {
+            "start": "15:25",
+            "end": "15:30",
+            "resume": "15:30",
+            "pair_end": "16:15",
+            "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+        }
     },
     2: {
-        "start": "11:30",
-        "end": "11:35",
-        "resume": "11:35",
-        "pair_end": "12:20",
-        "tip": "Вторая половина пары продлится до 12:20, а сразу после — большой обед (12:20 — 12:55) 🥪"
+        1: {
+            "start": "09:45",
+            "end": "09:50",
+            "resume": "09:50",
+            "pair_end": "10:35",
+            "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+        },
+        2: {
+            "start": "11:30",
+            "end": "12:00",
+            "resume": "12:00",
+            "pair_end": "12:45",
+            "is_lunch": True,
+            "tip": "Большой 30-минутный обед внутри 2-й пары! Приятного аппетита 🥪"
+        },
+        3: {
+            "start": "13:40",
+            "end": "13:45",
+            "resume": "13:45",
+            "pair_end": "14:30",
+            "tip": "Вторая половина пары продлится до 14:30 ☕️"
+        },
+        4: {
+            "start": "15:25",
+            "end": "15:30",
+            "resume": "15:30",
+            "pair_end": "16:15",
+            "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+        }
     },
     3: {
-        "start": "13:40",
-        "end": "13:45",
-        "resume": "13:45",
-        "pair_end": "14:30",
-        "tip": "Вторая половина пары продлится до 14:30 ☕️"
+        1: {
+            "start": "09:45",
+            "end": "09:50",
+            "resume": "09:50",
+            "pair_end": "10:35",
+            "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+        },
+        2: {
+            "start": "11:30",
+            "end": "11:35",
+            "resume": "11:35",
+            "pair_end": "12:20",
+            "tip": "Вторая половина пары продлится до 12:20, а сразу после — большой обед (12:20 — 12:55) 🥪"
+        },
+        3: {
+            "start": "13:40",
+            "end": "13:45",
+            "resume": "13:45",
+            "pair_end": "14:30",
+            "tip": "Вторая половина пары продлится до 14:30 ☕️"
+        },
+        4: {
+            "start": "15:25",
+            "end": "15:30",
+            "resume": "15:30",
+            "pair_end": "16:15",
+            "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+        }
     },
     4: {
-        "start": "15:25",
-        "end": "15:30",
-        "resume": "15:30",
-        "pair_end": "16:15",
-        "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+        1: {
+            "start": "09:45",
+            "end": "09:50",
+            "resume": "09:50",
+            "pair_end": "10:35",
+            "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+        },
+        2: {
+            "start": "11:30",
+            "end": "11:35",
+            "resume": "11:35",
+            "pair_end": "12:20",
+            "tip": "Вторая половина пары продлится до 12:20, а сразу после — большой обед (12:20 — 12:55) 🥪"
+        },
+        3: {
+            "start": "13:40",
+            "end": "13:45",
+            "resume": "13:45",
+            "pair_end": "14:30",
+            "tip": "Вторая половина пары продлится до 14:30 ☕️"
+        },
+        4: {
+            "start": "15:25",
+            "end": "15:30",
+            "resume": "15:30",
+            "pair_end": "16:15",
+            "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+        }
     }
 }
 
+FIVE_MIN_BREAKS = COURSE_FIVE_MIN_BREAKS[4]
 
-async def send_five_minute_break(pair_num: int):
+
+async def send_five_minute_break(pair_num: int, target_courses: list[int] | None = None):
     """
-    Отправляет уведомление о начале пятиминутного перерыва внутри пары.
+    Отправляет уведомление о начале пятиминутного перерыва или обеда внутри пары.
     Проверяет расписание каждой группы в БД и отправляет только если пара есть.
+    Поддерживает фильтрацию по целевым курсам target_courses.
     """
     if not bot:
         return
@@ -343,13 +481,14 @@ async def send_five_minute_break(pair_num: int):
         return
 
     parity_code, _ = get_week_parity(now.date())
-    break_data = FIVE_MIN_BREAKS.get(pair_num, {
-        "start": "—", "end": "—", "resume": "—", "pair_end": "—", "tip": ""
-    })
 
     # 1. Отправка в привязанные беседы
     bindings = await get_all_chat_bindings()
     for b in bindings:
+        c = get_course_from_group_name(b.group_name)
+        if target_courses is not None and c not in target_courses:
+            continue
+
         pairs = await get_lessons_for_day(b.group_name, weekday, parity_code)
         reps = await get_replacements_for_date_and_group(now.date(), b.group_name)
         if reps.get(pair_num, {}).get("type") == "cancel":
@@ -358,13 +497,20 @@ async def send_five_minute_break(pair_num: int):
         if not p_info:
             continue
 
+        c_breaks = COURSE_FIVE_MIN_BREAKS.get(c, COURSE_FIVE_MIN_BREAKS[4])
+        break_data = c_breaks.get(pair_num, {"start": "—", "end": "—", "resume": "—", "pair_end": "—", "tip": ""})
+        is_lunch = break_data.get("is_lunch", False)
+
+        title = f"🍽 <b>Звонок на обед! · 2-я пара ({c} курс)</b>" if is_lunch else f"🔔 <b>Звонок на пятиминутку! (Перерыв 5 минут) · {pair_num}-я пара</b>"
+        label = "Время обеда:" if is_lunch else "Время перерыва:"
+
         subj = p_info.get("subject", "")
         room = p_info.get("room", "—")
         text = (
-            f"🔔 <b>Звонок на пятиминутку! (Перерыв 5 минут) · {pair_num}-я пара</b>\n"
+            f"{title}\n"
             f"──────────────────────\n"
             f"<blockquote>"
-            f"⏱ <b>Время перерыва:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+            f"⏱ <b>{label}</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
             f"📚 <b>{html.escape(subj)}</b>\n"
             f"📍 Кабинет: <code>{html.escape(room)}</code>\n"
             f"🔔 <i>Звонок на 2-ю половину пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
@@ -381,6 +527,10 @@ async def send_five_minute_break(pair_num: int):
     users = await get_users_for_notification("five_min_breaks")
     for u in users:
         grp = u.group_name or "9ПО-43к"
+        c = get_course_from_group_name(grp)
+        if target_courses is not None and c not in target_courses:
+            continue
+
         pairs = await get_lessons_for_day(grp, weekday, parity_code)
         reps = await get_replacements_for_date_and_group(now.date(), grp)
         if reps.get(pair_num, {}).get("type") == "cancel":
@@ -389,11 +539,18 @@ async def send_five_minute_break(pair_num: int):
         if not p_info:
             continue
 
+        c_breaks = COURSE_FIVE_MIN_BREAKS.get(c, COURSE_FIVE_MIN_BREAKS[4])
+        break_data = c_breaks.get(pair_num, {"start": "—", "end": "—", "resume": "—", "pair_end": "—", "tip": ""})
+        is_lunch = break_data.get("is_lunch", False)
+
+        title = f"🍽 <b>Звонок на обед! · 2-я пара ({c} курс)</b>" if is_lunch else f"🔔 <b>Звонок на пятиминутку! · {pair_num}-я пара</b>"
+        label = "Обед:" if is_lunch else "Перерыв:"
+
         text = (
-            f"🔔 <b>Звонок на пятиминутку! · {pair_num}-я пара</b>\n"
+            f"{title}\n"
             f"──────────────────────\n"
             f"<blockquote>"
-            f"⏱ <b>Перерыв:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+            f"⏱ <b>{label}</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
             f"📚 <b>{html.escape(p_info.get('subject', ''))}</b> (каб. <code>{p_info.get('room', '—')}</code>)\n"
             f"🔔 <i>Звонок на 2-ю половину: в {break_data['resume']}</i>"
             f"</blockquote>"
@@ -771,18 +928,47 @@ async def handle_parity(message: types.Message):
 @dp.message(Command("bells"))
 @dp.message(F.text == "🔔 Звонки")
 async def handle_bells(message: types.Message):
+    target_group = await resolve_target_group(message.chat, message.from_user)
+    course = get_course_from_group_name(target_group)
+    text = get_bells_text(course)
+    kb = get_bells_course_keyboard(course)
+
     if os.path.exists(BELLS_IMG):
         try:
             await message.answer_photo(
                 photo=types.FSInputFile(BELLS_IMG),
-                caption=BELLS_TEXT,
-                reply_markup=services_keyboard
+                caption=text,
+                reply_markup=kb
             )
             return
         except Exception as e:
             logger.debug(f"Не удалось отправить фото bells: {e}")
 
-    await message.answer(BELLS_TEXT, reply_markup=services_keyboard)
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("bells_course_"))
+async def handle_bells_course_callback(call: types.CallbackQuery):
+    try:
+        selected_course = int(call.data.split("_")[2])
+    except (IndexError, ValueError):
+        selected_course = 4
+
+    new_text = get_bells_text(selected_course)
+    new_kb = get_bells_course_keyboard(selected_course)
+
+    try:
+        if call.message.photo:
+            await call.message.edit_caption(caption=new_text, reply_markup=new_kb)
+        else:
+            await call.message.edit_text(text=new_text, reply_markup=new_kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Ошибка обновления звонков при смене курса: {e}")
+    except Exception as e:
+        logger.debug(f"Ошибка смены курса звонков: {e}")
+
+    await call.answer()
 
 
 @dp.callback_query(F.data.startswith("navdate_"))
@@ -2749,8 +2935,8 @@ async def main():
             replace_existing=True
         )
 
-        # Расписание 3: Уведомления о пятиминутках внутри каждой пары по будням
-        # 1-я пара: 09:45
+        # Расписание 3: Уведомления о пятиминутках и обедах внутри каждой пары по будням
+        # 1-я пара: 09:45 (все курсы)
         scheduler.add_job(
             send_five_minute_break,
             trigger="cron",
@@ -2762,7 +2948,7 @@ async def main():
             id="break_pair_1",
             replace_existing=True
         )
-        # 2-я пара: 11:30
+        # 2-я пара: 11:30 (2 курс - обед 30 мин; 3 и 4 курс - пятиминутка 5 мин)
         scheduler.add_job(
             send_five_minute_break,
             trigger="cron",
@@ -2770,11 +2956,23 @@ async def main():
             hour=11,
             minute=30,
             second=0,
-            args=[2],
-            id="break_pair_2",
+            args=[2, [2, 3, 4]],
+            id="break_pair_2_courses_234",
             replace_existing=True
         )
-        # 3-я пара: 13:40
+        # 2-я пара: 11:55 (1 курс - пятиминутка 5 мин, т.к. пара с 11:10)
+        scheduler.add_job(
+            send_five_minute_break,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=11,
+            minute=55,
+            second=0,
+            args=[2, [1]],
+            id="break_pair_2_course_1",
+            replace_existing=True
+        )
+        # 3-я пара: 13:40 (все курсы)
         scheduler.add_job(
             send_five_minute_break,
             trigger="cron",
@@ -2786,7 +2984,7 @@ async def main():
             id="break_pair_3",
             replace_existing=True
         )
-        # 4-я пара: 15:25
+        # 4-я пара: 15:25 (все курсы)
         scheduler.add_job(
             send_five_minute_break,
             trigger="cron",
@@ -2800,7 +2998,7 @@ async def main():
         )
 
         # Расписание 4: Личный колокольчик — напоминания за 10 минут до каждой пары по будням
-        # 1-я пара: 08:50 (начало в 09:00)
+        # 1-я пара: 08:50 (начало в 09:00 для всех курсов)
         scheduler.add_job(
             send_pair_reminder,
             trigger="cron",
@@ -2812,7 +3010,7 @@ async def main():
             id="remind_pair_1",
             replace_existing=True
         )
-        # 2-я пара: 10:35 (начало в 10:45)
+        # 2-я пара для 2, 3, 4 курсов: 10:35 (начало в 10:45)
         scheduler.add_job(
             send_pair_reminder,
             trigger="cron",
@@ -2820,11 +3018,23 @@ async def main():
             hour=10,
             minute=35,
             second=0,
-            args=[bot, 2],
-            id="remind_pair_2",
+            args=[bot, 2, [2, 3, 4]],
+            id="remind_pair_2_courses_234",
             replace_existing=True
         )
-        # 3-я пара: 12:45 (начало в 12:55)
+        # 2-я пара для 1 курса: 11:00 (начало в 11:10 из-за раннего обеда)
+        scheduler.add_job(
+            send_pair_reminder,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=11,
+            minute=0,
+            second=0,
+            args=[bot, 2, [1]],
+            id="remind_pair_2_course_1",
+            replace_existing=True
+        )
+        # 3-я пара: 12:45 (начало в 12:55 для всех курсов)
         scheduler.add_job(
             send_pair_reminder,
             trigger="cron",
@@ -2836,7 +3046,7 @@ async def main():
             id="remind_pair_3",
             replace_existing=True
         )
-        # 4-я пара: 14:30 (начало в 14:40)
+        # 4-я пара: 14:30 (начало в 14:40 для всех курсов)
         scheduler.add_job(
             send_pair_reminder,
             trigger="cron",
