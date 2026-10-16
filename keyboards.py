@@ -6,30 +6,64 @@ from aiogram.types import (
     InlineKeyboardButton
 )
 
+# Главное меню (быстрый доступ + папки)
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="⚡️ Какая пара сейчас?"),
-            KeyboardButton(text="📅 Сегодня")
+            KeyboardButton(text="⚡️ Какая пара сейчас?")
         ],
         [
-            KeyboardButton(text="🔜 Завтра"),
+            KeyboardButton(text="📅 Сегодня"),
+            KeyboardButton(text="🔜 Завтра")
+        ],
+        [
+            KeyboardButton(text="🗓 Расписание 📂"),
+            KeyboardButton(text="🛠 Полезное 📂")
+        ]
+    ],
+    resize_keyboard=True,
+    is_persistent=True,
+    input_field_placeholder="Главное меню..."
+)
+
+# Папка-раздел «Расписание»
+schedule_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [
             KeyboardButton(text="🗓 Текущая неделя"),
             KeyboardButton(text="⏭ След. неделя")
         ],
         [
             KeyboardButton(text="📆 Выбрать день"),
-            KeyboardButton(text="👨‍🏫 Преподаватели")
+            KeyboardButton(text="🏷 Чётность недели")
         ],
         [
-            KeyboardButton(text="🏷 Чётность недели"),
-            KeyboardButton(text="🔔 Звонки"),
-            KeyboardButton(text="📥 В календарь")
+            KeyboardButton(text="◀️ Главное меню")
         ]
     ],
     resize_keyboard=True,
     is_persistent=True,
-    input_field_placeholder="Выберите действие или напишите команду..."
+    input_field_placeholder="Раздел: Расписание..."
+)
+
+# Папка-раздел «Полезное и сервисы»
+services_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text="🔔 Звонки"),
+            KeyboardButton(text="👨‍🏫 Преподаватели")
+        ],
+        [
+            KeyboardButton(text="📥 В календарь"),
+            KeyboardButton(text="📍 Поиск кабинета")
+        ],
+        [
+            KeyboardButton(text="◀️ Главное меню")
+        ]
+    ],
+    resize_keyboard=True,
+    is_persistent=True,
+    input_field_placeholder="Раздел: Полезное..."
 )
 
 def get_days_inline_keyboard(parity_code: str = "current") -> InlineKeyboardMarkup:

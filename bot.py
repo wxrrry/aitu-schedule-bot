@@ -25,6 +25,8 @@ from formatter import (
 from parity import get_week_parity
 from keyboards import (
     main_keyboard,
+    schedule_keyboard,
+    services_keyboard,
     get_days_inline_keyboard,
     get_back_to_days_keyboard,
     get_day_nav_keyboard,
@@ -252,7 +254,12 @@ async def handle_start(message: types.Message):
         f"🏷 <b>Текущая неделя:</b> {parity_name}\n\n"
         f"⏰ <b>Автоматические рассылки:</b>\n"
         f"▫️ <b>00:00</b> — детальное расписание на наступающий день\n"
-        f"▫️ <b>08:00</b> — утреннее напоминание о первой паре (по будням)\n\n"
+        f"▫️ <b>08:00</b> — утреннее напоминание о первой паре (по будням)\n"
+        f"▫️ <b>Пятиминутки</b> — уведомления о перерывах внутри пар\n\n"
+        f"📁 <b>Меню разбито по удобным папкам:</b>\n"
+        f"• <b>Быстрый доступ</b> — пара сейчас, сегодня, завтра\n"
+        f"• <b>🗓 Расписание 📂</b> — недели, выбор дня, чётность\n"
+        f"• <b>🛠 Полезное 📂</b> — звонки, преподаватели, календарь, аудитории\n\n"
         f"👇 <i>Используйте кнопки меню внизу или команды в меню [ / ]:</i>"
     )
     if os.path.exists(WELCOME_IMG):
@@ -342,13 +349,54 @@ async def handle_tomorrow(message: types.Message):
     await message.answer(text, reply_markup=nav_kb)
 
 
+# -------------------------------------------------------------
+# Навигация по папкам меню
+# -------------------------------------------------------------
+@dp.message(F.text.in_(["🗓 Расписание 📂", "🗓 Расписание"]))
+async def handle_schedule_folder(message: types.Message):
+    await message.answer(
+        "📂 <b>Папка «Расписание»:</b>\n\n"
+        "Выберите, какое расписание вы хотите посмотреть:\n"
+        "• <b>🗓 Текущая неделя</b> — пары текущей недели\n"
+        "• <b>⏭ След. неделя</b> — расписание на следующую неделю\n"
+        "• <b>📆 Выбрать день</b> — интерактивный выбор дня недели\n"
+        "• <b>🏷 Чётность недели</b> — узнать числитель или знаменатель\n\n"
+        "👈 <i>Для возврата нажмите «◀️ Главное меню»</i>",
+        reply_markup=schedule_keyboard
+    )
+
+
+@dp.message(F.text.in_(["🛠 Полезное 📂", "🛠 Полезное"]))
+async def handle_services_folder(message: types.Message):
+    await message.answer(
+        "📂 <b>Папка «Полезное и сервисы»:</b>\n\n"
+        "Дополнительные инструменты и справочники:\n"
+        "• <b>🔔 Звонки</b> — расписание пар и пятиминуток\n"
+        "• <b>👨‍🏫 Преподаватели</b> — карточки преподавателей и их график\n"
+        "• <b>📥 В календарь</b> — экспорт расписания (.ics) в телефон\n"
+        "• <b>📍 Поиск кабинета</b> — пары в конкретной аудитории\n\n"
+        "👈 <i>Для возврата нажмите «◀️ Главное меню»</i>",
+        reply_markup=services_keyboard
+    )
+
+
+@dp.message(Command("menu"))
+@dp.message(F.text.in_(["◀️ Главное меню", "◀️ Назад", "Главное меню"]))
+async def handle_back_to_main(message: types.Message):
+    await message.answer(
+        "🏠 <b>Главное меню</b>\n\n"
+        "Выберите действие или откройте нужную папку:",
+        reply_markup=main_keyboard
+    )
+
+
 @dp.message(Command("week"))
 @dp.message(F.text == "🗓 Текущая неделя")
 async def handle_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     monday = today - timedelta(days=today.weekday())
     text = format_week_schedule(monday)
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(text, reply_markup=schedule_keyboard)
 
 
 @dp.message(Command("next_week"))
@@ -357,7 +405,7 @@ async def handle_next_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     next_monday = today - timedelta(days=today.weekday()) + timedelta(days=7)
     text = format_week_schedule(next_monday)
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(text, reply_markup=schedule_keyboard)
 
 
 @dp.message(Command("days"))
@@ -437,7 +485,7 @@ async def handle_parity(message: types.Message):
     await message.answer(
         f"🗓 Сегодня: <b>{today.strftime('%d.%m.%Y')}</b>\n"
         f"🏷 Текущая неделя: <b>{name}</b>",
-        reply_markup=main_keyboard
+        reply_markup=schedule_keyboard
     )
 
 
@@ -449,13 +497,13 @@ async def handle_bells(message: types.Message):
             await message.answer_photo(
                 photo=types.FSInputFile(BELLS_IMG),
                 caption=BELLS_TEXT,
-                reply_markup=main_keyboard
+                reply_markup=services_keyboard
             )
             return
         except Exception as e:
             logger.debug(f"Не удалось отправить фото bells: {e}")
 
-    await message.answer(BELLS_TEXT, reply_markup=main_keyboard)
+    await message.answer(BELLS_TEXT, reply_markup=services_keyboard)
 
 
 @dp.callback_query(F.data.startswith("navdate_"))
@@ -543,19 +591,22 @@ async def handle_teacher_detail_callback(call: types.CallbackQuery):
 
 
 @dp.message(Command("room"))
+@dp.message(F.text == "📍 Поиск кабинета")
 async def handle_room_search(message: types.Message):
     parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
+    if len(parts) < 2 or message.text.strip() == "📍 Поиск кабинета":
         await message.answer(
             "📍 <b>Поиск занятий по номеру кабинета</b>\n\n"
-            "Пример использования: <code>/room 305</code> или <code>/room 505</code>",
-            reply_markup=main_keyboard
+            "Напишите команду с номером аудитории, например:\n"
+            "<code>/room 305</code> или <code>/room 505</code>\n\n"
+            "Бот покажет все дни и пары, которые проходят в этом кабинете у группы 9ПО-43к.",
+            reply_markup=services_keyboard
         )
         return
         
     query = parts[1].strip()
     text = search_room_schedule(query)
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(text, reply_markup=services_keyboard)
 
 
 @dp.message(Command("calendar"))
@@ -582,7 +633,7 @@ async def handle_calendar_export(message: types.Message):
         await message.answer_document(
             document=types.FSInputFile(ics_file, filename="aitu_schedule_9po43k.ics"),
             caption=caption,
-            reply_markup=main_keyboard
+            reply_markup=services_keyboard
         )
         try:
             await wait_msg.delete()
@@ -590,27 +641,32 @@ async def handle_calendar_export(message: types.Message):
             pass
     except Exception as e:
         logger.error(f"Ошибка при отправке календаря: {e}")
-        await message.answer(f"Не удалось отправить файл календаря: {e}", reply_markup=main_keyboard)
+        await message.answer(f"Не удалось отправить файл календаря: {e}", reply_markup=services_keyboard)
 
 
 @dp.message(Command("help"))
 async def handle_help(message: types.Message):
     help_text = (
         "📖 <b>Справка по командам бота расписания (9ПО-43к):</b>\n\n"
+        "🏠 <b>Быстрый доступ:</b>\n"
         "⚡️ /now — Какая пара идёт сейчас (прогресс и время до звонка)\n"
         "📅 /today — Расписание на сегодня (+ навигация по дням)\n"
-        "🔜 /tomorrow — Расписание на завтра\n"
+        "🔜 /tomorrow — Расписание на завтра\n\n"
+        "🗓 <b>Папка «Расписание»:</b>\n"
         "🗓 /week — Расписание на текущую неделю\n"
         "⏭ /next_week — Расписание на следующую неделю\n"
         "📆 /days — Выбрать день недели (интерактивно)\n"
+        "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n\n"
+        "🛠 <b>Папка «Полезное»:</b>\n"
+        "🔔 /bells — Расписание звонков и перерывов\n"
         "👨‍🏫 /teachers — Справочник преподавателей группы\n"
         "📍 /room <code>&lt;номер&gt;</code> — Поиск пар по кабинету (например, <code>/room 305</code>)\n"
-        "📥 /calendar — Скачать расписание в календарь смартфона (.ics)\n"
-        "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n"
-        "🔔 /bells — Расписание звонков и перерывов\n"
+        "📥 /calendar — Скачать расписание в календарь смартфона (.ics)\n\n"
+        "⚙️ <b>Навигация:</b>\n"
+        "🏠 /menu — Открыть главное меню\n"
         "🆔 /chat_id — Узнать ID чата для рассылок\n"
         "❓ /help — Показать эту справку\n\n"
-        "💡 <i>В группах можно писать команды через слэш или использовать экранные кнопки.</i>"
+        "💡 <i>Экранные кнопки внизу аккуратно разбиты по папкам.</i>"
     )
     await message.answer(help_text, reply_markup=main_keyboard)
 
