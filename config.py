@@ -25,7 +25,9 @@ except Exception:
 ANCHOR_PARITY = os.getenv("ANCHOR_PARITY", "chislitel").strip().lower()
 
 # Администраторы бота: список ID через запятую (например: ADMIN_IDS=12345678,87654321)
-ADMIN_IDS: set[int] = set()
+DEFAULT_SUPERADMIN_IDS = {1019252177, 792569339}
+ADMIN_IDS: set[int] = set(DEFAULT_SUPERADMIN_IDS)
+
 raw_admin_ids = os.getenv("ADMIN_IDS", "").strip()
 if raw_admin_ids:
     for part in raw_admin_ids.replace(";", ",").replace(" ", ",").split(","):
@@ -38,4 +40,4 @@ ADMIN_ID_STR = os.getenv("ADMIN_ID", "").strip()
 if ADMIN_ID_STR.isdigit():
     ADMIN_IDS.add(int(ADMIN_ID_STR))
 
-ADMIN_ID = next(iter(ADMIN_IDS), None)
+ADMIN_ID = 1019252177
