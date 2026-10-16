@@ -12,7 +12,10 @@ from aiogram.exceptions import TelegramBadRequest
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiohttp import web, ClientSession
 
+import html
+
 from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID
+from schedule_data import SCHEDULE
 from formatter import (
     format_day_schedule,
     format_week_schedule,
@@ -147,6 +150,98 @@ async def send_morning_alert():
         logger.info("Утреннее напоминание успешно доставлено.")
     except Exception as e:
         logger.error(f"Ошибка при отправке утреннего напоминания: {e}", exc_info=True)
+
+
+FIVE_MIN_BREAKS = {
+    1: {
+        "start": "09:45",
+        "end": "09:50",
+        "resume": "09:50",
+        "pair_end": "10:35",
+        "tip": "Время размяться, выпить воды или дать глазам отдохнуть от экрана 🧘‍♂️"
+    },
+    2: {
+        "start": "11:30",
+        "end": "11:35",
+        "resume": "11:35",
+        "pair_end": "12:20",
+        "tip": "Вторая половина пары продлится до 12:20, а сразу после — большой обед (12:20 — 12:55) 🥪"
+    },
+    3: {
+        "start": "13:40",
+        "end": "13:45",
+        "resume": "13:45",
+        "pair_end": "14:30",
+        "tip": "Вторая половина пары продлится до 14:30 ☕️"
+    },
+    4: {
+        "start": "15:25",
+        "end": "15:30",
+        "resume": "15:30",
+        "pair_end": "16:15",
+        "tip": "Финишная прямая! Вторая половина пары до 16:15 — и учебный день завершён 🎉"
+    }
+}
+
+
+async def send_five_minute_break(pair_num: int):
+    """
+    Отправляет уведомление в группу о начале пятиминутного перерыва внутри пары.
+    Отправляется только по будням и только если пара сегодня есть по расписанию!
+    """
+    if not bot or not CHAT_ID:
+        return
+
+    now = datetime.now(BOT_TZ)
+    weekday = now.weekday()
+    if weekday >= 5:
+        return
+
+    parity_code, parity_name = get_week_parity(now.date())
+    day_pairs = SCHEDULE.get(weekday, {})
+    pair_val = day_pairs.get(pair_num)
+    if not pair_val:
+        return
+
+    if pair_val.get("split"):
+        pair_info = pair_val["chislitel"] if parity_code == "chislitel" else pair_val["znamenatel"]
+    else:
+        pair_info = pair_val
+
+    if not pair_info:
+        return  # Пары нет по текущей четности (окно)
+
+    break_data = FIVE_MIN_BREAKS.get(pair_num, {
+        "start": "—", "end": "—", "resume": "—", "pair_end": "—", "tip": ""
+    })
+
+    subject = html.escape(str(pair_info.get("subject", "Не указан")))
+    room = html.escape(str(pair_info.get("room", "—")))
+    teacher = html.escape(str(pair_info.get("teacher", "—")))
+
+    text = (
+        f"☕️ <b>Начало пятиминутки · {pair_num}-я пара!</b>\n"
+        f"──────────────────────\n"
+        f"<blockquote>"
+        f"⏱ <b>Перерыв 5 минут:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+        f"📚 <b>{subject}</b>\n"
+        f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>\n"
+        f"🔔 <i>Продолжение пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
+        f"</blockquote>\n"
+        f"💡 <i>{break_data['tip']}</i>"
+    )
+
+    logger.info(f"Отправка уведомления о пятиминутке {pair_num}-й пары в чат {CHAT_ID}")
+    try:
+        await bot.send_message(
+            chat_id=CHAT_ID,
+            text=text,
+            reply_markup=main_keyboard,
+            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+        )
+        logger.info(f"Уведомление о пятиминутке {pair_num}-й пары успешно доставлено.")
+    except Exception as e:
+        logger.error(f"Ошибка при отправке уведомления о пятиминутке: {e}", exc_info=True)
 
 
 @dp.message(CommandStart())
@@ -535,10 +630,11 @@ async def handle_test_broadcast(message: types.Message):
         await message.answer("⛔️ Эта команда доступна только администратору.")
         return
         
-    await message.answer("⏳ Тестирую отправку рассылки...")
+    await message.answer("⏳ Тестирую отправку рассылок...")
     await send_midnight_schedule()
     await send_morning_alert()
-    await message.answer("✅ Тест отправки завершён (проверьте целевой чат или логи).")
+    await send_five_minute_break(2)
+    await message.answer("✅ Тест отправки завершён (полночь, 08:00 и пятиминутка).")
 
 
 # Простой HTTP health-check сервер для Koyeb / Render
@@ -576,27 +672,43 @@ async def start_http_server() -> web.AppRunner | None:
 
 async def render_keep_alive():
     """
-    Фоновый анти-сон для Render: раз в 10 минут шлёт запрос на /health.
-    Render автоматически определяет URL через RENDER_EXTERNAL_URL.
+    Фоновый анти-сон для Render: каждые 4 минуты шлёт запрос на /health.
+    Предотвращает засыпание (spin down) бесплатного контейнера Render (лимит 15 минут).
     """
-    render_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("RENDER_URL", "").strip()
+    render_url = (
+        os.getenv("RENDER_EXTERNAL_URL")
+        or os.getenv("RENDER_URL")
+        or os.getenv("APP_URL")
+        or ""
+    ).strip()
+
     if not render_url:
-        logger.info("RENDER_EXTERNAL_URL не задан (активен локальный режим). Анти-сон отключен.")
+        service_name = os.getenv("RENDER_SERVICE_NAME", "").strip()
+        if service_name:
+            render_url = f"https://{service_name}.onrender.com"
+        elif os.getenv("RENDER") or os.getenv("RENDER_INSTANCE_ID"):
+            render_url = "https://aitu-schedule-bot.onrender.com"
+
+    if not render_url:
+        logger.info("Внешний URL не задан (активен локальный режим). Анти-сон отключен.")
         return
 
+    if not render_url.startswith("http"):
+        render_url = f"https://{render_url}"
+
     ping_target = f"{render_url.rstrip('/')}/health"
-    logger.info(f"🛡 Автопинг Render (анти-сон) включен! Цель: {ping_target}")
+    logger.info(f"🛡 Автопинг Render (анти-сон) включен! Интервал: 4 мин. Цель: {ping_target}")
     
     # Небольшая пауза перед первым пингом
-    await asyncio.sleep(45)
+    await asyncio.sleep(30)
     async with ClientSession() as session:
         while True:
             try:
                 async with session.get(ping_target, timeout=20) as resp:
                     logger.info(f"Keep-Alive пинг Render выполнен: статус {resp.status}")
             except Exception as e:
-                logger.debug(f"Keep-Alive пинг: {e}")
-            await asyncio.sleep(600)  # Пинг раз в 10 минут (Render спит после 15 минут)
+                logger.debug(f"Keep-Alive пинг ({ping_target}): {e}")
+            await asyncio.sleep(240)  # Пинг раз в 4 минуты (Render засыпает через 15 минут неактивности)
 
 
 async def main():
@@ -664,10 +776,60 @@ async def main():
             id="morning_alert_job",
             replace_existing=True
         )
+
+        # Расписание 3: Уведомления о пятиминутках внутри каждой пары по будням
+        # 1-я пара: 09:45
+        scheduler.add_job(
+            send_five_minute_break,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=9,
+            minute=45,
+            second=0,
+            args=[1],
+            id="break_pair_1",
+            replace_existing=True
+        )
+        # 2-я пара: 11:30
+        scheduler.add_job(
+            send_five_minute_break,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=11,
+            minute=30,
+            second=0,
+            args=[2],
+            id="break_pair_2",
+            replace_existing=True
+        )
+        # 3-я пара: 13:40
+        scheduler.add_job(
+            send_five_minute_break,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=13,
+            minute=40,
+            second=0,
+            args=[3],
+            id="break_pair_3",
+            replace_existing=True
+        )
+        # 4-я пара: 15:25
+        scheduler.add_job(
+            send_five_minute_break,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=15,
+            minute=25,
+            second=0,
+            args=[4],
+            id="break_pair_4",
+            replace_existing=True
+        )
         
         scheduler.start()
         
-        logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00 и 08:00.")
+        logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00, 08:00 и пятиминутки в 09:45, 11:30, 13:40, 15:25.")
         
         # Удаляем вебхуки если были, и запускаем опрос
         await bot.delete_webhook(drop_pending_updates=True)

@@ -17,3 +17,5 @@ services:
         value: "2026-10-12"
       - key: ANCHOR_PARITY
         value: chislitel
+      - key: RENDER_EXTERNAL_URL
+        value: https://aitu-schedule-bot.onrender.com
