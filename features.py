@@ -8,6 +8,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import BOT_TZ, ANCHOR_DATE, ANCHOR_PARITY
 from parity import get_week_parity
 from schedule_data import SCHEDULE, BELL_SCHEDULE, BELL_TIMES, DAYS_RU, GROUP_NAME
+from replacements import get_replacements_for_date
 
 def get_progress_bar(percentage: float, length: int = 10) -> str:
     """Генерирует аккуратный визуальный прогресс-бар."""
@@ -106,9 +107,66 @@ def get_now_status(now_dt: datetime | None = None) -> str:
             f"👉 Нажмите <b>«🔜 Завтра»</b>, чтобы посмотреть расписание на наступающий день."
         )
 
+    today_reps = get_replacements_for_date(now_dt.date())
+
     # Проверяем, идёт ли сейчас пара
     for num, (start_m, end_m, start_s, end_s) in intervals.items():
         if start_m <= curr_minutes < end_m:
+            rep = today_reps.get(num)
+            
+            # Если пара отменена
+            if rep and rep.get("type") == "cancel":
+                next_pairs = [n for n in pair_nums if n > num and (n not in today_reps or today_reps[n].get("type") != "cancel")]
+                next_str = ""
+                if next_pairs:
+                    nxt = next_pairs[0]
+                    nxt_info = today_pairs.get(nxt)
+                    if nxt_info:
+                        next_str = f"\n🔜 <b>Следующая активная пара:</b> №{nxt} в {intervals[nxt][2]} (каб. <code>{html.escape(nxt_info['room'])}</code>)"
+                return (
+                    f"{header}"
+                    f"🚫 <b>СЕЙЧАС ВРЕМЯ {num}-Й ПАРЫ, НО ОНА ОТМЕНЕНА!</b>\n"
+                    f"<blockquote>"
+                    f"⏰ <b>{start_s} — {end_s}</b>\n"
+                    f"❌ <b>Пара отменена:</b> <i>{html.escape(rep.get('text', 'Отмена'))}</i>\n"
+                    f"🎉 Свободное время до следующей пары!"
+                    f"</blockquote>"
+                    f"{next_str}"
+                )
+            
+            # Если пара заменена
+            if rep and rep.get("type") == "replace":
+                elapsed = curr_minutes - start_m
+                total = end_m - start_m
+                pct = (elapsed / total) * 100
+                rem = end_m - curr_minutes
+                bar = get_progress_bar(pct)
+                orig_subj = html.escape(today_pairs[num]['subject']) if num in today_pairs else ""
+                orig_note = f"\n▫️ <i>(по плану: {orig_subj})</i>" if orig_subj else ""
+                
+                next_pairs = [n for n in pair_nums if n > num]
+                next_str = ""
+                if next_pairs:
+                    nxt = next_pairs[0]
+                    nxt_info = today_pairs.get(nxt)
+                    if nxt_info:
+                        next_str = (
+                            f"\n🔜 <b>Следующая пара (№{nxt}):</b> в {intervals[nxt][2]}\n"
+                            f"   ▫️ <b>{html.escape(nxt_info['subject'])}</b> (каб. <code>{html.escape(nxt_info['room'])}</code>)"
+                        )
+                return (
+                    f"{header}"
+                    f"⚠️ <b>СЕЙЧАС ИДЁТ {num}-Я ПАРА (ЗАМЕНА)</b>\n"
+                    f"<blockquote>"
+                    f"⏰ <b>{start_s} — {end_s}</b>\n"
+                    f"📚 <b>{html.escape(rep.get('text', ''))}</b>{orig_note}\n"
+                    f"⏱ <i>{BELL_SCHEDULE[num]['breakdown']}</i>\n\n"
+                    f"⏳ До звонка: <b>{rem} мин</b> · Прогресс: {int(pct)}%\n"
+                    f"<code>{bar}</code>"
+                    f"</blockquote>"
+                    f"{next_str}"
+                )
+
             if num in today_pairs:
                 pair_info = today_pairs[num]
                 break_start_m = start_m + 45
@@ -569,3 +627,23 @@ def generate_ics_calendar(output_path: str = "assets/aitu_schedule_9po43k.ics") 
         f.write("\r\n".join(ics_lines) + "\r\n")
 
     return output_path
+
+
+def get_moodle_info_text() -> str:
+    """Возвращает информацию о СДО Moodle, портале и учебных материалах группы."""
+    return (
+        "📁 <b>СДО Moodle и учебные материалы · 9ПО-43к</b>\n"
+        "──────────────────────\n"
+        "<blockquote>"
+        "🎓 <b>Портал СДО:</b>\n"
+        "▫️ Ссылка: <a href=\"https://moodle.astanait.edu.kz\">moodle.astanait.edu.kz</a>\n"
+        "▫️ В СДО публикуются задания, практические (ПЗ), лабораторные (ЛР) и лекционные материалы.\n\n"
+        "📄 <b>Макет титульного листа (.docx):</b>\n"
+        "▫️ Официальный шаблон титульника для отчётов по практическим и лабораторным работам 4 курса.\n"
+        "▫️ Утверждён стандартами кафедры AITU.\n\n"
+        "📚 <b>Материалы группы:</b>\n"
+        "▫️ Методические указания и вопросы к зачётам/экзаменам."
+        "</blockquote>\n"
+        "👇 <i>Нажмите кнопку ниже, чтобы скачать макет титульного листа (.docx):</i>"
+    )
+

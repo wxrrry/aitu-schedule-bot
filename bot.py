@@ -15,12 +15,13 @@ from aiohttp import web, ClientSession
 import html
 
 from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID
-from schedule_data import SCHEDULE
+from schedule_data import SCHEDULE, DAYS_RU
 from formatter import (
     format_day_schedule,
     format_week_schedule,
     format_weekday_by_index,
-    format_morning_alert
+    format_morning_alert,
+    MONTHS_RU
 )
 from parity import get_week_parity
 from keyboards import (
@@ -30,7 +31,10 @@ from keyboards import (
     get_days_inline_keyboard,
     get_back_to_days_keyboard,
     get_day_nav_keyboard,
-    get_back_to_teachers_keyboard
+    get_back_to_teachers_keyboard,
+    get_moodle_keyboard,
+    get_remind_toggle_keyboard,
+    get_replacements_keyboard
 )
 from features import (
     get_now_status,
@@ -38,7 +42,20 @@ from features import (
     get_teachers_inline_keyboard,
     get_teacher_detail_text,
     search_room_schedule,
-    generate_ics_calendar
+    generate_ics_calendar,
+    get_moodle_info_text
+)
+from replacements import (
+    add_replacement,
+    delete_replacement,
+    format_replacements_summary,
+    parse_date_input,
+    get_replacements_for_date
+)
+from reminders import (
+    is_subscribed,
+    toggle_subscription,
+    send_pair_reminder
 )
 
 # Настройка логирования
@@ -57,6 +74,7 @@ WELCOME_IMG = os.path.join(ASSETS_DIR, "welcome.jpg")
 MORNING_IMG = os.path.join(ASSETS_DIR, "morning.jpg")
 BELLS_IMG = os.path.join(ASSETS_DIR, "bells.jpg")
 WEEKEND_IMG = os.path.join(ASSETS_DIR, "weekend.jpg")
+MAKET_DOCX = os.path.join(ASSETS_DIR, "maket_titul_pz_lr.docx")
 
 BELLS_TEXT = (
     "🔔 <b>Расписание звонков · 4 курс (9ПО-43к)</b>\n"
@@ -259,7 +277,8 @@ async def handle_start(message: types.Message):
         f"📁 <b>Меню разбито по удобным папкам:</b>\n"
         f"• <b>Быстрый доступ</b> — пара сейчас, сегодня, завтра\n"
         f"• <b>🗓 Расписание 📂</b> — недели, выбор дня, чётность\n"
-        f"• <b>🛠 Полезное 📂</b> — звонки, преподаватели, календарь, аудитории\n\n"
+        f"• <b>🛠 Полезное 📂</b> — звонки, замены, СДО/макет, напоминания, преподаватели\n\n"
+        f"💬 <b>Инлайн-режим:</b> напишите <code>@aituraspisaniebot</code> в любом чате!\n\n"
         f"👇 <i>Используйте кнопки меню внизу или команды в меню [ / ]:</i>"
     )
     if os.path.exists(WELCOME_IMG):
@@ -372,9 +391,12 @@ async def handle_services_folder(message: types.Message):
         "📂 <b>Папка «Полезное и сервисы»:</b>\n\n"
         "Дополнительные инструменты и справочники:\n"
         "• <b>🔔 Звонки</b> — расписание пар и пятиминуток\n"
+        "• <b>⚠️ Замены пар</b> — отмены и переносы занятий\n"
+        "• <b>📁 СДО и Материалы</b> — портал СДО и макет титульного листа (.docx)\n"
+        "• <b>🔔 Мои напоминания</b> — личный колокольчик за 10 минут до пары\n"
         "• <b>👨‍🏫 Преподаватели</b> — карточки преподавателей и их график\n"
-        "• <b>📥 В календарь</b> — экспорт расписания (.ics) в телефон\n"
-        "• <b>📍 Поиск кабинета</b> — пары в конкретной аудитории\n\n"
+        "• <b>📍 Поиск кабинета</b> — пары в конкретной аудитории\n"
+        "• <b>📥 В календарь</b> — экспорт расписания (.ics) в телефон\n\n"
         "👈 <i>Для возврата нажмите «◀️ Главное меню»</i>",
         reply_markup=services_keyboard
     )
@@ -644,6 +666,462 @@ async def handle_calendar_export(message: types.Message):
         await message.answer(f"Не удалось отправить файл календаря: {e}", reply_markup=services_keyboard)
 
 
+# -------------------------------------------------------------
+# Раздел: Замены и отмены пар
+# -------------------------------------------------------------
+@dp.message(Command("zameny"))
+@dp.message(Command("zameni"))
+@dp.message(F.text == "⚠️ Замены пар")
+async def handle_zameny_list(message: types.Message):
+    text = format_replacements_summary()
+    kb = get_replacements_keyboard()
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "refresh_replacements")
+async def handle_refresh_replacements(call: types.CallbackQuery):
+    text = format_replacements_summary()
+    kb = get_replacements_keyboard()
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Refresh replacements error: {e}")
+    except Exception:
+        pass
+    await call.answer("Список замен обновлён!")
+
+
+@dp.callback_query(F.data == "nav_today")
+async def handle_nav_today_callback(call: types.CallbackQuery):
+    now = datetime.now(BOT_TZ)
+    current_time_str = now.strftime("%H:%M")
+    text = format_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    nav_kb = get_day_nav_keyboard(now.date())
+    try:
+        await call.message.edit_text(text, reply_markup=nav_kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=nav_kb)
+    await call.answer()
+
+
+async def is_user_admin(message: types.Message) -> bool:
+    """Проверяет права админа бота или администратора текущей группы."""
+    user_id = message.from_user.id
+    if ADMIN_ID and user_id == ADMIN_ID:
+        return True
+    if message.chat.type in ("group", "supergroup"):
+        try:
+            member = await message.chat.get_member(user_id)
+            if member.status in ("creator", "administrator"):
+                return True
+        except Exception:
+            pass
+    if not ADMIN_ID:
+        return True
+    return False
+
+
+@dp.message(Command("zamena"))
+async def handle_zamena_cmd(message: types.Message):
+    """
+    Добавление замены или отмены пары.
+    Синтаксис:
+    /zamena <дата> <номер_пары> <описание или 'отмена'>
+    Пример: /zamena 17.10 3 отмена
+    Пример: /zamena завтра 2 МДК 07.01, каб. 305
+    Удаление: /zamena del <дата> <номер_пары>
+    """
+    if not await is_user_admin(message):
+        await message.answer("⛔️ У вас нет прав для добавления замен. Обратитесь к старосте или администратору бота.")
+        return
+
+    text = message.text.strip()
+    parts = text.split(maxsplit=3)
+    
+    if len(parts) < 2:
+        await message.answer(
+            "⚠️ <b>Управление заменами и отменами пар</b>\n\n"
+            "▫️ <b>Отменить пару:</b>\n"
+            "<code>/zamena 17.10 3 отмена</code> или <code>/zamena завтра 1 отмена</code>\n\n"
+            "▫️ <b>Заменить пару:</b>\n"
+            "<code>/zamena 17.10 2 МДК 07.01 Сертификация, каб. 305</code>\n\n"
+            "▫️ <b>Удалить замену:</b>\n"
+            "<code>/zamena del 17.10 3</code> или <code>/zamena_del 17.10 3</code>\n\n"
+            "▫️ <b>Список всех замен:</b> /zameny\n\n"
+            "📢 <i>При добавлении замены бот автоматически оповестит группу 9ПО-43к!</i>"
+        )
+        return
+
+    # Удаление: /zamena del 17.10 3
+    if parts[1].lower() in ("del", "delete", "rm", "remove"):
+        if len(parts) < 4:
+            await message.answer("ℹ️ Формат удаления: <code>/zamena del &lt;дата&gt; &lt;номер_пары&gt;</code>\nПример: <code>/zamena del 17.10 3</code>")
+            return
+        d_obj = parse_date_input(parts[2])
+        if not d_obj:
+            await message.answer(f"❌ Не удалось распознать дату: <code>{parts[2]}</code>. Используйте формат ДД.ММ или 'завтра'.")
+            return
+        try:
+            p_num = int(parts[3])
+        except ValueError:
+            await message.answer("❌ Номер пары должен быть числом от 1 до 6.")
+            return
+
+        deleted = delete_replacement(d_obj, p_num)
+        if deleted:
+            await message.answer(f"✅ Замена на <b>{d_obj.strftime('%d.%m.%Y')}</b> (пара №{p_num}) успешно удалена.")
+        else:
+            await message.answer(f"ℹ️ Замена для пары №{p_num} на {d_obj.strftime('%d.%m.%Y')} не была найдена.")
+        return
+
+    # Добавление: /zamena <дата> <номер_пары> <текст>
+    if len(parts) < 4:
+        await message.answer(
+            "❌ Недостаточно аргументов!\n"
+            "Используйте: <code>/zamena &lt;дата&gt; &lt;номер_пары&gt; &lt;текст или отмена&gt;</code>\n"
+            "Пример: <code>/zamena 17.10 3 отмена</code>"
+        )
+        return
+
+    target_date = parse_date_input(parts[1])
+    if not target_date:
+        await message.answer(f"❌ Не удалось распознать дату: <code>{parts[1]}</code>. Укажите дату как ДД.ММ (например, 17.10), 'сегодня' или 'завтра'.")
+        return
+
+    try:
+        pair_num = int(parts[2])
+        if pair_num < 1 or pair_num > 6:
+            raise ValueError()
+    except ValueError:
+        await message.answer("❌ Номер пары должен быть числом от 1 до 6.")
+        return
+
+    rep_content = parts[3].strip()
+    author_name = message.from_user.full_name or message.from_user.username or "Администратор"
+    
+    entry = add_replacement(target_date, pair_num, rep_content, author=author_name)
+    is_cancel = entry.get("type") == "cancel"
+    action_title = "❌ ОТМЕНЕНА" if is_cancel else f"🔄 ЗАМЕНА: {entry['text']}"
+
+    success_msg = (
+        f"✅ <b>Запись успешно сохранена!</b>\n\n"
+        f"📅 <b>Дата:</b> {target_date.strftime('%d.%m.%Y')}\n"
+        f"🔔 <b>Пара №{pair_num}:</b> {action_title}\n\n"
+        f"Метка отобразится во всех расписаниях (сегодня, завтра, неделя, инлайн)."
+    )
+    await message.answer(success_msg)
+
+    # Оповещение группы 9ПО-43к
+    if CHAT_ID:
+        try:
+            alert_text = (
+                f"⚠️ <b>Внимание! Изменение в расписании 9ПО-43к!</b>\n"
+                f"──────────────────────\n"
+                f"📅 <b>Дата:</b> {target_date.strftime('%d.%m.%Y')} ({DAYS_RU[target_date.weekday()]})\n"
+                f"🔔 <b>Пара №{pair_num}:</b> {action_title}\n"
+                f"👤 <i>Внёс: {html.escape(author_name)}</i>\n\n"
+                f"👉 <i>Смотрите актуальное расписание кнопкой <b>«📅 Сегодня»</b> или <b>«⚠️ Замены пар»</b></i>"
+            )
+            await bot.send_message(
+                chat_id=CHAT_ID,
+                text=alert_text,
+                link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+            )
+            logger.info(f"Оповещение о замене успешно разослано в группу {CHAT_ID}")
+        except Exception as e:
+            logger.warning(f"Не удалось отправить уведомление о замене в группу: {e}")
+
+
+@dp.message(Command("zamena_del"))
+async def handle_zamena_del_cmd(message: types.Message):
+    if not await is_user_admin(message):
+        await message.answer("⛔️ У вас нет прав для изменения замен.")
+        return
+
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer("ℹ️ Использование: <code>/zamena_del &lt;дата&gt; &lt;номер_пары&gt;</code>\nПример: <code>/zamena_del 17.10 3</code>")
+        return
+
+    d_obj = parse_date_input(parts[1])
+    if not d_obj:
+        await message.answer(f"❌ Не удалось распознать дату: <code>{parts[1]}</code>.")
+        return
+
+    try:
+        p_num = int(parts[2])
+    except ValueError:
+        await message.answer("❌ Номер пары должен быть числом от 1 до 6.")
+        return
+
+    deleted = delete_replacement(d_obj, p_num)
+    if deleted:
+        await message.answer(f"✅ Замена на <b>{d_obj.strftime('%d.%m.%Y')}</b> (пара №{p_num}) успешно удалена.")
+    else:
+        await message.answer(f"ℹ️ Замена для пары №{p_num} на {d_obj.strftime('%d.%m.%Y')} не была найдена.")
+
+
+# -------------------------------------------------------------
+# Раздел: СДО Moodle и материалы
+# -------------------------------------------------------------
+@dp.message(Command("moodle"))
+@dp.message(Command("materials"))
+@dp.message(Command("materialy"))
+@dp.message(F.text == "📁 СДО и Материалы")
+async def handle_moodle_and_materials(message: types.Message):
+    text = get_moodle_info_text()
+    kb = get_moodle_keyboard()
+    await message.answer(text, reply_markup=kb, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+
+
+@dp.message(Command("maket"))
+@dp.callback_query(F.data == "download_maket_docx")
+async def handle_download_maket(event: types.Message | types.CallbackQuery):
+    if not os.path.exists(MAKET_DOCX):
+        error_text = "❌ Файл макета титульного листа не найден на сервере. Обратитесь к разработчику."
+        if isinstance(event, types.CallbackQuery):
+            await event.answer("Файл временно недоступен", show_alert=True)
+            return
+        await event.answer(error_text)
+        return
+
+    caption = (
+        "📄 <b>Макет титульного листа для практических и лабораторных работ</b>\n"
+        "Группа: <code>9ПО-43к</code> · 4 курс 1 семестр\n\n"
+        "💡 <i>Откройте файл в Word или Google Docs, заполните тему, номер работы и вашу фамилию.</i>"
+    )
+
+    if isinstance(event, types.CallbackQuery):
+        await event.answer("Отправляю документ...")
+        await event.message.answer_document(
+            document=types.FSInputFile(MAKET_DOCX, filename="maket_titul_pz_lr.docx"),
+            caption=caption
+        )
+    else:
+        await event.answer_document(
+            document=types.FSInputFile(MAKET_DOCX, filename="maket_titul_pz_lr.docx"),
+            caption=caption
+        )
+
+
+# -------------------------------------------------------------
+# Раздел: Личный колокольчик (Напоминания за 10 минут)
+# -------------------------------------------------------------
+@dp.message(Command("remind"))
+@dp.message(Command("notify"))
+@dp.message(F.text == "🔔 Мои напоминания")
+async def handle_remind_status(message: types.Message):
+    user_id = message.from_user.id
+    active = is_subscribed(user_id)
+    status_str = "🟢 <b>ВКЛЮЧЕНЫ</b>" if active else "🔴 <b>ОТКЛЮЧЕНЫ</b>"
+    kb = get_remind_toggle_keyboard(active)
+
+    text = (
+        f"🔔 <b>Личный колокольчик (напоминания за 10 минут)</b>\n"
+        f"──────────────────────\n"
+        f"Статус для вас: {status_str}\n\n"
+        f"✨ <b>Как это работает:</b>\n"
+        f"Бот автоматически пришлёт вам персональное сообщение в ЛС за 10 минут до начала пары "
+        f"с точным номером кабинета, предметом и преподавателем.\n\n"
+        f"⏰ <i>Время напоминаний: 08:50, 10:35, 12:45, 14:30 (по будням).</i>\n\n"
+        f"👇 Нажмите кнопку ниже, чтобы включить или отключить:"
+    )
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "toggle_reminder")
+async def handle_toggle_reminder(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    new_active = toggle_subscription(user_id)
+    status_str = "🟢 <b>ВКЛЮЧЕНЫ</b>" if new_active else "🔴 <b>ОТКЛЮЧЕНЫ</b>"
+    kb = get_remind_toggle_keyboard(new_active)
+
+    toast = "🔔 Напоминания включены! За 10 мин до пары придёт уведомление." if new_active else "🔕 Напоминания отключены."
+    await call.answer(toast, show_alert=False)
+
+    text = (
+        f"🔔 <b>Личный колокольчик (напоминания за 10 минут)</b>\n"
+        f"──────────────────────\n"
+        f"Статус для вас: {status_str}\n\n"
+        f"✨ <b>Как это работает:</b>\n"
+        f"Бот автоматически пришлёт вам персональное сообщение в ЛС за 10 минут до начала пары "
+        f"с точным номером кабинета, предметом и преподавателем.\n\n"
+        f"⏰ <i>Время напоминаний: 08:50, 10:35, 12:45, 14:30 (по будням).</i>\n\n"
+        f"👇 Нажмите кнопку ниже, чтобы включить или отключить:"
+    )
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        pass
+
+
+# -------------------------------------------------------------
+# Раздел: Инлайн-режим (Inline Mode @aituraspisaniebot)
+# -------------------------------------------------------------
+@dp.inline_query()
+async def handle_inline_query(inline_query: types.InlineQuery):
+    """
+    Инлайн-режим: позволяет вызывать бота в любом чате через @aituraspisaniebot.
+    Делится расписанием на сегодня, завтра, текущим статусом, звонками и заменами.
+    """
+    query = inline_query.query.strip().lower()
+    results: list[types.InlineQueryResultArticle] = []
+    
+    now = datetime.now(BOT_TZ)
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
+    current_time_str = now.strftime("%H:%M")
+    parity_code, parity_name = get_week_parity(today)
+    
+    # 1. Сегодня
+    today_text = format_day_schedule(today, title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_today",
+            title="📅 Расписание на сегодня",
+            description=f"{DAYS_RU[today.weekday()]}, {today.day} {MONTHS_RU[today.month]} · {parity_name}",
+            input_message_content=types.InputTextMessageContent(
+                message_text=today_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 2. Завтра
+    tomorrow_text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_tomorrow",
+            title="🔜 Расписание на завтра",
+            description=f"{DAYS_RU[tomorrow.weekday()]}, {tomorrow.day} {MONTHS_RU[tomorrow.month]}",
+            input_message_content=types.InputTextMessageContent(
+                message_text=tomorrow_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 3. Сейчас идёт пара
+    now_text = get_now_status(now)
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_now",
+            title="⚡️ Какая пара идёт сейчас?",
+            description=f"Текущее время {current_time_str} · прогресс пары и звонки",
+            input_message_content=types.InputTextMessageContent(
+                message_text=now_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 4. Неделя
+    monday = today - timedelta(days=today.weekday())
+    week_text = format_week_schedule(monday)
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_week",
+            title="🗓 Расписание на всю неделю",
+            description="Понедельник — Пятница (группа 9ПО-43к)",
+            input_message_content=types.InputTextMessageContent(
+                message_text=week_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 5. Замены и отмены
+    zameny_text = format_replacements_summary()
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_zameny",
+            title="⚠️ Замены и отмены пар",
+            description="Актуальные изменения в расписании",
+            input_message_content=types.InputTextMessageContent(
+                message_text=zameny_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 6. Звонки
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_bells",
+            title="🔔 Расписание звонков и пятиминуток",
+            description="1-4 пары, 5-минутки внутри и обед 35 минут",
+            input_message_content=types.InputTextMessageContent(
+                message_text=BELLS_TEXT,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # 7. СДО Moodle
+    moodle_text = get_moodle_info_text()
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_moodle",
+            title="📁 СДО Moodle и материалы",
+            description="Ссылка на moodle.astanait.edu.kz и макет титульника",
+            input_message_content=types.InputTextMessageContent(
+                message_text=moodle_text,
+                parse_mode=ParseMode.HTML
+            )
+        )
+    )
+
+    # Поисковая фильтрация, если пользователь ввёл текст
+    if query:
+        search_results: list[types.InlineQueryResultArticle] = []
+        
+        # Если ввод похож на номер кабинета (например "304", "515", "с/з")
+        if any(c.isdigit() for c in query) or "с/з" in query or "зал" in query:
+            room_res = search_room_schedule(query)
+            if "не найден" not in room_res.lower():
+                search_results.append(
+                    types.InlineQueryResultArticle(
+                        id=f"inline_room_{query}",
+                        title=f"📍 Кабинет {query.upper()}",
+                        description=f"Расписание занятий в аудитории {query.upper()}",
+                        input_message_content=types.InputTextMessageContent(
+                            message_text=room_res,
+                            parse_mode=ParseMode.HTML
+                        )
+                    )
+                )
+
+        # Если совпадение с днем недели
+        day_keywords = {
+            "понедельник": 0, "пн": 0,
+            "вторник": 1, "вт": 1,
+            "среда": 2, "ср": 2,
+            "четверг": 3, "чт": 3,
+            "пятница": 4, "пт": 4
+        }
+        for kw, d_idx in day_keywords.items():
+            if kw in query:
+                d_text = format_weekday_by_index(d_idx, parity_code)
+                search_results.append(
+                    types.InlineQueryResultArticle(
+                        id=f"inline_day_{d_idx}",
+                        title=f"📆 {DAYS_RU[d_idx]} ({parity_name})",
+                        description=f"Расписание на {DAYS_RU[d_idx]} для текущей недели",
+                        input_message_content=types.InputTextMessageContent(
+                            message_text=d_text,
+                            parse_mode=ParseMode.HTML
+                        )
+                    )
+                )
+                break
+
+        if search_results:
+            results = search_results + results
+
+    await inline_query.answer(results=results[:20], cache_time=5, is_personal=False)
+
+
 @dp.message(Command("help"))
 async def handle_help(message: types.Message):
     help_text = (
@@ -659,14 +1137,22 @@ async def handle_help(message: types.Message):
         "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n\n"
         "🛠 <b>Папка «Полезное»:</b>\n"
         "🔔 /bells — Расписание звонков и перерывов\n"
+        "⚠️ /zameny — Актуальные замены и отмены пар\n"
+        "📁 /moodle — Портал СДО и материалы группы\n"
+        "📄 /maket — Скачать макет титульного листа (.docx)\n"
+        "🔔 /remind — Напоминания за 10 минут до пары в ЛС\n"
         "👨‍🏫 /teachers — Справочник преподавателей группы\n"
         "📍 /room <code>&lt;номер&gt;</code> — Поиск пар по кабинету (например, <code>/room 305</code>)\n"
         "📥 /calendar — Скачать расписание в календарь смартфона (.ics)\n\n"
+        "👑 <b>Для старосты и админов:</b>\n"
+        "✏️ /zamena <code>&lt;дата&gt; &lt;пара&gt; &lt;текст/отмена&gt;</code> — Добавить замену\n"
+        "🗑 /zamena del <code>&lt;дата&gt; &lt;пара&gt;</code> — Удалить замену\n\n"
+        "💬 <b>Инлайн-режим:</b>\n"
+        "Напишите <code>@aituraspisaniebot</code> в любом чате Telegram, чтобы поделиться расписанием!\n\n"
         "⚙️ <b>Навигация:</b>\n"
         "🏠 /menu — Открыть главное меню\n"
         "🆔 /chat_id — Узнать ID чата для рассылок\n"
-        "❓ /help — Показать эту справку\n\n"
-        "💡 <i>Экранные кнопки внизу аккуратно разбиты по папкам.</i>"
+        "❓ /help — Показать эту справку"
     )
     await message.answer(help_text, reply_markup=main_keyboard)
 
@@ -791,7 +1277,10 @@ async def main():
                 types.BotCommand(command="today", description="📅 Расписание на сегодня"),
                 types.BotCommand(command="tomorrow", description="🔜 Расписание на завтра"),
                 types.BotCommand(command="week", description="🗓 Расписание на эту неделю"),
-                types.BotCommand(command="next_week", description="⏭ На следующую неделю"),
+                types.BotCommand(command="zameny", description="⚠️ Замены и отмены пар"),
+                types.BotCommand(command="moodle", description="📁 СДО Moodle и материалы"),
+                types.BotCommand(command="maket", description="📄 Скачать титульный лист (.docx)"),
+                types.BotCommand(command="remind", description="🔔 Личные напоминания перед парами"),
                 types.BotCommand(command="days", description="📆 Выбрать день недели"),
                 types.BotCommand(command="teachers", description="👨‍🏫 Преподаватели группы"),
                 types.BotCommand(command="room", description="📍 Поиск пар по кабинету"),
@@ -882,10 +1371,60 @@ async def main():
             id="break_pair_4",
             replace_existing=True
         )
+
+        # Расписание 4: Личный колокольчик — напоминания за 10 минут до каждой пары по будням
+        # 1-я пара: 08:50 (начало в 09:00)
+        scheduler.add_job(
+            send_pair_reminder,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=8,
+            minute=50,
+            second=0,
+            args=[bot, 1],
+            id="remind_pair_1",
+            replace_existing=True
+        )
+        # 2-я пара: 10:35 (начало в 10:45)
+        scheduler.add_job(
+            send_pair_reminder,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=10,
+            minute=35,
+            second=0,
+            args=[bot, 2],
+            id="remind_pair_2",
+            replace_existing=True
+        )
+        # 3-я пара: 12:45 (начало в 12:55)
+        scheduler.add_job(
+            send_pair_reminder,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=12,
+            minute=45,
+            second=0,
+            args=[bot, 3],
+            id="remind_pair_3",
+            replace_existing=True
+        )
+        # 4-я пара: 14:30 (начало в 14:40)
+        scheduler.add_job(
+            send_pair_reminder,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=14,
+            minute=30,
+            second=0,
+            args=[bot, 4],
+            id="remind_pair_4",
+            replace_existing=True
+        )
         
         scheduler.start()
         
-        logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00, 08:00 и пятиминутки в 09:45, 11:30, 13:40, 15:25.")
+        logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00, 08:00, пятиминутки и напоминания за 10 мин.")
         
         # Удаляем вебхуки если были, и запускаем опрос
         await bot.delete_webhook(drop_pending_updates=True)

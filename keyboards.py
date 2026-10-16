@@ -51,13 +51,18 @@ services_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🔔 Звонки"),
-            KeyboardButton(text="👨‍🏫 Преподаватели")
+            KeyboardButton(text="⚠️ Замены пар")
         ],
         [
-            KeyboardButton(text="📥 В календарь"),
+            KeyboardButton(text="📁 СДО и Материалы"),
+            KeyboardButton(text="🔔 Мои напоминания")
+        ],
+        [
+            KeyboardButton(text="👨‍🏫 Преподаватели"),
             KeyboardButton(text="📍 Поиск кабинета")
         ],
         [
+            KeyboardButton(text="📥 В календарь"),
             KeyboardButton(text="◀️ Главное меню")
         ]
     ],
@@ -65,6 +70,42 @@ services_keyboard = ReplyKeyboardMarkup(
     is_persistent=True,
     input_field_placeholder="Раздел: Полезное..."
 )
+
+def get_moodle_keyboard() -> InlineKeyboardMarkup:
+    """Инлайн-кнопки для СДО Moodle и скачивания макета титульного листа."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🌐 Войти в СДО Moodle", url="https://moodle.astanait.edu.kz")
+            ],
+            [
+                InlineKeyboardButton(text="📄 Скачать титульный лист (.docx)", callback_data="download_maket_docx")
+            ]
+        ]
+    )
+
+def get_remind_toggle_keyboard(is_active: bool) -> InlineKeyboardMarkup:
+    """Инлайн-кнопка переключения подписки на личные напоминания."""
+    btn_text = "🔕 Отключить напоминания" if is_active else "🔔 Включить напоминания"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=btn_text, callback_data="toggle_reminder")
+            ]
+        ]
+    )
+
+def get_replacements_keyboard() -> InlineKeyboardMarkup:
+    """Инлайн-кнопки под списком замен."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔄 Обновить замены", callback_data="refresh_replacements"),
+                InlineKeyboardButton(text="📅 Сегодня", callback_data="nav_today")
+            ]
+        ]
+    )
+
 
 def get_days_inline_keyboard(parity_code: str = "current") -> InlineKeyboardMarkup:
     """
