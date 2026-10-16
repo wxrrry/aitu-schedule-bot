@@ -111,11 +111,10 @@ def get_now_status(now_dt: datetime | None = None) -> str:
         if start_m <= curr_minutes < end_m:
             if num in today_pairs:
                 pair_info = today_pairs[num]
-                elapsed = curr_minutes - start_m
-                total = end_m - start_m
-                pct = (elapsed / total) * 100
-                rem = end_m - curr_minutes
-                bar = get_progress_bar(pct)
+                break_start_m = start_m + 45
+                break_end_m = start_m + 50
+                break_start_s = f"{break_start_m // 60:02d}:{break_start_m % 60:02d}"
+                break_end_s = f"{break_end_m // 60:02d}:{break_end_m % 60:02d}"
                 
                 # Следующая пара
                 next_pairs = [n for n in pair_nums if n > num]
@@ -130,19 +129,77 @@ def get_now_status(now_dt: datetime | None = None) -> str:
                 else:
                     next_str = "\n✨ <i>Это последняя пара на сегодня!</i>"
 
-                return (
-                    f"{header}"
-                    f"🟢 <b>СЕЙЧАС ИДЁТ {num}-Я ПАРА</b>\n"
-                    f"<blockquote>"
-                    f"⏰ <b>{start_s} — {end_s}</b>\n"
-                    f"📚 <b>{html.escape(pair_info['subject'])}</b>\n"
-                    f"📍 Кабинет: <code>{html.escape(pair_info['room'])}</code> · 👨‍🏫 <i>{html.escape(pair_info['teacher'])}</i>\n"
-                    f"⏱ <i>{BELL_SCHEDULE[num]['breakdown']}</i>\n\n"
-                    f"⏳ До звонка: <b>{rem} мин</b> · Прогресс: {int(pct)}%\n"
-                    f"<code>{bar}</code>"
-                    f"</blockquote>"
-                    f"{next_str}"
-                )
+                # Фаза 1: 1-я половина пары (до звонка на пятиминутку)
+                if curr_minutes < break_start_m:
+                    half_elapsed = curr_minutes - start_m
+                    half_rem = break_start_m - curr_minutes
+                    half_pct = (half_elapsed / 45) * 100
+                    bar = get_progress_bar(half_pct)
+                    return (
+                        f"{header}"
+                        f"🟢 <b>СЕЙЧАС ИДЁТ {num}-Я ПАРА (1-я половина)</b>\n"
+                        f"<blockquote>"
+                        f"⏰ <b>{start_s} — {break_start_s}</b> (пара: {start_s} — {end_s})\n"
+                        f"📚 <b>{html.escape(pair_info['subject'])}</b>\n"
+                        f"📍 Кабинет: <code>{html.escape(pair_info['room'])}</code> · 👨‍🏫 <i>{html.escape(pair_info['teacher'])}</i>\n"
+                        f"⏱ <i>{BELL_SCHEDULE[num]['breakdown']}</i>\n\n"
+                        f"🔔 <b>Следующий звонок:</b> на пятиминутку в <b>{break_start_s}</b>\n"
+                        f"⏳ До звонка: <b>{half_rem} мин</b> · Прогресс: {int(half_pct)}%\n"
+                        f"<code>{bar}</code>\n\n"
+                        f"☕️ <i>Затем 5-минутный перерыв ({break_start_s} — {break_end_s})</i>"
+                        f"</blockquote>"
+                        f"{next_str}"
+                    )
+
+                # Фаза 2: Пятиминутка внутри пары
+                elif curr_minutes < break_end_m:
+                    break_elapsed = curr_minutes - break_start_m
+                    break_rem = break_end_m - curr_minutes
+                    break_pct = (break_elapsed / 5) * 100
+                    bar = get_progress_bar(break_pct)
+                    return (
+                        f"{header}"
+                        f"☕️ <b>СЕЙЧАС ПЯТИМИНУТКА · {num}-я пара</b>\n"
+                        f"<blockquote>"
+                        f"⏱ <b>Перерыв внутри пары:</b> <code>{break_start_s} — {break_end_s}</code> (5 минут)\n"
+                        f"📚 <b>{html.escape(pair_info['subject'])}</b>\n"
+                        f"📍 Кабинет: <code>{html.escape(pair_info['room'])}</code> · 👨‍🏫 <i>{html.escape(pair_info['teacher'])}</i>\n\n"
+                        f"🔔 <b>Следующий звонок:</b> на 2-ю половину пары в <b>{break_end_s}</b>\n"
+                        f"⏳ До звонка: <b>{break_rem} мин</b>\n"
+                        f"<code>{bar}</code>\n\n"
+                        f"🔔 <i>2-я половина пары начнётся в {break_end_s} (до {end_s})</i>"
+                        f"</blockquote>"
+                        f"{next_str}"
+                    )
+
+                # Фаза 3: 2-я половина пары (после пятиминутки)
+                else:
+                    half_elapsed = curr_minutes - break_end_m
+                    half_rem = end_m - curr_minutes
+                    half_pct = (half_elapsed / 45) * 100
+                    bar = get_progress_bar(half_pct)
+
+                    if num == 2:
+                        bell_dest = f"на обед в <b>{end_s}</b>"
+                    elif num == 4 or num == last_pair_num:
+                        bell_dest = f"с занятий в <b>{end_s}</b> (конец пар 🎉)"
+                    else:
+                        bell_dest = f"на перемену в <b>{end_s}</b>"
+
+                    return (
+                        f"{header}"
+                        f"🟢 <b>СЕЙЧАС ИДЁТ {num}-Я ПАРА (2-я половина)</b>\n"
+                        f"<blockquote>"
+                        f"⏰ <b>{break_end_s} — {end_s}</b> (пара: {start_s} — {end_s})\n"
+                        f"📚 <b>{html.escape(pair_info['subject'])}</b>\n"
+                        f"📍 Кабинет: <code>{html.escape(pair_info['room'])}</code> · 👨‍🏫 <i>{html.escape(pair_info['teacher'])}</i>\n"
+                        f"⏱ <i>{BELL_SCHEDULE[num]['breakdown']}</i>\n\n"
+                        f"🔔 <b>Следующий звонок:</b> {bell_dest}\n"
+                        f"⏳ До звонка: <b>{half_rem} мин</b> · Прогресс: {int(half_pct)}%\n"
+                        f"<code>{bar}</code>"
+                        f"</blockquote>"
+                        f"{next_str}"
+                    )
             else:
                 next_pairs = [n for n in pair_nums if n > num]
                 nxt_str = ""

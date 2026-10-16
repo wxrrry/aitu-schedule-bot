@@ -222,13 +222,13 @@ async def send_five_minute_break(pair_num: int):
     teacher = html.escape(str(pair_info.get("teacher", "—")))
 
     text = (
-        f"☕️ <b>Начало пятиминутки · {pair_num}-я пара!</b>\n"
+        f"🔔 <b>Звонок на пятиминутку! (Перерыв 5 минут) · {pair_num}-я пара</b>\n"
         f"──────────────────────\n"
         f"<blockquote>"
-        f"⏱ <b>Перерыв 5 минут:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+        f"⏱ <b>Время перерыва:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
         f"📚 <b>{subject}</b>\n"
         f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>\n"
-        f"🔔 <i>Продолжение пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
+        f"🔔 <i>Звонок на 2-ю половину пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
         f"</blockquote>\n"
         f"💡 <i>{break_data['tip']}</i>"
     )
