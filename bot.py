@@ -34,7 +34,13 @@ from keyboards import (
     get_back_to_teachers_keyboard,
     get_moodle_keyboard,
     get_remind_toggle_keyboard,
-    get_replacements_keyboard
+    get_replacements_keyboard,
+    get_lectures_menu_keyboard,
+    get_subject_lectures_keyboard,
+    get_dates_lectures_keyboard,
+    get_date_lectures_keyboard,
+    get_lecture_card_keyboard,
+    get_lecture_reader_keyboard
 )
 from features import (
     get_now_status,
@@ -73,6 +79,20 @@ from admin import (
     get_admin_tests_keyboard,
     run_git_pull
 )
+from lectures import (
+    get_all_lectures,
+    get_lecture_by_id,
+    get_subject_info,
+    get_subjects_with_counts,
+    get_lectures_by_subject_code,
+    get_unique_dates,
+    get_lectures_by_date_iso,
+    search_lectures,
+    format_lecture_card,
+    get_lecture_pages,
+    format_lecture_page,
+    get_lecture_file_path
+)
 
 # Время запуска для расчета Uptime
 BOT_START_TIME = datetime.now(BOT_TZ)
@@ -85,6 +105,7 @@ async def register_bot_commands(bot_instance: Bot):
             types.BotCommand(command="today", description="📅 Расписание на сегодня"),
             types.BotCommand(command="tomorrow", description="🔜 Расписание на завтра"),
             types.BotCommand(command="week", description="🗓 Расписание на эту неделю"),
+            types.BotCommand(command="lectures", description="📚 Конспекты лекций 4 курса"),
             types.BotCommand(command="zameny", description="⚠️ Замены и отмены пар"),
             types.BotCommand(command="settings", description="⚙️ Настройки уведомлений"),
             types.BotCommand(command="refresh", description="🔄 Обновить интерфейс"),
@@ -1331,6 +1352,251 @@ async def handle_test_ten_min(call: types.CallbackQuery):
 
 
 # -------------------------------------------------------------
+# Раздел: База конспектов лекций (4 курс 1 семестр)
+# -------------------------------------------------------------
+
+LECTURES_INTRO_TEXT = (
+    "📚 <b>База конспектов лекций (4 курс 1 семестр)</b>\n"
+    "──────────────────────\n"
+    "Здесь собраны подробные конспекты всех лекций с датами занятий, "
+    "краткими выжимками (TL;DR), ключевыми вопросами и полными текстами.\n\n"
+    "📖 Можно читать прямо в Telegram по страницам или скачать <code>.md</code> файл для Obsidian и заметок.\n\n"
+    "👇 <b>Выберите предмет для просмотра:</b>"
+)
+
+
+@dp.message(Command("lectures"))
+@dp.message(Command("lecture"))
+@dp.message(Command("konspect"))
+@dp.message(Command("konspekty"))
+@dp.message(F.text == "📚 Конспекты лекций")
+async def handle_lectures_entry(message: types.Message):
+    # Проверяем, передан ли аргумент для быстрого поиска: например "/lecture rest" или "/lecture 15.10"
+    text = (message.text or "").strip()
+    parts = text.split(maxsplit=1)
+    if len(parts) > 1 and parts[0].startswith("/"):
+        query = parts[1].strip()
+        matched = search_lectures(query)
+        if len(matched) == 1:
+            lec = matched[0]
+            card_text = format_lecture_card(lec)
+            kb = get_lecture_card_keyboard(lec["id"], lec["subject_code"])
+            await message.answer(card_text, reply_markup=kb)
+            return
+        elif len(matched) > 1:
+            buttons = []
+            for l in matched:
+                date_short = l["date"].split(".2026")[0] if ".2026" in l["date"] else l["date"]
+                title_btn = l["title"][:26] + "..." if len(l["title"]) > 26 else l["title"]
+                buttons.append([types.InlineKeyboardButton(text=f"📖 {l['subject']}: {title_btn}", callback_data=f"lec_view_{l['id']}")])
+            buttons.append([types.InlineKeyboardButton(text="📚 Все предметы", callback_data="lec_menu")])
+            await message.answer(
+                f"🔍 <b>Найдено лекций: {len(matched)}</b> по запросу «{html.escape(query)}»:\nВыберите нужную:",
+                reply_markup=types.InlineKeyboardMarkup(inline_keyboard=buttons)
+            )
+            return
+        else:
+            await message.answer(
+                f"🔍 По запросу «<b>{html.escape(query)}</b>» лекций не найдено.\n\n"
+                f"💡 <i>Попробуйте ввести номер темы, дату (например 15.10) или предмет (МДК 07.02, Менеджмент, REST, ФСТЭК).</i>",
+                reply_markup=get_lectures_menu_keyboard()
+            )
+            return
+
+    await message.answer(LECTURES_INTRO_TEXT, reply_markup=get_lectures_menu_keyboard())
+
+
+@dp.callback_query(F.data == "lec_menu")
+async def handle_lec_menu(call: types.CallbackQuery):
+    try:
+        await call.message.edit_text(LECTURES_INTRO_TEXT, reply_markup=get_lectures_menu_keyboard())
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"lec_menu edit error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("lec_sub_"))
+async def handle_lec_subject(call: types.CallbackQuery):
+    subject_code = call.data[8:]
+    info = get_subject_info(subject_code)
+    if not info:
+        await call.answer("Предмет не найден.", show_alert=True)
+        return
+
+    lectures = get_lectures_by_subject_code(subject_code)
+    kb = get_subject_lectures_keyboard(subject_code)
+    text = (
+        f"{info['icon']} <b>{html.escape(info['full'])}</b>\n"
+        f"──────────────────────\n"
+        f"Всего доступно лекций: <b>{len(lectures)}</b>\n\n"
+        f"👇 <i>Выберите лекцию из списка ниже, чтобы открыть карточку темы:</i>"
+    )
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"lec_sub edit error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data == "lec_dates")
+async def handle_lec_dates(call: types.CallbackQuery):
+    text = (
+        f"📅 <b>Лекции по датам проведения занятий</b>\n"
+        f"──────────────────────\n"
+        f"В базе собраны лекции с датами осеннего семестра 2026 года.\n\n"
+        f"👇 <i>Выберите дату занятия:</i>"
+    )
+    kb = get_dates_lectures_keyboard()
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"lec_dates edit error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("lec_date_"))
+async def handle_lec_date_specific(call: types.CallbackQuery):
+    date_iso = call.data[9:]
+    lectures = get_lectures_by_date_iso(date_iso)
+    if not lectures:
+        await call.answer("Лекции за эту дату не найдены.", show_alert=True)
+        return
+
+    date_display = lectures[0]["date"]
+    text = (
+        f"📅 <b>Лекции за {date_display}</b>\n"
+        f"──────────────────────\n"
+        f"Занятий в этот день: <b>{len(lectures)}</b>\n\n"
+        f"👇 <i>Выберите лекцию для открытия карточки:</i>"
+    )
+    kb = get_date_lectures_keyboard(date_iso)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"lec_date edit error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("lec_view_"))
+async def handle_lec_view(call: types.CallbackQuery):
+    lecture_id = call.data[9:]
+    lec = get_lecture_by_id(lecture_id)
+    if not lec:
+        await call.answer("Лекция не найдена.", show_alert=True)
+        return
+
+    card_text = format_lecture_card(lec)
+    kb = get_lecture_card_keyboard(lecture_id, lec["subject_code"])
+    try:
+        await call.message.edit_text(card_text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"lec_view edit error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("lec_p_"))
+async def handle_lec_page(call: types.CallbackQuery):
+    parts = call.data.split("_")
+    # Формат: lec_p_{lecture_id}_{page_idx}
+    if len(parts) < 4:
+        await call.answer()
+        return
+
+    lecture_id = "_".join(parts[2:-1])
+    try:
+        page_idx = int(parts[-1])
+    except ValueError:
+        page_idx = 0
+
+    lec = get_lecture_by_id(lecture_id)
+    if not lec:
+        await call.answer("Лекция не найдена.", show_alert=True)
+        return
+
+    pages = get_lecture_pages(lecture_id)
+    total_pages = len(pages)
+    if page_idx < 0:
+        page_idx = 0
+    if page_idx >= total_pages:
+        page_idx = total_pages - 1
+
+    page_content = pages[page_idx]
+    page_text = format_lecture_page(lec, page_idx, total_pages, page_content)
+    kb = get_lecture_reader_keyboard(lecture_id, page_idx, total_pages, lec["subject_code"])
+
+    try:
+        await call.message.edit_text(page_text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e).lower():
+            pass
+        else:
+            fallback_text = (
+                f"📖 {lec['title']} (Стр. {page_idx + 1} из {total_pages})\n"
+                f"──────────────────────\n\n"
+                f"{page_content}\n\n"
+                f"──────────────────────\n"
+                f"💡 Листайте страницы кнопками ниже:"
+            )
+            await call.message.edit_text(fallback_text, parse_mode=None, reply_markup=kb)
+    except Exception as e:
+        logger.error(f"Ошибка при отображении страницы лекции {lecture_id}: {e}")
+
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("lec_doc_"))
+async def handle_lec_download(call: types.CallbackQuery):
+    lecture_id = call.data[8:]
+    lec = get_lecture_by_id(lecture_id)
+    if not lec:
+        await call.answer("Лекция не найдена.", show_alert=True)
+        return
+
+    file_path = get_lecture_file_path(lecture_id)
+    if not file_path or not os.path.exists(file_path):
+        await call.answer("❌ Файл конспекта не найден на сервере.", show_alert=True)
+        return
+
+    await call.answer("📄 Отправляю файл конспекта...")
+    doc = types.FSInputFile(file_path, filename=lec["file"])
+    caption = (
+        f"📄 <b>{html.escape(lec['title'])}</b>\n"
+        f"📚 <code>{html.escape(lec['subject_full'])}</code> · 📅 {lec['date']} · {html.escape(lec.get('pair', ''))}\n\n"
+        f"💡 <i>Файл в формате Markdown (.md). Открывается в Obsidian, Notion, VS Code или любом блокноте.</i>"
+    )
+    await call.message.answer_document(doc, caption=caption, parse_mode=ParseMode.HTML)
+
+
+@dp.callback_query(F.data == "lec_search_hint")
+async def handle_lec_search_hint(call: types.CallbackQuery):
+    await call.answer(
+        "🔍 Чтобы найти лекцию, напишите команду:\n"
+        "/lecture <название или тема>\n\n"
+        "Примеры:\n"
+        "• /lecture rest\n"
+        "• /lecture 15.10\n"
+        "• /lecture фстэк\n"
+        "• /lecture менеджмент",
+        show_alert=True
+    )
+
+
+# -------------------------------------------------------------
 # Раздел: Инлайн-режим (Inline Mode @aituraspisaniebot)
 # -------------------------------------------------------------
 @dp.inline_query()
@@ -1446,10 +1712,44 @@ async def handle_inline_query(inline_query: types.InlineQuery):
         )
     )
 
+    # 8. Конспекты лекций
+    results.append(
+        types.InlineQueryResultArticle(
+            id="inline_lectures",
+            title="📚 Конспекты лекций (4 курс 1 семестр)",
+            description="МДК 07.02, Менеджмент, МДК 04.01, Экономика, БЖД (с датами и TL;DR)",
+            input_message_content=types.InputTextMessageContent(
+                message_text=LECTURES_INTRO_TEXT,
+                parse_mode=ParseMode.HTML
+            ),
+            reply_markup=get_lectures_menu_keyboard()
+        )
+    )
+
     if query:
         search_results: list[types.InlineQueryResultArticle] = []
         
-        # Если ввод похож на номер кабинета (например "304", "515", "с/з")
+        # 1. Поиск по базе конспектов лекций
+        lec_matches = search_lectures(query)
+        if query in ("лекции", "лекция", "конспект", "конспекты", "тема", "темы", "учеба", "учёба"):
+            lec_matches = get_all_lectures()
+            
+        for lec in lec_matches[:6]:
+            card_text = format_lecture_card(lec)
+            search_results.append(
+                types.InlineQueryResultArticle(
+                    id=f"inline_lec_{lec['id']}",
+                    title=f"📖 {lec['subject']}: {lec['title'][:40]}",
+                    description=f"{lec['date']} · {lec['teacher']} · {lec['pair']}",
+                    input_message_content=types.InputTextMessageContent(
+                        message_text=card_text,
+                        parse_mode=ParseMode.HTML
+                    ),
+                    reply_markup=get_lecture_card_keyboard(lec["id"], lec["subject_code"])
+                )
+            )
+
+        # 2. Если ввод похож на номер кабинета (например "304", "515", "с/з")
         if any(c.isdigit() for c in query) or "с/з" in query or "зал" in query:
             room_res = search_room_schedule(query)
             if "не найден" not in room_res.lower():
@@ -1465,7 +1765,7 @@ async def handle_inline_query(inline_query: types.InlineQuery):
                     )
                 )
 
-        # Если совпадение с днем недели
+        # 3. Если совпадение с днем недели
         day_keywords = {
             "понедельник": 0, "пн": 0,
             "вторник": 1, "вт": 1,
@@ -1518,6 +1818,8 @@ async def handle_help(message: types.Message):
         "📆 /days — Выбрать день недели (интерактивно)\n"
         "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n\n"
         "🛠 <b>Папка «Полезное»:</b>\n"
+        "📚 /lectures — База конспектов лекций с датами (МДК, Менеджмент, Экономика, БЖД)\n"
+        "🔍 /lecture <code>&lt;тема&gt;</code> — Поиск лекции по ключевому слову (например <code>/lecture rest</code>)\n"
         "🔔 /bells — Расписание звонков и перерывов\n"
         "⚠️ /zameny — Актуальные замены и отмены пар\n"
         "📁 /moodle — Портал СДО и материалы группы\n"

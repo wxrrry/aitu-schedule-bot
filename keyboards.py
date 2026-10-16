@@ -54,15 +54,18 @@ services_keyboard = ReplyKeyboardMarkup(
             KeyboardButton(text="⚠️ Замены пар")
         ],
         [
-            KeyboardButton(text="📁 СДО и Материалы"),
-            KeyboardButton(text="⚙️ Настройки")
+            KeyboardButton(text="📚 Конспекты лекций"),
+            KeyboardButton(text="📁 СДО и Материалы")
         ],
         [
-            KeyboardButton(text="👨‍🏫 Преподаватели"),
-            KeyboardButton(text="📍 Поиск кабинета")
+            KeyboardButton(text="⚙️ Настройки"),
+            KeyboardButton(text="👨‍🏫 Преподаватели")
         ],
         [
-            KeyboardButton(text="📥 В календарь"),
+            KeyboardButton(text="📍 Поиск кабинета"),
+            KeyboardButton(text="📥 В календарь")
+        ],
+        [
             KeyboardButton(text="◀️ Главное меню")
         ]
     ],
@@ -174,3 +177,116 @@ def get_back_to_teachers_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="◀️ Назад к списку преподавателей", callback_data="teachers_list")]
         ]
     )
+
+
+# -------------------------------------------------------------
+# Клавиатуры для раздела «Конспекты лекций»
+# -------------------------------------------------------------
+
+def get_lectures_menu_keyboard() -> InlineKeyboardMarkup:
+    """Главное меню конспектов: список предметов + даты + поиск."""
+    from lectures import get_subjects_with_counts
+    subjects = get_subjects_with_counts()
+    keyboard = []
+    for s in subjects:
+        btn_text = f"{s['icon']} {s['name']} ({s['count']} л.)"
+        keyboard.append([InlineKeyboardButton(text=btn_text, callback_data=f"lec_sub_{s['code']}")])
+    
+    keyboard.append([
+        InlineKeyboardButton(text="📅 По датам занятий", callback_data="lec_dates"),
+        InlineKeyboardButton(text="🔍 Поиск лекции", callback_data="lec_search_hint")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_subject_lectures_keyboard(subject_code: str) -> InlineKeyboardMarkup:
+    """Список лекций по выбранному предмету."""
+    from lectures import get_lectures_by_subject_code
+    lectures = get_lectures_by_subject_code(subject_code)
+    keyboard = []
+    for l in lectures:
+        date_short = l["date"].split(".2026")[0] if ".2026" in l["date"] else l["date"]
+        title_btn = l["title"]
+        if len(title_btn) > 30:
+            title_btn = title_btn[:27] + "..."
+        btn_text = f"📖 {date_short} · {title_btn}"
+        keyboard.append([InlineKeyboardButton(text=btn_text, callback_data=f"lec_view_{l['id']}")])
+
+    keyboard.append([
+        InlineKeyboardButton(text="◀️ Все предметы", callback_data="lec_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_dates_lectures_keyboard() -> InlineKeyboardMarkup:
+    """Список дат занятий."""
+    from lectures import get_unique_dates
+    dates = get_unique_dates()
+    keyboard = []
+    for d in dates:
+        btn_text = f"📅 {d['date']} ({d['count']} лекц.)"
+        keyboard.append([InlineKeyboardButton(text=btn_text, callback_data=f"lec_date_{d['date_iso']}")])
+
+    keyboard.append([
+        InlineKeyboardButton(text="◀️ Все предметы", callback_data="lec_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_date_lectures_keyboard(date_iso: str) -> InlineKeyboardMarkup:
+    """Список лекций за конкретную дату."""
+    from lectures import get_lectures_by_date_iso
+    lectures = get_lectures_by_date_iso(date_iso)
+    keyboard = []
+    for l in lectures:
+        pair_num = l["pair"].split(" ")[0] if l.get("pair") else "Лекция"
+        btn_text = f"📖 {pair_num} · {l['subject']}"
+        keyboard.append([InlineKeyboardButton(text=btn_text, callback_data=f"lec_view_{l['id']}")])
+
+    keyboard.append([
+        InlineKeyboardButton(text="◀️ К списку дат", callback_data="lec_dates"),
+        InlineKeyboardButton(text="📚 Все предметы", callback_data="lec_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_lecture_card_keyboard(lecture_id: str, subject_code: str) -> InlineKeyboardMarkup:
+    """Кнопки под карточкой лекции: Читать, Скачать, Назад к предмету, Все предметы."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📖 Читать конспект", callback_data=f"lec_p_{lecture_id}_0"),
+                InlineKeyboardButton(text="📄 Скачать .md", callback_data=f"lec_doc_{lecture_id}")
+            ],
+            [
+                InlineKeyboardButton(text="◀️ К лекциям предмета", callback_data=f"lec_sub_{subject_code}"),
+                InlineKeyboardButton(text="📚 Все предметы", callback_data="lec_menu")
+            ]
+        ]
+    )
+
+
+def get_lecture_reader_keyboard(lecture_id: str, current_page: int, total_pages: int, subject_code: str) -> InlineKeyboardMarkup:
+    """Кнопки при постраничном чтении конспекта."""
+    nav_row = []
+    if current_page > 0:
+        nav_row.append(InlineKeyboardButton(text="◀️ Назад", callback_data=f"lec_p_{lecture_id}_{current_page - 1}"))
+    
+    nav_row.append(InlineKeyboardButton(text=f"📄 {current_page + 1}/{total_pages}", callback_data=f"lec_p_{lecture_id}_{current_page}"))
+    
+    if current_page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton(text="Вперёд ▶️", callback_data=f"lec_p_{lecture_id}_{current_page + 1}"))
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            nav_row,
+            [
+                InlineKeyboardButton(text="📄 Скачать полный .md файл", callback_data=f"lec_doc_{lecture_id}")
+            ],
+            [
+                InlineKeyboardButton(text="◀️ К карточке лекции", callback_data=f"lec_view_{lecture_id}"),
+                InlineKeyboardButton(text="📚 Все предметы", callback_data="lec_menu")
+            ]
+        ]
+    )
+
