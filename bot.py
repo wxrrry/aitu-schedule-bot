@@ -198,6 +198,7 @@ async def register_bot_commands(bot_instance: Bot):
             types.BotCommand(command="calendar", description="📥 Добавить в календарь (.ics)"),
             types.BotCommand(command="parity", description="🏷 Чётность (числ / знам)"),
             types.BotCommand(command="bells", description="🔔 Расписание звонков"),
+            types.BotCommand(command="id", description="🆔 Узнать свой Telegram ID"),
             types.BotCommand(command="admin", description="👑 Панель администратора"),
             types.BotCommand(command="help", description="📖 Полная справка"),
         ])
@@ -2170,6 +2171,32 @@ async def handle_set_role_command(message: types.Message):
         f"🎖 Новая роль: <b>{roles_ru.get(role_str, role_str)}</b>\n"
         f"👥 Группа: <b>{group_str or target_user.group_name or '9ПО-43к'}</b>"
     )
+
+
+@dp.message(Command("id"))
+@dp.message(Command("myid"))
+@dp.message(Command("whois"))
+async def handle_id_command(message: types.Message):
+    """Показывает Telegram ID пользователя/чата с возможностью копирования в 1 клик."""
+    target_user = message.reply_to_message.from_user if message.reply_to_message else message.from_user
+    username_str = f"@{target_user.username}" if target_user.username else "—"
+    full_name_str = html.escape(target_user.full_name or "Без имени")
+    
+    reply_type = " (из пересланного сообщения)" if message.reply_to_message else ""
+    role_disp, grp = await get_user_role_display(target_user.id)
+
+    reply_text = (
+        f"🆔 <b>Информация о Telegram ID{reply_type}:</b>\n"
+        f"──────────────────────\n"
+        f"👤 <b>Имя:</b> {full_name_str}\n"
+        f"🔗 <b>Юзернейм:</b> {username_str}\n"
+        f"🎖 <b>Роль в боте:</b> {role_disp}\n"
+        f"👥 <b>Группа:</b> <code>{grp or '—'}</code>\n\n"
+        f"🔢 <b>Telegram ID:</b> <code>{target_user.id}</code>\n"
+        f"<i>(нажмите на номер ID, чтобы скопировать)</i>\n\n"
+        f"💬 <b>ID этого чата:</b> <code>{message.chat.id}</code>"
+    )
+    await message.answer(reply_text)
 
 
 @dp.message(Command("my_role"))
