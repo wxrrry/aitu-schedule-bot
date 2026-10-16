@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ParseMode
@@ -742,18 +742,6 @@ async def handle_today(message: types.Message):
     grp = await resolve_target_group(message.chat, message.from_user)
     text = await get_formatted_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str, group_name=grp)
     nav_kb = get_day_nav_keyboard(now.date())
-    
-    if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
-        try:
-            await message.answer_photo(
-                photo=types.FSInputFile(WEEKEND_IMG),
-                caption=text,
-                reply_markup=nav_kb
-            )
-            return
-        except Exception as e:
-            logger.debug(f"Не удалось отправить фото: {e}")
-
     await message.answer(text, reply_markup=nav_kb)
 
 
@@ -764,18 +752,6 @@ async def handle_tomorrow(message: types.Message):
     grp = await resolve_target_group(message.chat, message.from_user)
     text = await get_formatted_day_schedule(tomorrow, title_prefix="Расписание на завтра", group_name=grp)
     nav_kb = get_day_nav_keyboard(tomorrow)
-    
-    if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
-        try:
-            await message.answer_photo(
-                photo=types.FSInputFile(WEEKEND_IMG),
-                caption=text,
-                reply_markup=nav_kb
-            )
-            return
-        except Exception as e:
-            logger.debug(f"Не удалось отправить фото: {e}")
-
     await message.answer(text, reply_markup=nav_kb)
 
 
@@ -989,58 +965,64 @@ async def handle_navdate_callback(call: types.CallbackQuery):
     else:
         prefix = "Расписание на"
 
-    grp = await resolve_target_group(call.message.chat, call.from_user)
+    chat = getattr(call.message, "chat", None)
+    grp = await resolve_target_group(chat, call.from_user)
     text = await get_formatted_day_schedule(target_date, title_prefix=prefix, current_time_str=current_time_str, group_name=grp)
     nav_kb = get_day_nav_keyboard(target_date)
-    is_weekend = "Пар нет!" in text and os.path.exists(WEEKEND_IMG)
-    
-    if call.message.photo:
-        if is_weekend:
-            try:
-                await call.message.edit_caption(caption=text, reply_markup=nav_kb)
+
+    is_refresh = (target_date == today and call.data == f"navdate_{today.strftime('%Y-%m-%d')}")
+
+    # Если исходное сообщение было фото (например, старое сообщение)
+    if getattr(call.message, "photo", None):
+        try:
+            await call.message.edit_caption(caption=text[:1024], reply_markup=nav_kb)
+            if is_refresh:
+                await call.answer("Расписание актуально! 🔄", show_alert=False)
+            else:
                 await call.answer()
+            return
+        except TelegramBadRequest as e:
+            if "message is not modified" in str(e).lower():
+                await call.answer("Расписание актуально! 🔄", show_alert=False)
                 return
-            except TelegramBadRequest as e:
-                if "message is not modified" in str(e).lower():
-                    await call.answer()
-                    return
-            except Exception:
-                pass
+        except Exception:
+            pass
+        # Если не удалось отредактировать подпись фото
+        try:
+            await call.answer()
+        except Exception:
+            pass
         try:
             await call.message.delete()
         except Exception:
             pass
-        if is_weekend:
-            await call.message.answer_photo(photo=types.FSInputFile(WEEKEND_IMG), caption=text, reply_markup=nav_kb)
+        await call.message.answer(text, reply_markup=nav_kb)
+        return
+
+    # Стандартное поведение: плавное обновление текстового сообщения на месте
+    try:
+        await call.message.edit_text(text, reply_markup=nav_kb)
+        if is_refresh:
+            await call.answer("Расписание обновлено! 🔄", show_alert=False)
         else:
-            await call.message.answer(text, reply_markup=nav_kb)
-    else:
-        if is_weekend:
+            await call.answer()
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e).lower():
+            await call.answer("Расписание актуально! 🔄", show_alert=False)
+        else:
+            logger.debug(f"Navdate edit_text bad request: {e}")
             try:
-                await call.message.delete()
-                await call.message.answer_photo(photo=types.FSInputFile(WEEKEND_IMG), caption=text, reply_markup=nav_kb)
                 await call.answer()
-                return
-            except Exception:
-                pass
-        try:
-            await call.message.edit_text(text, reply_markup=nav_kb)
-        except TelegramBadRequest as e:
-            if "message is not modified" not in str(e).lower():
-                logger.debug(f"Navdate error: {e}")
-                try:
-                    await call.message.delete()
-                except Exception:
-                    pass
-                await call.message.answer(text, reply_markup=nav_kb)
-        except Exception:
-            try:
-                await call.message.delete()
             except Exception:
                 pass
             await call.message.answer(text, reply_markup=nav_kb)
-            
-    await call.answer()
+    except Exception as e:
+        logger.debug(f"Navdate error: {e}")
+        try:
+            await call.answer()
+        except Exception:
+            pass
+        await call.message.answer(text, reply_markup=nav_kb)
 
 
 @dp.callback_query(F.data == "nav_chooseday")
@@ -1052,7 +1034,11 @@ async def handle_nav_chooseday_callback(call: types.CallbackQuery):
         f"🗓 <b>Выберите день недели:</b>\n"
         f"Отображаются пары для: <b>{parity_name}</b>"
     )
-    if call.message.photo:
+    if getattr(call.message, "photo", None):
+        try:
+            await call.answer()
+        except Exception:
+            pass
         try:
             await call.message.delete()
         except Exception:
@@ -1061,12 +1047,17 @@ async def handle_nav_chooseday_callback(call: types.CallbackQuery):
     else:
         try:
             await call.message.edit_text(text, reply_markup=kb)
+            await call.answer()
         except TelegramBadRequest as e:
             if "message is not modified" not in str(e).lower():
                 await call.message.answer(text, reply_markup=kb)
+            await call.answer()
         except Exception:
             await call.message.answer(text, reply_markup=kb)
-    await call.answer()
+            try:
+                await call.answer()
+            except Exception:
+                pass
 
 @dp.message(Command("teachers"))
 @dp.message(F.text == "👨‍🏫 Преподаватели")
@@ -1189,13 +1180,24 @@ async def handle_refresh_replacements(call: types.CallbackQuery):
 async def handle_nav_today_callback(call: types.CallbackQuery):
     now = datetime.now(BOT_TZ)
     current_time_str = now.strftime("%H:%M")
-    text = format_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    chat = getattr(call.message, "chat", None)
+    grp = await resolve_target_group(chat, call.from_user)
+    text = await get_formatted_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str, group_name=grp)
     nav_kb = get_day_nav_keyboard(now.date())
     try:
         await call.message.edit_text(text, reply_markup=nav_kb)
+        await call.answer("Расписание обновлено! 🔄", show_alert=False)
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e).lower():
+            await call.answer("Расписание актуально! 🔄", show_alert=False)
+        else:
+            await call.answer()
     except Exception:
         await call.message.answer(text, reply_markup=nav_kb)
-    await call.answer()
+        try:
+            await call.answer()
+        except Exception:
+            pass
 
 
 async def check_admin_privileges(user_id: int, chat: types.Chat | None = None) -> bool:
