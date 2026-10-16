@@ -1518,7 +1518,8 @@ async def handle_refresh_command(message: types.Message):
 # -------------------------------------------------------------
 # Раздел: Панель администратора
 # -------------------------------------------------------------
-@dp.message(Command("admin"))
+@dp.message(Command("admin", ignore_case=True))
+@dp.message(F.text.lower().in_(["/admin", "admin", "админ", "админка", "/админ", "панель управления", "админ панель"]))
 @dp.callback_query(F.data == "open_admin_panel")
 @dp.callback_query(F.data == "admin_back_to_main")
 async def handle_admin_panel(event: types.Message | types.CallbackQuery):
