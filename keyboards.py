@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton,
@@ -8,24 +9,27 @@ from aiogram.types import (
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="📅 Сегодня"),
-            KeyboardButton(text="🔜 Завтра")
+            KeyboardButton(text="⚡️ Какая пара сейчас?"),
+            KeyboardButton(text="📅 Сегодня")
         ],
         [
+            KeyboardButton(text="🔜 Завтра"),
             KeyboardButton(text="🗓 Текущая неделя"),
             KeyboardButton(text="⏭ След. неделя")
         ],
         [
             KeyboardButton(text="📆 Выбрать день"),
-            KeyboardButton(text="🏷 Чётность недели")
+            KeyboardButton(text="👨‍🏫 Преподаватели")
         ],
         [
-            KeyboardButton(text="🔔 Звонки")
+            KeyboardButton(text="🏷 Чётность недели"),
+            KeyboardButton(text="🔔 Звонки"),
+            KeyboardButton(text="📥 В календарь")
         ]
     ],
     resize_keyboard=True,
     is_persistent=True,
-    input_field_placeholder="Выберите действие из меню..."
+    input_field_placeholder="Выберите действие или напишите команду..."
 )
 
 def get_days_inline_keyboard(parity_code: str = "current") -> InlineKeyboardMarkup:
@@ -61,5 +65,37 @@ def get_back_to_days_keyboard(parity_code: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="◀️ Назад к выбору дня", callback_data=f"backtodays_{parity_code}")]
+        ]
+    )
+
+def get_day_nav_keyboard(target_date: date) -> InlineKeyboardMarkup:
+    """
+    Инлайн-навигация под расписанием дня (переключение Вчера/Завтра на лету).
+    """
+    prev_date = target_date - timedelta(days=1)
+    next_date = target_date + timedelta(days=1)
+    prev_str = prev_date.strftime("%Y-%m-%d")
+    next_str = next_date.strftime("%Y-%m-%d")
+    curr_str = target_date.strftime("%Y-%m-%d")
+
+    keyboard = [
+        [
+            InlineKeyboardButton(text="◀️ Вчера", callback_data=f"navdate_{prev_str}"),
+            InlineKeyboardButton(text="🔄 Обновить", callback_data=f"navdate_{curr_str}"),
+            InlineKeyboardButton(text="Завтра ▶️", callback_data=f"navdate_{next_str}"),
+        ],
+        [
+            InlineKeyboardButton(text="📆 Выбрать день недели", callback_data="nav_chooseday")
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def get_back_to_teachers_keyboard() -> InlineKeyboardMarkup:
+    """
+    Кнопка возврата к списку преподавателей.
+    """
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад к списку преподавателей", callback_data="teachers_list")]
         ]
     )

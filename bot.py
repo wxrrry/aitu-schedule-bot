@@ -23,7 +23,17 @@ from parity import get_week_parity
 from keyboards import (
     main_keyboard,
     get_days_inline_keyboard,
-    get_back_to_days_keyboard
+    get_back_to_days_keyboard,
+    get_day_nav_keyboard,
+    get_back_to_teachers_keyboard
+)
+from features import (
+    get_now_status,
+    get_teachers_catalog_text,
+    get_teachers_inline_keyboard,
+    get_teacher_detail_text,
+    search_room_schedule,
+    generate_ics_calendar
 )
 
 # Настройка логирования
@@ -164,25 +174,56 @@ async def handle_start(message: types.Message):
     await message.answer(welcome_text, reply_markup=main_keyboard)
 
 
+@dp.message(Command("now"))
+@dp.message(F.text == "⚡️ Какая пара сейчас?")
+async def handle_now(message: types.Message):
+    text = get_now_status()
+    refresh_kb = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [types.InlineKeyboardButton(text="🔄 Обновить статус", callback_data="refresh_now")]
+        ]
+    )
+    await message.answer(text, reply_markup=refresh_kb)
+
+
+@dp.callback_query(F.data == "refresh_now")
+async def handle_refresh_now_callback(call: types.CallbackQuery):
+    text = get_now_status()
+    refresh_kb = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [types.InlineKeyboardButton(text="🔄 Обновить статус", callback_data="refresh_now")]
+        ]
+    )
+    try:
+        await call.message.edit_text(text, reply_markup=refresh_kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Refresh now error: {e}")
+    except Exception:
+        pass
+    await call.answer("Статус обновлён!")
+
+
 @dp.message(Command("today"))
 @dp.message(F.text == "📅 Сегодня")
 async def handle_today(message: types.Message):
     now = datetime.now(BOT_TZ)
     current_time_str = now.strftime("%H:%M")
     text = format_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    nav_kb = get_day_nav_keyboard(now.date())
     
     if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
         try:
             await message.answer_photo(
                 photo=types.FSInputFile(WEEKEND_IMG),
                 caption=text,
-                reply_markup=main_keyboard
+                reply_markup=nav_kb
             )
             return
         except Exception as e:
             logger.debug(f"Не удалось отправить фото: {e}")
 
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(text, reply_markup=nav_kb)
 
 
 @dp.message(Command("tomorrow"))
@@ -190,19 +231,20 @@ async def handle_today(message: types.Message):
 async def handle_tomorrow(message: types.Message):
     tomorrow = datetime.now(BOT_TZ).date() + timedelta(days=1)
     text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+    nav_kb = get_day_nav_keyboard(tomorrow)
     
     if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
         try:
             await message.answer_photo(
                 photo=types.FSInputFile(WEEKEND_IMG),
                 caption=text,
-                reply_markup=main_keyboard
+                reply_markup=nav_kb
             )
             return
         except Exception as e:
             logger.debug(f"Не удалось отправить фото: {e}")
 
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(text, reply_markup=nav_kb)
 
 
 @dp.message(Command("week"))
@@ -321,20 +363,159 @@ async def handle_bells(message: types.Message):
     await message.answer(BELLS_TEXT, reply_markup=main_keyboard)
 
 
+@dp.callback_query(F.data.startswith("navdate_"))
+async def handle_navdate_callback(call: types.CallbackQuery):
+    date_str = call.data.split("_")[1]
+    try:
+        target_date = date.fromisoformat(date_str)
+    except Exception:
+        target_date = datetime.now(BOT_TZ).date()
+
+    today = datetime.now(BOT_TZ).date()
+    current_time_str = datetime.now(BOT_TZ).strftime("%H:%M") if target_date == today else None
+    
+    if target_date == today:
+        prefix = "Расписание на сегодня"
+    elif target_date == today + timedelta(days=1):
+        prefix = "Расписание на завтра"
+    else:
+        prefix = "Расписание на"
+
+    text = format_day_schedule(target_date, title_prefix=prefix, current_time_str=current_time_str)
+    nav_kb = get_day_nav_keyboard(target_date)
+    
+    try:
+        await call.message.edit_text(text, reply_markup=nav_kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Navdate error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data == "nav_chooseday")
+async def handle_nav_chooseday_callback(call: types.CallbackQuery):
+    today = datetime.now(BOT_TZ).date()
+    curr_parity, parity_name = get_week_parity(today)
+    kb = get_days_inline_keyboard(curr_parity)
+    try:
+        await call.message.edit_text(
+            f"🗓 <b>Выберите день недели:</b>\n"
+            f"Отображаются пары для: <b>{parity_name}</b>",
+            reply_markup=kb
+        )
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.message(Command("teachers"))
+@dp.message(F.text == "👨‍🏫 Преподаватели")
+async def handle_teachers(message: types.Message):
+    text = get_teachers_catalog_text()
+    kb = get_teachers_inline_keyboard()
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "teachers_list")
+async def handle_teachers_list_callback(call: types.CallbackQuery):
+    text = get_teachers_catalog_text()
+    kb = get_teachers_inline_keyboard()
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Teachers list error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("teacher_"))
+async def handle_teacher_detail_callback(call: types.CallbackQuery):
+    t_idx = int(call.data.split("_")[1])
+    text = get_teacher_detail_text(t_idx)
+    kb = get_back_to_teachers_keyboard()
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Teacher detail error: {e}")
+    except Exception:
+        pass
+    await call.answer()
+
+
+@dp.message(Command("room"))
+async def handle_room_search(message: types.Message):
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer(
+            "📍 <b>Поиск занятий по номеру кабинета</b>\n\n"
+            "Пример использования: <code>/room 305</code> или <code>/room 505</code>",
+            reply_markup=main_keyboard
+        )
+        return
+        
+    query = parts[1].strip()
+    text = search_room_schedule(query)
+    await message.answer(text, reply_markup=main_keyboard)
+
+
+@dp.message(Command("calendar"))
+@dp.message(Command("ics"))
+@dp.message(F.text == "📥 В календарь")
+async def handle_calendar_export(message: types.Message):
+    wait_msg = await message.answer("⏳ Генерирую файл календаря с вашим расписанием...")
+    ics_file = generate_ics_calendar()
+    
+    caption = (
+        "📅 <b>Интеграция расписания в ваш смартфон (iCalendar .ics)</b>\n\n"
+        "✨ <b>Что внутри файла:</b>\n"
+        "• Все пары 4 курса группы <code>9ПО-43к</code>\n"
+        "• Учёт числителя и знаменателя\n"
+        "• Точное время звонков, кабинеты и преподаватели\n"
+        "• 🔔 Автоматические напоминания за 15 минут до пары!\n\n"
+        "📲 <b>Как добавить:</b>\n"
+        "1. Нажмите на прикреплённый файл ниже.\n"
+        "2. Выберите «Добавить всё в Календарь» (iOS) или откройте через Google Calendar (Android).\n"
+        "Готово! Все пары появятся в вашем системном календаре."
+    )
+    
+    try:
+        await message.answer_document(
+            document=types.FSInputFile(ics_file, filename="aitu_schedule_9po43k.ics"),
+            caption=caption,
+            reply_markup=main_keyboard
+        )
+        try:
+            await wait_msg.delete()
+        except Exception:
+            pass
+    except Exception as e:
+        logger.error(f"Ошибка при отправке календаря: {e}")
+        await message.answer(f"Не удалось отправить файл календаря: {e}", reply_markup=main_keyboard)
+
+
 @dp.message(Command("help"))
 async def handle_help(message: types.Message):
     help_text = (
-        "📖 <b>Справка по командам бота:</b>\n\n"
-        "📅 /today — Расписание на сегодня\n"
+        "📖 <b>Справка по командам бота расписания (9ПО-43к):</b>\n\n"
+        "⚡️ /now — Какая пара идёт сейчас (прогресс и время до звонка)\n"
+        "📅 /today — Расписание на сегодня (+ навигация по дням)\n"
         "🔜 /tomorrow — Расписание на завтра\n"
         "🗓 /week — Расписание на текущую неделю\n"
         "⏭ /next_week — Расписание на следующую неделю\n"
         "📆 /days — Выбрать день недели (интерактивно)\n"
+        "👨‍🏫 /teachers — Справочник преподавателей группы\n"
+        "📍 /room <code>&lt;номер&gt;</code> — Поиск пар по кабинету (например, <code>/room 305</code>)\n"
+        "📥 /calendar — Скачать расписание в календарь смартфона (.ics)\n"
         "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n"
         "🔔 /bells — Расписание звонков и перерывов\n"
-        "🆔 /chat_id — Узнать ID текущего чата\n"
+        "🆔 /chat_id — Узнать ID чата для рассылок\n"
         "❓ /help — Показать эту справку\n\n"
-        "💡 <i>В группах можно писать команды через слэш или использовать кнопки экранного меню.</i>"
+        "💡 <i>В группах можно писать команды через слэш или использовать экранные кнопки.</i>"
     )
     await message.answer(help_text, reply_markup=main_keyboard)
 
@@ -438,14 +619,18 @@ async def main():
         # Регистрация меню команд в интерфейсе Telegram
         try:
             await bot.set_my_commands([
+                types.BotCommand(command="now", description="⚡️ Какая пара идёт сейчас"),
                 types.BotCommand(command="today", description="📅 Расписание на сегодня"),
                 types.BotCommand(command="tomorrow", description="🔜 Расписание на завтра"),
                 types.BotCommand(command="week", description="🗓 Расписание на эту неделю"),
-                types.BotCommand(command="next_week", description="⏭ Расписание на след. неделю"),
+                types.BotCommand(command="next_week", description="⏭ На следующую неделю"),
                 types.BotCommand(command="days", description="📆 Выбрать день недели"),
+                types.BotCommand(command="teachers", description="👨‍🏫 Преподаватели группы"),
+                types.BotCommand(command="room", description="📍 Поиск пар по кабинету"),
+                types.BotCommand(command="calendar", description="📥 Добавить в календарь (.ics)"),
                 types.BotCommand(command="parity", description="🏷 Чётность (числ / знам)"),
                 types.BotCommand(command="bells", description="🔔 Расписание звонков"),
-                types.BotCommand(command="help", description="📖 Справка по командам"),
+                types.BotCommand(command="help", description="📖 Полная справка"),
             ])
             logger.info("Команды меню бота успешно зарегистрированы в Telegram.")
         except Exception as e:
