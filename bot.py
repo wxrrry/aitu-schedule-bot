@@ -37,25 +37,27 @@ dp = Dispatcher()
 scheduler = AsyncIOScheduler(timezone=BOT_TZ)
 bot: Bot | None = None
 
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+WELCOME_IMG = os.path.join(ASSETS_DIR, "welcome.jpg")
+MORNING_IMG = os.path.join(ASSETS_DIR, "morning.jpg")
+BELLS_IMG = os.path.join(ASSETS_DIR, "bells.jpg")
+WEEKEND_IMG = os.path.join(ASSETS_DIR, "weekend.jpg")
+
 BELLS_TEXT = (
-    "🔔 <b>Расписание звонков (4 курс · 9ПО-43к)</b>\n\n"
+    "🔔 <b>Расписание звонков · 4 курс (9ПО-43к)</b>\n"
+    "──────────────────────\n"
+    "<blockquote>"
     "1️⃣ пара: <b>09:00 — 10:35</b>\n"
-    "   ▫️ <i>09:00 — 09:45 (45 мин)</i>\n"
-    "   ☕️ <i>перерыв 5 минут</i>\n"
-    "   ▫️ <i>09:50 — 10:35 (45 мин)</i>\n\n"
+    "⏱ <i>09:00–09:45 • перерыв 5 мин • 09:50–10:35</i>\n\n"
     "2️⃣ пара: <b>10:45 — 12:20</b>\n"
-    "   ▫️ <i>10:45 — 11:30 (45 мин)</i>\n"
-    "   ☕️ <i>перерыв 5 минут</i>\n"
-    "   ▫️ <i>11:35 — 12:20 (45 мин)</i>\n\n"
+    "⏱ <i>10:45–11:30 • перерыв 5 мин • 11:35–12:20</i>\n\n"
     "🍽 <b>Обед: 12:20 — 12:55 (35 минут)</b>\n\n"
     "3️⃣ пара: <b>12:55 — 14:30</b>\n"
-    "   ▫️ <i>12:55 — 13:40 (45 мин)</i>\n"
-    "   ☕️ <i>перерыв 5 минут</i>\n"
-    "   ▫️ <i>13:45 — 14:30 (45 мин)</i>\n\n"
+    "⏱ <i>12:55–13:40 • перерыв 5 мин • 13:45–14:30</i>\n\n"
     "4️⃣ пара: <b>14:40 — 16:15</b>\n"
-    "   ▫️ <i>14:40 — 15:25 (45 мин)</i>\n"
-    "   ☕️ <i>перерыв 5 минут</i>\n"
-    "   ▫️ <i>15:30 — 16:15 (45 мин)</i>"
+    "⏱ <i>14:40–15:25 • перерыв 5 мин • 15:30–16:15</i>"
+    "</blockquote>\n"
+    "💡 <i>Перерывы между парами: 10 минут. Обед после 2-й пары.</i>"
 )
 
 async def send_midnight_schedule():
@@ -68,13 +70,25 @@ async def send_midnight_schedule():
         return
 
     now = datetime.now(BOT_TZ)
-    # В 00:00 сегодня — это уже наступивший день
     target_date = now.date()
     
     logger.info(f"Запуск полночной рассылки на {target_date} в чат {CHAT_ID}")
     text = format_day_schedule(target_date, title_prefix="Расписание на сегодня")
     
     try:
+        if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
+            try:
+                await bot.send_photo(
+                    chat_id=CHAT_ID,
+                    photo=types.FSInputFile(WEEKEND_IMG),
+                    caption=text,
+                    reply_markup=main_keyboard
+                )
+                logger.info("Полночное расписание (выходной с фото) успешно доставлено.")
+                return
+            except Exception as e:
+                logger.debug(f"Не удалось отправить фото расписания: {e}")
+
         await bot.send_message(
             chat_id=CHAT_ID,
             text=text,
@@ -101,6 +115,19 @@ async def send_morning_alert():
         
     logger.info(f"Запуск утреннего напоминания на {now.date()} в чат {CHAT_ID}")
     try:
+        if os.path.exists(MORNING_IMG):
+            try:
+                await bot.send_photo(
+                    chat_id=CHAT_ID,
+                    photo=types.FSInputFile(MORNING_IMG),
+                    caption=text,
+                    reply_markup=main_keyboard
+                )
+                logger.info("Утреннее напоминание (с фото) успешно доставлено.")
+                return
+            except Exception as e:
+                logger.debug(f"Не удалось отправить утреннее фото: {e}")
+
         await bot.send_message(
             chat_id=CHAT_ID,
             text=text,
@@ -116,21 +143,45 @@ async def send_morning_alert():
 async def handle_start(message: types.Message):
     parity_code, parity_name = get_week_parity(datetime.now(BOT_TZ).date())
     welcome_text = (
-        f"👋 <b>Привет! Я бот расписания для группы 9ПО-43к (AITU).</b>\n\n"
-        f"Текущая неделя: <b>{parity_name}</b>\n\n"
-        f"⏰ <b>Рассылки:</b>\n"
-        f"• В <b>00:00</b> — подробное расписание на день\n"
-        f"• В <b>08:00</b> — утреннее напоминание о первой паре\n\n"
-        f"👇 <b>Для просмотра расписания нажимайте кнопки меню:</b>"
+        f"👋 <b>Добро пожаловать в бот расписания группы 9ПО-43к!</b>\n\n"
+        f"🏷 <b>Текущая неделя:</b> {parity_name}\n\n"
+        f"⏰ <b>Автоматические рассылки:</b>\n"
+        f"▫️ <b>00:00</b> — детальное расписание на наступающий день\n"
+        f"▫️ <b>08:00</b> — утреннее напоминание о первой паре (по будням)\n\n"
+        f"👇 <i>Используйте кнопки меню внизу или команды в меню [ / ]:</i>"
     )
+    if os.path.exists(WELCOME_IMG):
+        try:
+            await message.answer_photo(
+                photo=types.FSInputFile(WELCOME_IMG),
+                caption=welcome_text,
+                reply_markup=main_keyboard
+            )
+            return
+        except Exception as e:
+            logger.debug(f"Не удалось отправить фото start: {e}")
+
     await message.answer(welcome_text, reply_markup=main_keyboard)
 
 
 @dp.message(Command("today"))
 @dp.message(F.text == "📅 Сегодня")
 async def handle_today(message: types.Message):
-    today = datetime.now(BOT_TZ).date()
-    text = format_day_schedule(today, title_prefix="Расписание на сегодня")
+    now = datetime.now(BOT_TZ)
+    current_time_str = now.strftime("%H:%M")
+    text = format_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    
+    if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
+        try:
+            await message.answer_photo(
+                photo=types.FSInputFile(WEEKEND_IMG),
+                caption=text,
+                reply_markup=main_keyboard
+            )
+            return
+        except Exception as e:
+            logger.debug(f"Не удалось отправить фото: {e}")
+
     await message.answer(text, reply_markup=main_keyboard)
 
 
@@ -139,6 +190,18 @@ async def handle_today(message: types.Message):
 async def handle_tomorrow(message: types.Message):
     tomorrow = datetime.now(BOT_TZ).date() + timedelta(days=1)
     text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+    
+    if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
+        try:
+            await message.answer_photo(
+                photo=types.FSInputFile(WEEKEND_IMG),
+                caption=text,
+                reply_markup=main_keyboard
+            )
+            return
+        except Exception as e:
+            logger.debug(f"Не удалось отправить фото: {e}")
+
     await message.answer(text, reply_markup=main_keyboard)
 
 
@@ -244,6 +307,17 @@ async def handle_parity(message: types.Message):
 @dp.message(Command("bells"))
 @dp.message(F.text == "🔔 Звонки")
 async def handle_bells(message: types.Message):
+    if os.path.exists(BELLS_IMG):
+        try:
+            await message.answer_photo(
+                photo=types.FSInputFile(BELLS_IMG),
+                caption=BELLS_TEXT,
+                reply_markup=main_keyboard
+            )
+            return
+        except Exception as e:
+            logger.debug(f"Не удалось отправить фото bells: {e}")
+
     await message.answer(BELLS_TEXT, reply_markup=main_keyboard)
 
 

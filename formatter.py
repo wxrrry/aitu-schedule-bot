@@ -1,7 +1,7 @@
 import html
 from datetime import date, timedelta
 from parity import get_week_parity
-from schedule_data import SCHEDULE, BELL_SCHEDULE, DAYS_RU, GROUP_NAME
+from schedule_data import SCHEDULE, BELL_SCHEDULE, BELL_TIMES, DAYS_RU, GROUP_NAME
 
 MONTHS_RU = [
     "",
@@ -18,9 +18,10 @@ NUMBER_EMOJIS = {
     6: "6️⃣",
 }
 
-def format_day_schedule(target_date: date, title_prefix: str = "Расписание на день") -> str:
+def format_day_schedule(target_date: date, title_prefix: str = "Расписание на день", current_time_str: str | None = None) -> str:
     """
-    Форматирует расписание на один день.
+    Форматирует расписание на один день с красивым блочным оформлением (blockquote).
+    Если передан current_time_str (например, "11:20"), подсвечивает текущую пару.
     """
     parity_code, parity_name = get_week_parity(target_date)
     weekday = target_date.weekday()
@@ -28,10 +29,10 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     date_str = f"{target_date.day} {MONTHS_RU[target_date.month]} {target_date.year}"
     
     header = (
-        f"📅 <b>{title_prefix} · {day_name} ({date_str})</b>\n"
+        f"📅 <b>{title_prefix} · {day_name}</b> (<code>{date_str}</code>)\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
-        f"👥 <b>Группа:</b> {GROUP_NAME}\n"
-        "──────────────────\n"
+        f"👥 <b>Группа:</b> <code>{GROUP_NAME}</code>\n"
+        "──────────────────────\n"
     )
     
     day_pairs = SCHEDULE.get(weekday, {})
@@ -58,7 +59,7 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         
         if pair.get("split"):
             current_info = pair["chislitel"] if parity_code == "chislitel" else pair["znamenatel"]
-            parity_tag = " [Числ]" if parity_code == "chislitel" else " [Знам]"
+            parity_tag = " · <i>[Числитель]</i>" if parity_code == "chislitel" else " · <i>[Знаменатель]</i>"
         else:
             current_info = pair
             parity_tag = ""
@@ -70,18 +71,28 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         room = html.escape(str(current_info.get("room", "—")))
         teacher = html.escape(str(current_info.get("teacher", "—")))
         
-        card_lines = [
-            f"{emoji_num} <b>{time_range}</b>{parity_tag}",
-            f"⏱ <i>{breakdown}</i>" if breakdown else "",
-            f"📚 <b>{subject}</b>",
-            f"📍 Кабинет: <code>{room}</code>",
-            f"👨‍🏫 Преподаватель: {teacher}\n"
-        ]
-        formatted_card = "\n".join([line for line in card_lines if line])
+        # Индикатор статуса пары (идёт сейчас / завершена)
+        badge = ""
+        if current_time_str and num in BELL_TIMES:
+            start_t, end_t = BELL_TIMES[num]
+            if start_t <= current_time_str <= end_t:
+                badge = " · 🟢 <b>Идёт сейчас</b>"
+            elif current_time_str > end_t:
+                badge = " · ▫️ <i>(завершена)</i>"
+        
+        breakdown_line = f"\n⏱ <i>{breakdown}</i>" if breakdown else ""
+        card_content = (
+            f"<blockquote>"
+            f"{emoji_num} <b>{time_range}</b>{parity_tag}{badge}\n"
+            f"📚 <b>{subject}</b>\n"
+            f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>"
+            f"{breakdown_line}"
+            f"</blockquote>"
+        )
         
         pair_items.append({
             "num": num,
-            "text": formatted_card
+            "text": card_content
         })
         
     if not pair_items:
@@ -96,7 +107,10 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     for item in pair_items:
         # Если между 2 и 3 парой — добавляем отметку обеда
         if item["num"] == 3 and any(n <= 2 for n in existing_nums):
-            lines.append("🍽 <i>Обед: 12:20 — 12:55 (35 минут)</i>\n")
+            lunch_badge = ""
+            if current_time_str and "12:20" <= current_time_str <= "12:55":
+                lunch_badge = " · 🟢 <b>Сейчас перерыв</b>"
+            lines.append(f"🍽 <b>Обед: 12:20 — 12:55</b> <i>(35 минут)</i>{lunch_badge}\n")
         lines.append(item["text"])
         
     return "\n".join(lines).strip()
@@ -195,16 +209,17 @@ def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str
         room = html.escape(str(current_info.get("room", "—")))
         teacher = html.escape(str(current_info.get("teacher", "—")))
         
-        card_lines = [
-            f"{emoji_num} <b>{time_range}</b>{parity_tag}",
-            f"⏱ <i>{breakdown}</i>" if breakdown else "",
-            f"📚 <b>{subject}</b>",
-            f"📍 Кабинет: <code>{room}</code>",
-            f"👨‍🏫 Преподаватель: {teacher}\n"
-        ]
+        card_content = (
+            f"<blockquote>"
+            f"{emoji_num} <b>{time_range}</b>{parity_tag}\n"
+            f"📚 <b>{subject}</b>\n"
+            f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>"
+            + (f"\n⏱ <i>{breakdown}</i>" if breakdown else "")
+            + f"</blockquote>"
+        )
         pair_items.append({
             "num": num,
-            "text": "\n".join([line for line in card_lines if line])
+            "text": card_content
         })
         
     if not pair_items:
@@ -214,7 +229,7 @@ def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str
     existing_nums = [item["num"] for item in pair_items]
     for item in pair_items:
         if item["num"] == 3 and any(n <= 2 for n in existing_nums):
-            lines.append("🍽 <i>Обед: 12:20 — 12:55 (35 минут)</i>\n")
+            lines.append("🍽 <b>Обед: 12:20 — 12:55</b> <i>(35 минут)</i>\n")
         lines.append(item["text"])
         
     return "\n".join(lines).strip()
@@ -269,14 +284,15 @@ def format_morning_alert(today_date: date) -> str | None:
     return (
         f"☀️ <b>Доброе утро, группа 9ПО-43к!</b>\n"
         f"🗓 <b>{day_name}, {date_str}</b> · {parity_name}\n"
-        "──────────────────\n"
+        "──────────────────────\n"
         f"⏰ <b>Первая пара сегодня:</b>\n"
+        f"<blockquote>"
         f"{NUMBER_EMOJIS.get(first_pair_num, '')} <b>{time_range}</b>\n"
-        f"⏱ <i>{breakdown}</i>\n"
         f"📚 <b>{subj_esc}</b>\n"
-        f"📍 Кабинет: <code>{room_esc}</code>\n"
-        f"👨‍🏫 Преподаватель: {teacher_esc}\n"
-        f"{extra_note}\n"
-        f"👉 Полное расписание на день — кнопка <b>«📅 Сегодня»</b>."
+        f"📍 Кабинет: <code>{room_esc}</code> · 👨‍🏫 <i>{teacher_esc}</i>"
+        + (f"\n⏱ <i>{breakdown}</i>" if breakdown else "")
+        + f"</blockquote>\n"
+        f"{extra_note}"
+        f"👉 <i>Полное расписание на день — кнопка <b>«📅 Сегодня»</b></i>"
     )
 
