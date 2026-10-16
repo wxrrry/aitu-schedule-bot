@@ -1072,7 +1072,6 @@ async def handle_inline_query(inline_query: types.InlineQuery):
         )
     )
 
-    # Поисковая фильтрация, если пользователь ввёл текст
     if query:
         search_results: list[types.InlineQueryResultArticle] = []
         
@@ -1119,7 +1118,16 @@ async def handle_inline_query(inline_query: types.InlineQuery):
         if search_results:
             results = search_results + results
 
-    await inline_query.answer(results=results[:20], cache_time=5, is_personal=False)
+    logger.info(f"Инлайн-запрос от user_id={inline_query.from_user.id}: query={query!r}, возвращаем {len(results)} карточек")
+    try:
+        await inline_query.answer(
+            results=results[:20],
+            cache_time=1,
+            is_personal=True
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при ответе на inline_query: {e}", exc_info=True)
+
 
 
 @dp.message(Command("help"))
@@ -1428,7 +1436,10 @@ async def main():
         
         # Удаляем вебхуки если были, и запускаем опрос
         await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+        await dp.start_polling(
+            bot,
+            allowed_updates=["message", "inline_query", "callback_query"]
+        )
     finally:
         logger.info("Завершение работы и очистка ресурсов бота...")
         if keep_alive_task and not keep_alive_task.done():
