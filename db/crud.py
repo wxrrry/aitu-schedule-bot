@@ -1,12 +1,27 @@
 from datetime import date, datetime
+import re
 import logging
-from sqlalchemy import select, update, delete, or_, and_
+from sqlalchemy import select, update, delete, or_, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import async_session
 from .models import User, Group, Lesson, Replacement, ChatBinding, UserRole
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_group_name(group_name: str | None) -> str:
+    """
+    Приводит название группы к каноническому виду (например, 9ПО-43к).
+    """
+    if not group_name:
+        return ""
+    clean = group_name.strip()
+    m = re.match(r"^(\d{1,2})([а-яА-Яa-zA-Z]+)-(\d{1,3})([а-яА-Яa-zA-Z]?)$", clean)
+    if m:
+        c, dept, num, letter = m.groups()
+        return f"{c}{dept.upper()}-{num}{letter.lower() if letter else ''}"
+    return clean
 
 
 # =============================================================
@@ -179,15 +194,20 @@ async def get_all_courses() -> list[int]:
 # =============================================================
 # LESSONS (SCHEDULE) CRUD
 # =============================================================
-async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str) -> dict[int, dict]:
+async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str = "both") -> dict[int, dict]:
     """
     Возвращает пары группы на указанный день недели с учётом чётности.
     Формат словаря: {1: {'subject': '...', 'room': '...', 'teacher': '...'}, ...}
     """
+    norm_grp = normalize_group_name(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
             and_(
-                Lesson.group_name.ilike(group_name.strip()),
+                or_(
+                    Lesson.group_name == norm_grp,
+                    func.lower(Lesson.group_name) == norm_grp.lower(),
+                    func.lower(Lesson.group_name) == group_name.strip().lower()
+                ),
                 Lesson.weekday == weekday,
                 or_(Lesson.parity == "both", Lesson.parity == parity_code)
             )
@@ -208,9 +228,14 @@ async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str) -
 
 async def get_all_lessons_for_group(group_name: str) -> list[Lesson]:
     """Возвращает все уроки группы из базы данных."""
+    norm_grp = normalize_group_name(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
-            Lesson.group_name.ilike(group_name.strip())
+            or_(
+                Lesson.group_name == norm_grp,
+                func.lower(Lesson.group_name) == norm_grp.lower(),
+                func.lower(Lesson.group_name) == group_name.strip().lower()
+            )
         ).order_by(Lesson.weekday, Lesson.pair_num)
         res = await session.execute(stmt)
         return list(res.scalars().all())
@@ -226,10 +251,14 @@ async def add_or_update_lesson(
     teacher: str = "—"
 ) -> Lesson:
     """Добавляет или обновляет урок."""
+    norm_grp = normalize_group_name(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
             and_(
-                Lesson.group_name.ilike(group_name.strip()),
+                or_(
+                    Lesson.group_name == norm_grp,
+                    func.lower(Lesson.group_name) == norm_grp.lower()
+                ),
                 Lesson.weekday == weekday,
                 Lesson.pair_num == pair_num,
                 Lesson.parity == parity
@@ -241,9 +270,10 @@ async def add_or_update_lesson(
             lesson.subject = subject
             lesson.room = room
             lesson.teacher = teacher
+            lesson.group_name = norm_grp
         else:
             lesson = Lesson(
-                group_name=group_name.strip(),
+                group_name=norm_grp,
                 weekday=weekday,
                 pair_num=pair_num,
                 parity=parity,
@@ -259,10 +289,14 @@ async def add_or_update_lesson(
 
 async def update_lesson_room(group_name: str, weekday: int, pair_num: int, new_room: str) -> bool:
     """Староста/Зам: обновляет номер аудитории для всех вариантов пары."""
+    norm_grp = normalize_group_name(group_name)
     async with async_session() as session:
         stmt = update(Lesson).where(
             and_(
-                Lesson.group_name.ilike(group_name.strip()),
+                or_(
+                    Lesson.group_name == norm_grp,
+                    func.lower(Lesson.group_name) == norm_grp.lower()
+                ),
                 Lesson.weekday == weekday,
                 Lesson.pair_num == pair_num
             )
@@ -282,7 +316,13 @@ async def get_replacements_for_date_and_group(target_date: date, group_name: str
     async with async_session() as session:
         conditions = [Replacement.date == target_date]
         if group_name:
-            conditions.append(or_(Replacement.group_name.is_(None), Replacement.group_name.ilike(group_name.strip())))
+            norm_grp = normalize_group_name(group_name)
+            conditions.append(or_(
+                Replacement.group_name.is_(None),
+                Replacement.group_name == norm_grp,
+                func.lower(Replacement.group_name) == norm_grp.lower(),
+                func.lower(Replacement.group_name) == group_name.strip().lower()
+            ))
         stmt = select(Replacement).where(and_(*conditions)).order_by(Replacement.pair_num)
         res = await session.execute(stmt)
         reps = res.scalars().all()
@@ -322,13 +362,17 @@ async def add_replacement_record(
     created_by: int = 0
 ) -> Replacement:
     """Добавляет или заменяет запись о замене/отмене."""
+    norm_grp = normalize_group_name(group_name) if group_name else None
     async with async_session() as session:
         # Проверяем существующую замену на эту пару
         stmt = select(Replacement).where(
             and_(
                 Replacement.date == target_date,
                 Replacement.pair_num == pair_num,
-                Replacement.group_name == (group_name.strip() if group_name else None)
+                or_(
+                    Replacement.group_name == norm_grp,
+                    func.lower(Replacement.group_name) == (norm_grp.lower() if norm_grp else None)
+                ) if norm_grp else Replacement.group_name.is_(None)
             )
         )
         res = await session.execute(stmt)
@@ -340,9 +384,10 @@ async def add_replacement_record(
             rep.teacher = teacher
             rep.raw_text = raw_text
             rep.created_by = created_by
+            rep.group_name = norm_grp
         else:
             rep = Replacement(
-                group_name=group_name.strip() if group_name else None,
+                group_name=norm_grp,
                 date=target_date,
                 pair_num=pair_num,
                 action_type=action_type,

@@ -3104,6 +3104,114 @@ async def handle_lec_search_hint(call: types.CallbackQuery):
 
 
 # -------------------------------------------------------------
+# Раздел: Автоматический парсинг загруженных файлов (.docx / .xlsx)
+# -------------------------------------------------------------
+@dp.message(F.document)
+async def handle_document_upload(message: types.Message):
+    """
+    Обработчик загрузки документов:
+    - .docx: автоматический парсинг замен и сохранение в БД
+    - .xlsx / .xls: автоматический парсинг семестрового расписания
+    """
+    user_id = message.from_user.id
+    if not (await is_admin(user_id) or await is_starosta_or_zam(user_id)):
+        await message.answer(
+            "ℹ️ Загрузка файлов расписания и документов замен доступна только старостам и администрации бота."
+        )
+        return
+
+    doc = message.document
+    filename = (doc.file_name or "").lower()
+
+    if not (filename.endswith(".docx") or filename.endswith(".xlsx") or filename.endswith(".xls")):
+        await message.answer("ℹ️ Поддерживаются только документы замен (<code>.docx</code>) или таблицы расписания (<code>.xlsx</code>).")
+        return
+
+    os.makedirs("downloads", exist_ok=True)
+    temp_path = os.path.join("downloads", f"{user_id}_{doc.file_name}")
+
+    status_msg = await message.answer(f"⏳ <i>Загружаю и анализирую документ <code>{html.escape(doc.file_name or '')}</code>...</i>")
+
+    try:
+        await bot.download(doc, destination=temp_path)
+
+        if filename.endswith(".docx"):
+            from services.parser import parse_and_apply_docx_replacements
+            result = await parse_and_apply_docx_replacements(temp_path, created_by=user_id)
+            groups_str = ", ".join(sorted(list(result["groups_affected"]))) if result["groups_affected"] else "—"
+
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="📢 Разослать студентам об изменениях", callback_data=f"notify_zam_{result['date_str']}")]
+            ])
+
+            await status_msg.edit_text(
+                f"✅ <b>Документ замен успешно обработан и применён!</b>\n\n"
+                f"📅 <b>Дата замен:</b> <code>{result['date_str']}</code>\n"
+                f"👥 <b>Затронутые группы:</b> <code>{groups_str}</code>\n"
+                f"📝 <b>Внесено записей:</b> <b>{result['applied_count']}</b>\n\n"
+                f"<i>Все замены уже активны в расписании групп!</i>",
+                reply_markup=kb
+            )
+
+        elif filename.endswith((".xlsx", ".xls")):
+            from services.parser import parse_and_apply_excel_schedule
+            result = await parse_and_apply_excel_schedule(temp_path)
+            groups_str = ", ".join(sorted(list(result["groups_found"]))) if result["groups_found"] else "—"
+
+            await status_msg.edit_text(
+                f"✅ <b>Семестровое расписание успешно обновлено!</b>\n\n"
+                f"👥 <b>Найдено групп:</b> <b>{len(result['groups_found'])}</b> (<code>{groups_str}</code>)\n"
+                f"📚 <b>Внесено пар в БД:</b> <b>{result.get('applied_count', 0)}</b>\n\n"
+                f"<i>Студенты уже видят актуальное расписание!</i>"
+            )
+
+    except Exception as e:
+        logger.error(f"Ошибка парсинга документа {doc.file_name}: {e}")
+        await status_msg.edit_text(f"❌ <b>Ошибка при обработке файла:</b>\n<code>{html.escape(str(e))}</code>")
+    finally:
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except Exception:
+            pass
+
+
+@dp.callback_query(F.data.startswith("notify_zam_"))
+async def handle_notify_zam_callback(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    if not (await is_admin(user_id) or await is_starosta_or_zam(user_id)):
+        await call.answer("⛔️ Недостаточно прав.", show_alert=True)
+        return
+
+    date_str = call.data[11:]
+    alert_text = (
+        f"⚠️ <b>ОБНОВЛЕНИЕ РАСПИСАНИЯ НА {date_str}</b>\n"
+        f"──────────────────────\n"
+        f"В расписание внесены официальные замены и отмены пар из учебной части.\n"
+        f"Проверьте актуальное расписание на этот день кнопкой /today или /tomorrow!"
+    )
+
+    from services.broadcaster import safe_send_message
+    from db.crud import get_all_chat_bindings, get_users_for_notification
+
+    await call.answer("📢 Начинаю оповещение...")
+    chats = await get_all_chat_bindings()
+    for c in chats:
+        await safe_send_message(bot, c.chat_id, alert_text)
+        await asyncio.sleep(0.05)
+
+    users = await get_users_for_notification("morning_alert")
+    for u in users:
+        await safe_send_message(bot, u.user_id, alert_text)
+        await asyncio.sleep(0.05)
+
+    try:
+        await call.message.reply("✅ <b>Студенты и группы успешно оповещены об изменениях!</b>")
+    except Exception:
+        pass
+
+
+# -------------------------------------------------------------
 # Раздел: Инлайн-режим (Inline Mode @aituraspisaniebot)
 # -------------------------------------------------------------
 @dp.inline_query()
