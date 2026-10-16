@@ -1,3 +1,4 @@
+import html
 from datetime import date, timedelta
 from parity import get_week_parity
 from schedule_data import SCHEDULE, BELL_SCHEDULE, DAYS_RU, GROUP_NAME
@@ -17,7 +18,7 @@ NUMBER_EMOJIS = {
     6: "6️⃣",
 }
 
-def format_day_schedule(target_date: date, title_prefix: str = "Расписание на") -> str:
+def format_day_schedule(target_date: date, title_prefix: str = "Расписание на день") -> str:
     """
     Форматирует расписание на один день.
     """
@@ -27,7 +28,7 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     date_str = f"{target_date.day} {MONTHS_RU[target_date.month]} {target_date.year}"
     
     header = (
-        f"📅 <b>{title_prefix} {day_name.lower()} ({date_str})</b>\n"
+        f"📅 <b>{title_prefix} · {day_name} ({date_str})</b>\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
         f"👥 <b>Группа:</b> {GROUP_NAME}\n"
         "──────────────────\n"
@@ -65,9 +66,9 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         if not current_info:
             continue
             
-        subject = current_info.get("subject", "Не указан")
-        room = current_info.get("room", "—")
-        teacher = current_info.get("teacher", "—")
+        subject = html.escape(str(current_info.get("subject", "Не указан")))
+        room = html.escape(str(current_info.get("room", "—")))
+        teacher = html.escape(str(current_info.get("teacher", "—")))
         
         card_lines = [
             f"{emoji_num} <b>{time_range}</b>{parity_tag}",
@@ -141,7 +142,9 @@ def format_week_schedule(target_monday: date) -> str:
             if not info:
                 continue
                 
-            day_lines.append(f"  {num}. <b>{info['subject']}</b> | {time_range} (каб. {info['room']})")
+            subj_esc = html.escape(str(info.get("subject", "")))
+            room_esc = html.escape(str(info.get("room", "—")))
+            day_lines.append(f"  {num}. <b>{subj_esc}</b> | {time_range} (каб. {room_esc})")
             
         if day_lines:
             res.extend(day_lines)
@@ -188,9 +191,9 @@ def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str
         if not current_info:
             continue
             
-        subject = current_info.get("subject", "Не указан")
-        room = current_info.get("room", "—")
-        teacher = current_info.get("teacher", "—")
+        subject = html.escape(str(current_info.get("subject", "Не указан")))
+        room = html.escape(str(current_info.get("room", "—")))
+        teacher = html.escape(str(current_info.get("teacher", "—")))
         
         card_lines = [
             f"{emoji_num} <b>{time_range}</b>{parity_tag}",
@@ -259,6 +262,10 @@ def format_morning_alert(today_date: date) -> str | None:
     if first_pair_num > 1:
         extra_note = f"\n☕️ <i>1-я пара отсутствует, учёба начинается со {first_pair_num}-й пары! Можно поспать подольше.</i>\n"
         
+    subj_esc = html.escape(str(first_pair_info.get("subject", "")))
+    room_esc = html.escape(str(first_pair_info.get("room", "—")))
+    teacher_esc = html.escape(str(first_pair_info.get("teacher", "—")))
+
     return (
         f"☀️ <b>Доброе утро, группа 9ПО-43к!</b>\n"
         f"🗓 <b>{day_name}, {date_str}</b> · {parity_name}\n"
@@ -266,9 +273,9 @@ def format_morning_alert(today_date: date) -> str | None:
         f"⏰ <b>Первая пара сегодня:</b>\n"
         f"{NUMBER_EMOJIS.get(first_pair_num, '')} <b>{time_range}</b>\n"
         f"⏱ <i>{breakdown}</i>\n"
-        f"📚 <b>{first_pair_info['subject']}</b>\n"
-        f"📍 Кабинет: <code>{first_pair_info['room']}</code>\n"
-        f"👨‍🏫 Преподаватель: {first_pair_info['teacher']}\n"
+        f"📚 <b>{subj_esc}</b>\n"
+        f"📍 Кабинет: <code>{room_esc}</code>\n"
+        f"👨‍🏫 Преподаватель: {teacher_esc}\n"
         f"{extra_note}\n"
         f"👉 Полное расписание на день — кнопка <b>«📅 Сегодня»</b>."
     )

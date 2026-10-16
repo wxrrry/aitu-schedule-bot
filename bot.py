@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.client.default import DefaultBotProperties
+from aiogram.exceptions import TelegramBadRequest
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiohttp import web, ClientSession
 
@@ -78,7 +79,7 @@ async def send_midnight_schedule():
             chat_id=CHAT_ID,
             text=text,
             reply_markup=main_keyboard,
-            disable_web_page_preview=True
+            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
         )
         logger.info("Полночное расписание успешно доставлено.")
     except Exception as e:
@@ -104,7 +105,7 @@ async def send_morning_alert():
             chat_id=CHAT_ID,
             text=text,
             reply_markup=main_keyboard,
-            disable_web_page_preview=True
+            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
         )
         logger.info("Утреннее напоминание успешно доставлено.")
     except Exception as e:
@@ -182,6 +183,9 @@ async def handle_show_day_callback(call: types.CallbackQuery):
     kb = get_back_to_days_keyboard(parity_code)
     try:
         await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            await call.message.answer(text, reply_markup=kb)
     except Exception:
         await call.message.answer(text, reply_markup=kb)
     await call.answer()
@@ -198,6 +202,9 @@ async def handle_toggle_week_callback(call: types.CallbackQuery):
             f"Отображаются пары для: <b>{parity_name}</b>",
             reply_markup=kb
         )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Toggle week error: {e}")
     except Exception:
         pass
     await call.answer()
@@ -214,6 +221,9 @@ async def handle_back_to_days_callback(call: types.CallbackQuery):
             f"Отображаются пары для: <b>{parity_name}</b>",
             reply_markup=kb
         )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Back to days error: {e}")
     except Exception:
         pass
     await call.answer()
@@ -231,9 +241,28 @@ async def handle_parity(message: types.Message):
     )
 
 
+@dp.message(Command("bells"))
 @dp.message(F.text == "🔔 Звонки")
 async def handle_bells(message: types.Message):
     await message.answer(BELLS_TEXT, reply_markup=main_keyboard)
+
+
+@dp.message(Command("help"))
+async def handle_help(message: types.Message):
+    help_text = (
+        "📖 <b>Справка по командам бота:</b>\n\n"
+        "📅 /today — Расписание на сегодня\n"
+        "🔜 /tomorrow — Расписание на завтра\n"
+        "🗓 /week — Расписание на текущую неделю\n"
+        "⏭ /next_week — Расписание на следующую неделю\n"
+        "📆 /days — Выбрать день недели (интерактивно)\n"
+        "🏷 /parity — Текущая чётность (Числитель / Знаменатель)\n"
+        "🔔 /bells — Расписание звонков и перерывов\n"
+        "🆔 /chat_id — Узнать ID текущего чата\n"
+        "❓ /help — Показать эту справку\n\n"
+        "💡 <i>В группах можно писать команды через слэш или использовать кнопки экранного меню.</i>"
+    )
+    await message.answer(help_text, reply_markup=main_keyboard)
 
 
 @dp.message(Command("chat_id"))
@@ -258,7 +287,7 @@ async def handle_test_broadcast(message: types.Message):
 
 
 # Простой HTTP health-check сервер для Koyeb / Render
-async def start_http_server():
+async def start_http_server() -> web.AppRunner | None:
     preferred_port = int(os.getenv("PORT", "8000"))
     
     async def health_handler(request):
@@ -271,17 +300,23 @@ async def start_http_server():
     runner = web.AppRunner(app)
     await runner.setup()
     
-    # Пробуем указанный порт или запасные
-    for port in [preferred_port, 8000, 8081, 8888, 9090]:
+    # Формируем список портов без дубликатов
+    candidate_ports = [preferred_port]
+    for p in (8000, 8080, 8081, 10000, 8888, 9090):
+        if p not in candidate_ports:
+            candidate_ports.append(p)
+
+    for port in candidate_ports:
         try:
             site = web.TCPSite(runner, "0.0.0.0", port)
             await site.start()
             logger.info(f"Healthcheck HTTP server запущен на порту {port} (для Koyeb/Render)")
-            return
+            return runner
         except OSError:
             continue
             
     logger.warning("Не удалось привязать HTTP healthcheck порт (все порты заняты). Продолжаем работу бота.")
+    return runner
 
 
 async def render_keep_alive():
@@ -299,14 +334,14 @@ async def render_keep_alive():
     
     # Небольшая пауза перед первым пингом
     await asyncio.sleep(45)
-    while True:
-        try:
-            async with ClientSession() as session:
+    async with ClientSession() as session:
+        while True:
+            try:
                 async with session.get(ping_target, timeout=20) as resp:
                     logger.info(f"Keep-Alive пинг Render выполнен: статус {resp.status}")
-        except Exception as e:
-            logger.debug(f"Keep-Alive пинг: {e}")
-        await asyncio.sleep(600)  # Пинг раз в 10 минут (Render спит после 15 минут)
+            except Exception as e:
+                logger.debug(f"Keep-Alive пинг: {e}")
+            await asyncio.sleep(600)  # Пинг раз в 10 минут (Render спит после 15 минут)
 
 
 async def main():
@@ -320,44 +355,75 @@ async def main():
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
 
-    logger.info("Запуск бота и планировщика APScheduler...")
-    
-    # Запуск легковесного HTTP сервера для Health Check в облаке (Koyeb/Render)
-    await start_http_server()
-    
-    # Запуск фонового анти-сна для Render
-    asyncio.create_task(render_keep_alive())
-    
-    # Расписание 1: ежедневно в 00:00:00 (подробное расписание на день)
-    scheduler.add_job(
-        send_midnight_schedule,
-        trigger="cron",
-        hour=0,
-        minute=0,
-        second=0,
-        id="midnight_schedule_job",
-        replace_existing=True
-    )
-    
-    # Расписание 2: по будням в 08:00:00 (утреннее напоминание о 1-й паре)
-    scheduler.add_job(
-        send_morning_alert,
-        trigger="cron",
-        day_of_week="mon-fri",
-        hour=8,
-        minute=0,
-        second=0,
-        id="morning_alert_job",
-        replace_existing=True
-    )
-    
-    scheduler.start()
-    
-    logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00 и 08:00.")
-    
-    # Удаляем вебхуки если были, и запускаем опрос
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    http_runner = None
+    keep_alive_task = None
+
+    try:
+        logger.info("Запуск бота и планировщика APScheduler...")
+        
+        # Регистрация меню команд в интерфейсе Telegram
+        try:
+            await bot.set_my_commands([
+                types.BotCommand(command="today", description="📅 Расписание на сегодня"),
+                types.BotCommand(command="tomorrow", description="🔜 Расписание на завтра"),
+                types.BotCommand(command="week", description="🗓 Расписание на эту неделю"),
+                types.BotCommand(command="next_week", description="⏭ Расписание на след. неделю"),
+                types.BotCommand(command="days", description="📆 Выбрать день недели"),
+                types.BotCommand(command="parity", description="🏷 Чётность (числ / знам)"),
+                types.BotCommand(command="bells", description="🔔 Расписание звонков"),
+                types.BotCommand(command="help", description="📖 Справка по командам"),
+            ])
+            logger.info("Команды меню бота успешно зарегистрированы в Telegram.")
+        except Exception as e:
+            logger.warning(f"Не удалось установить команды меню Telegram: {e}")
+
+        # Запуск легковесного HTTP сервера для Health Check в облаке (Koyeb/Render)
+        http_runner = await start_http_server()
+        
+        # Запуск фонового анти-сна для Render
+        keep_alive_task = asyncio.create_task(render_keep_alive())
+        
+        # Расписание 1: ежедневно в 00:00:00 (подробное расписание на день)
+        scheduler.add_job(
+            send_midnight_schedule,
+            trigger="cron",
+            hour=0,
+            minute=0,
+            second=0,
+            id="midnight_schedule_job",
+            replace_existing=True
+        )
+        
+        # Расписание 2: по будням в 08:00:00 (утреннее напоминание о 1-й паре)
+        scheduler.add_job(
+            send_morning_alert,
+            trigger="cron",
+            day_of_week="mon-fri",
+            hour=8,
+            minute=0,
+            second=0,
+            id="morning_alert_job",
+            replace_existing=True
+        )
+        
+        scheduler.start()
+        
+        logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00 и 08:00.")
+        
+        # Удаляем вебхуки если были, и запускаем опрос
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+    finally:
+        logger.info("Завершение работы и очистка ресурсов бота...")
+        if keep_alive_task and not keep_alive_task.done():
+            keep_alive_task.cancel()
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+        if http_runner:
+            await http_runner.cleanup()
+        if bot and bot.session:
+            await bot.session.close()
+        logger.info("Все сервисы бота корректно остановлены.")
 
 
 if __name__ == "__main__":
