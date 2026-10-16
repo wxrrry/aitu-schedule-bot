@@ -10,16 +10,29 @@ MONTHS_RU = [
     "июля", "августа", "сентября", "октября", "ноября", "декабря"
 ]
 
-def format_day_schedule(target_date: date, title_prefix: str = "Расписание на день", current_time_str: str | None = None) -> str:
+
+def format_day_schedule(
+    target_date: date,
+    title_prefix: str = "Расписание на день",
+    current_time_str: str | None = None,
+    group_name: str | None = None,
+    custom_pairs: dict[int, dict] | None = None,
+    custom_replacements: dict[int, dict] | None = None
+) -> str:
     """
     Форматирует расписание на один день с красивым блочным оформлением (blockquote).
-    Если передан current_time_str (например, "11:20"), подсвечивает текущую пару.
+    Поддерживает произвольную группу, кастомные пары и замены из БД.
     """
     parity_code, parity_name = get_week_parity(target_date)
     weekday = target_date.weekday()
     day_name = DAYS_RU[weekday]
     date_str = f"{target_date.day} {MONTHS_RU[target_date.month]} {target_date.year}"
-    replacements = get_replacements_for_date(target_date)
+    target_group = group_name or GROUP_NAME
+
+    if custom_replacements is not None:
+        replacements = custom_replacements
+    else:
+        replacements = get_replacements_for_date(target_date)
     
     rep_notice = ""
     if replacements:
@@ -28,12 +41,16 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     header = (
         f"📅 <b>{title_prefix} · {day_name}</b> (<code>{date_str}</code>)\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
-        f"👥 <b>Группа:</b> <code>{GROUP_NAME}</code>\n"
+        f"👥 <b>Группа:</b> <code>{target_group}</code>\n"
         + rep_notice
         + "──────────────────────\n"
     )
     
-    day_pairs = SCHEDULE.get(weekday, {})
+    if custom_pairs is not None:
+        day_pairs = custom_pairs
+    else:
+        day_pairs = SCHEDULE.get(weekday, {})
+
     all_pair_nums = sorted(list(set(day_pairs.keys()) | set(replacements.keys())))
     if not all_pair_nums:
         return (
@@ -63,7 +80,13 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
                 parity_tag = " · <i>[Числитель]</i>" if parity_code == "chislitel" else " · <i>[Знаменатель]</i>"
             else:
                 current_info = pair
-                parity_tag = ""
+                p_val = pair.get("parity")
+                if p_val == "chislitel":
+                    parity_tag = " · <i>[Числитель]</i>"
+                elif p_val == "znamenatel":
+                    parity_tag = " · <i>[Знаменатель]</i>"
+                else:
+                    parity_tag = ""
                 
         # Проверяем наличие замены/отмены
         rep = replacements.get(num)
@@ -85,29 +108,33 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         
         if rep and rep.get("type") == "cancel":
             subj_title = html.escape(str(current_info.get("subject", "Пара"))) if current_info else "Пара"
+            reason_text = html.escape(rep.get("text") or rep.get("subject") or "Отмена")
             card_content = (
                 f"<blockquote>"
                 f"❌ {emoji_num} <b><s>{time_range}</s></b>{parity_tag}{badge}\n"
                 f"📚 <s>{subj_title}</s>\n"
-                f"🚫 <b>ПАРА ОТМЕНЕНА</b> (<i>{html.escape(rep.get('text', 'Отмена'))}</i>)"
+                f"🚫 <b>ПАРА ОТМЕНЕНА</b> (<i>{reason_text}</i>)"
                 f"</blockquote>"
             )
         elif rep and rep.get("type") == "replace":
             orig_subj = html.escape(str(current_info.get("subject", ""))) if current_info else ""
             orig_note = f"\n▫️ <i>(по расписанию: {orig_subj})</i>" if orig_subj else ""
+            rep_subj = html.escape(rep.get("subject") or rep.get("text") or "Замена")
+            rep_room = html.escape(rep.get("room") or (current_info.get("room", "—") if current_info else "—"))
+            rep_teacher = html.escape(rep.get("teacher") or (current_info.get("teacher", "—") if current_info else "—"))
             card_content = (
                 f"<blockquote>"
                 f"⚠️ {emoji_num} <b>{time_range}</b>{parity_tag}{badge} · <b>ЗАМЕНА</b>\n"
-                f"📚 <b>{html.escape(rep.get('text', ''))}</b>"
-                f"{orig_note}"
+                f"📚 <b>{rep_subj}</b>\n"
+                f"📍 Кабинет: <code>{rep_room}</code> · 👨‍🏫 <i>{rep_teacher}</i>"
                 f"{breakdown_line}"
+                f"{orig_note}"
                 f"</blockquote>"
             )
         else:
             subject = html.escape(str(current_info.get("subject", "Не указан")))
             room = html.escape(str(current_info.get("room", "—")))
             teacher = html.escape(str(current_info.get("teacher", "—")))
-            
             card_content = (
                 f"<blockquote>"
                 f"{emoji_num} <b>{time_range}</b>{parity_tag}{badge}\n"
@@ -116,7 +143,7 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
                 f"{breakdown_line}"
                 f"</blockquote>"
             )
-        
+            
         pair_items.append({
             "num": num,
             "text": card_content
@@ -125,7 +152,7 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
     if not pair_items:
         return (
             f"{header}\n"
-            "🎉 <b>Пар нет!</b> Отличный день для отдыха или самоподготовки 🏖️"
+            "🎉 <b>Пар нет!</b> В этот день занятий не запланировано 🏖️"
         )
         
     lines = [header]
@@ -142,35 +169,49 @@ def format_day_schedule(target_date: date, title_prefix: str = "Расписан
         
     return "\n".join(lines).strip()
 
-def format_week_schedule(target_monday: date) -> str:
+
+def format_week_schedule(
+    target_monday: date,
+    group_name: str | None = None,
+    custom_week_pairs: dict[int, dict[int, dict]] | None = None,
+    custom_week_replacements: dict[int, dict[int, dict]] | None = None
+) -> str:
     """
     Форматирует расписание на всю неделю (понедельник — пятница).
     """
     parity_code, parity_name = get_week_parity(target_monday)
     sunday = target_monday + timedelta(days=6)
+    target_group = group_name or GROUP_NAME
     
     range_str = f"{target_monday.day} {MONTHS_RU[target_monday.month]} — {sunday.day} {MONTHS_RU[sunday.month]}"
     
     res = [
         f"🗓 <b>Расписание на неделю ({range_str})</b>",
         f"🏷 <b>Неделя:</b> {parity_name}",
-        f"👥 <b>Группа:</b> {GROUP_NAME}",
+        f"👥 <b>Группа:</b> {target_group}",
         "══════════════════\n"
     ]
     
     for day_idx in range(5):  # Пн - Пт
         curr_date = target_monday + timedelta(days=day_idx)
-        day_pairs = SCHEDULE.get(day_idx, {})
+        if custom_week_pairs is not None:
+            day_pairs = custom_week_pairs.get(day_idx, {})
+        else:
+            day_pairs = SCHEDULE.get(day_idx, {})
+
         day_name = DAYS_RU[day_idx]
         
         res.append(f"📌 <b>{day_name} ({curr_date.day} {MONTHS_RU[curr_date.month]}):</b>")
         
-        if not day_pairs:
+        if custom_week_replacements is not None:
+            day_replacements = custom_week_replacements.get(day_idx, {})
+        else:
+            day_replacements = get_replacements_for_date(curr_date)
+
+        all_nums = sorted(list(set(day_pairs.keys()) | set(day_replacements.keys())))
+        if not all_nums:
             res.append("  <i>Пар нет</i>\n")
             continue
-            
-        day_replacements = get_replacements_for_date(curr_date)
-        all_nums = sorted(list(set(day_pairs.keys()) | set(day_replacements.keys())))
         
         day_lines = []
         for num in all_nums:
@@ -191,9 +232,12 @@ def format_week_schedule(target_monday: date) -> str:
 
             if rep and rep.get("type") == "cancel":
                 subj_esc = html.escape(str(info.get("subject", "Пара"))) if info else "Пара"
-                day_lines.append(f"  {num}. <s>{subj_esc}</s> | ❌ <i>ОТМЕНЕНА ({html.escape(rep.get('text', ''))})</i>")
+                reason = html.escape(rep.get("text") or rep.get("subject") or "Отмена")
+                day_lines.append(f"  {num}. <s>{subj_esc}</s> | ❌ <i>ОТМЕНЕНА ({reason})</i>")
             elif rep and rep.get("type") == "replace":
-                day_lines.append(f"  {num}. ⚠️ <b>ЗАМЕНА: {html.escape(rep.get('text', ''))}</b> | {time_range}")
+                rep_title = html.escape(rep.get("subject") or rep.get("text") or "Замена")
+                rep_room = html.escape(rep.get("room") or "—")
+                day_lines.append(f"  {num}. ⚠️ <b>ЗАМЕНА: {rep_title}</b> | {time_range} (каб. {rep_room})")
             else:
                 subj_esc = html.escape(str(info.get("subject", "")))
                 room_esc = html.escape(str(info.get("room", "—")))
@@ -208,21 +252,31 @@ def format_week_schedule(target_monday: date) -> str:
     return "\n".join(res).strip()
 
 
-def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str:
+def format_weekday_by_index(
+    day_idx: int,
+    parity_code: str = "chislitel",
+    group_name: str | None = None,
+    custom_pairs: dict[int, dict] | None = None
+) -> str:
     """
     Форматирует расписание на конкретный день недели для указанной чётности.
     """
     day_name = DAYS_RU[day_idx]
     parity_name = "Числитель 🔺" if parity_code == "chislitel" else "Знаменатель 🔻"
+    target_group = group_name or GROUP_NAME
     
     header = (
         f"📅 <b>{day_name}</b>\n"
         f"🏷 <b>Неделя:</b> {parity_name}\n"
-        f"👥 <b>Группа:</b> {GROUP_NAME}\n"
+        f"👥 <b>Группа:</b> {target_group}\n"
         "──────────────────\n"
     )
     
-    day_pairs = SCHEDULE.get(day_idx, {})
+    if custom_pairs is not None:
+        day_pairs = custom_pairs
+    else:
+        day_pairs = SCHEDULE.get(day_idx, {})
+
     if not day_pairs:
         return f"{header}\n🎉 <b>Пар нет!</b> Выходной день 🏖️"
         
@@ -239,7 +293,13 @@ def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str
             parity_tag = " [Числ]" if parity_code == "chislitel" else " [Знам]"
         else:
             current_info = pair
-            parity_tag = ""
+            p_val = pair.get("parity")
+            if p_val == "chislitel":
+                parity_tag = " [Числ]"
+            elif p_val == "znamenatel":
+                parity_tag = " [Знам]"
+            else:
+                parity_tag = ""
             
         if not current_info:
             continue
@@ -274,7 +334,12 @@ def format_weekday_by_index(day_idx: int, parity_code: str = "chislitel") -> str
     return "\n".join(lines).strip()
 
 
-def format_morning_alert(today_date: date) -> str | None:
+def format_morning_alert(
+    today_date: date,
+    group_name: str | None = None,
+    custom_pairs: dict[int, dict] | None = None,
+    custom_replacements: dict[int, dict] | None = None
+) -> str | None:
     """
     Форматирует короткое утреннее напоминание в 08:00 о первой паре.
     Учитывает отмены и замены пар.
@@ -286,13 +351,22 @@ def format_morning_alert(today_date: date) -> str | None:
     parity_code, parity_name = get_week_parity(today_date)
     day_name = DAYS_RU[weekday]
     date_str = f"{today_date.day} {MONTHS_RU[today_date.month]}"
+    target_group = group_name or GROUP_NAME
     
-    replacements = get_replacements_for_date(today_date)
+    if custom_replacements is not None:
+        replacements = custom_replacements
+    else:
+        replacements = get_replacements_for_date(today_date)
+
     rep_badge = ""
     if replacements:
         rep_badge = "⚠️ <b>Внимание: сегодня есть изменения в расписании!</b>\n\n"
 
-    day_pairs = SCHEDULE.get(weekday, {})
+    if custom_pairs is not None:
+        day_pairs = custom_pairs
+    else:
+        day_pairs = SCHEDULE.get(weekday, {})
+
     all_nums = sorted(list(set(day_pairs.keys()) | set(replacements.keys())))
     first_pair_num = None
     first_pair_info = None
@@ -309,7 +383,6 @@ def format_morning_alert(today_date: date) -> str | None:
                 
         rep = replacements.get(num)
         if rep and rep.get("type") == "cancel":
-            # Пара отменена, идём дальше
             continue
             
         if rep and rep.get("type") == "replace":
@@ -325,7 +398,7 @@ def format_morning_alert(today_date: date) -> str | None:
             
     if not first_pair_num or (not first_pair_info and not first_pair_rep):
         return (
-            f"☀️ <b>Доброе утро, 9ПО-43к!</b>\n"
+            f"☀️ <b>Доброе утро, {target_group}!</b>\n"
             f"🗓 <b>{day_name}, {date_str}</b> · {parity_name}\n\n"
             f"{rep_badge}"
             f"🎉 <b>Сегодня пар нет (или все отменены)!</b> Отличного дня и хорошего отдыха ☕️"
@@ -343,12 +416,15 @@ def format_morning_alert(today_date: date) -> str | None:
             extra_note = f"\n☕️ <i>1-я пара отсутствует, учёба начинается со {first_pair_num}-й пары! Можно поспать подольше.</i>\n"
         
     if first_pair_rep:
+        rep_subj = html.escape(first_pair_rep.get("subject") or first_pair_rep.get("text") or "Замена")
+        rep_room = html.escape(first_pair_rep.get("room") or "—")
         card_content = (
             f"<blockquote>"
             f"{NUMBER_EMOJIS.get(first_pair_num, '')} <b>{time_range}</b> · <b>ЗАМЕНА</b>\n"
-            f"📚 <b>{html.escape(first_pair_rep.get('text', ''))}</b>\n"
-            + (f"▫️ <i>(по плану: {html.escape(first_pair_info['subject'])})</i>\n" if first_pair_info else "")
-            + (f"⏱ <i>{breakdown}</i>" if breakdown else "")
+            f"📚 <b>{rep_subj}</b>\n"
+            f"📍 Кабинет: <code>{rep_room}</code>"
+            + (f"\n▫️ <i>(по плану: {html.escape(first_pair_info['subject'])})</i>\n" if first_pair_info else "")
+            + (f"\n⏱ <i>{breakdown}</i>" if breakdown else "")
             + f"</blockquote>"
         )
     else:
@@ -365,7 +441,7 @@ def format_morning_alert(today_date: date) -> str | None:
         )
 
     return (
-        f"☀️ <b>Доброе утро, группа 9ПО-43к!</b>\n"
+        f"☀️ <b>Доброе утро, группа {target_group}!</b>\n"
         f"🗓 <b>{day_name}, {date_str}</b> · {parity_name}\n"
         "──────────────────────\n"
         f"{rep_badge}"
@@ -375,3 +451,118 @@ def format_morning_alert(today_date: date) -> str | None:
         f"👉 <i>Полное расписание на день — кнопка <b>«📅 Сегодня»</b></i>"
     )
 
+
+# =============================================================
+# Асинхронные интерфейсы для работы с БД (мульти-группы)
+# =============================================================
+async def get_formatted_day_schedule(
+    target_date: date,
+    title_prefix: str = "Расписание на день",
+    current_time_str: str | None = None,
+    group_name: str | None = None
+) -> str:
+    """Загружает пары и замены группы из БД и форматирует расписание на день."""
+    from db.crud import get_lessons_for_day, get_replacements_for_date_and_group
+
+    grp = group_name or GROUP_NAME
+    parity_code, _ = get_week_parity(target_date)
+    weekday = target_date.weekday()
+
+    db_pairs = await get_lessons_for_day(grp, weekday, parity_code)
+    db_reps = await get_replacements_for_date_and_group(target_date, grp)
+
+    if not db_pairs and grp == GROUP_NAME:
+        return format_day_schedule(
+            target_date,
+            title_prefix=title_prefix,
+            current_time_str=current_time_str,
+            group_name=grp,
+            custom_replacements=db_reps or None
+        )
+
+    return format_day_schedule(
+        target_date,
+        title_prefix=title_prefix,
+        current_time_str=current_time_str,
+        group_name=grp,
+        custom_pairs=db_pairs,
+        custom_replacements=db_reps
+    )
+
+
+async def get_formatted_week_schedule(target_monday: date, group_name: str | None = None) -> str:
+    """Загружает пары недели и замены группы из БД и форматирует расписание на неделю."""
+    from db.crud import get_lessons_for_day, get_replacements_for_date_and_group
+
+    grp = group_name or GROUP_NAME
+    parity_code, _ = get_week_parity(target_monday)
+
+    week_pairs = {}
+    week_reps = {}
+    has_any_db_lessons = False
+
+    for day_idx in range(5):
+        d = target_monday + timedelta(days=day_idx)
+        pairs = await get_lessons_for_day(grp, day_idx, parity_code)
+        if pairs:
+            has_any_db_lessons = True
+        reps = await get_replacements_for_date_and_group(d, grp)
+        week_pairs[day_idx] = pairs
+        week_reps[day_idx] = reps
+
+    if not has_any_db_lessons and grp == GROUP_NAME:
+        return format_week_schedule(target_monday, group_name=grp, custom_week_replacements=week_reps)
+
+    return format_week_schedule(
+        target_monday,
+        group_name=grp,
+        custom_week_pairs=week_pairs,
+        custom_week_replacements=week_reps
+    )
+
+
+async def get_formatted_weekday_by_index(
+    day_idx: int,
+    parity_code: str = "chislitel",
+    group_name: str | None = None
+) -> str:
+    """Загружает пары конкретного дня недели из БД и форматирует их."""
+    from db.crud import get_lessons_for_day
+
+    grp = group_name or GROUP_NAME
+    db_pairs = await get_lessons_for_day(grp, day_idx, parity_code)
+
+    if not db_pairs and grp == GROUP_NAME:
+        return format_weekday_by_index(day_idx, parity_code=parity_code, group_name=grp)
+
+    return format_weekday_by_index(
+        day_idx,
+        parity_code=parity_code,
+        group_name=grp,
+        custom_pairs=db_pairs
+    )
+
+
+async def get_formatted_morning_alert(today_date: date, group_name: str | None = None) -> str | None:
+    """Загружает пары и замены на утро для конкретной группы."""
+    from db.crud import get_lessons_for_day, get_replacements_for_date_and_group
+
+    if today_date.weekday() >= 5:
+        return None
+
+    grp = group_name or GROUP_NAME
+    parity_code, _ = get_week_parity(today_date)
+    weekday = today_date.weekday()
+
+    db_pairs = await get_lessons_for_day(grp, weekday, parity_code)
+    db_reps = await get_replacements_for_date_and_group(today_date, grp)
+
+    if not db_pairs and grp == GROUP_NAME:
+        return format_morning_alert(today_date, group_name=grp, custom_replacements=db_reps or None)
+
+    return format_morning_alert(
+        today_date,
+        group_name=grp,
+        custom_pairs=db_pairs,
+        custom_replacements=db_reps
+    )

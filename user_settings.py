@@ -114,8 +114,13 @@ def get_users_with_setting(key: str) -> set[int]:
     return result
 
 
-def format_user_settings_text(user_id: int, user_name: str = "") -> str:
-    """Генерирует аккуратное текстовое описание настроек пользователя."""
+def format_user_settings_text(
+    user_id: int,
+    user_name: str = "",
+    group_name: str | None = None,
+    role_display: str | None = None
+) -> str:
+    """Генерирует аккуратное текстовое описание настроек пользователя с группой и ролью."""
     settings = get_user_settings(user_id)
     
     r_10 = "🟢 Включено" if settings.get("remind_10min") else "🔴 Отключено"
@@ -123,9 +128,14 @@ def format_user_settings_text(user_id: int, user_name: str = "") -> str:
     f_breaks = "🟢 Включено" if settings.get("five_min_breaks") else "🔴 Отключено"
 
     name_str = f", <b>{user_name}</b>" if user_name else ""
+    grp_str = f"👥 <b>Учебная группа:</b> <code>{group_name or '9ПО-43к'}</code>\n"
+    role_str = f"🎖 <b>Статус/Роль:</b> {role_display}\n" if role_display else ""
+
     return (
         f"⚙️ <b>Личные настройки{name_str}</b>\n"
         f"──────────────────────\n"
+        f"{grp_str}"
+        f"{role_str}\n"
         f"Управляйте персональными уведомлениями бота в личных сообщениях:\n\n"
         f"🔔 <b>Колокольчик за 10 мин:</b> {r_10}\n"
         f"   ▫️ <i>Персональное напоминание с предметом и кабинетом перед каждой парой</i>\n\n"
@@ -133,12 +143,17 @@ def format_user_settings_text(user_id: int, user_name: str = "") -> str:
         f"   ▫️ <i>Расписание на день каждое утро по будням в ЛС</i>\n\n"
         f"☕️ <b>Оповещения о пятиминутках:</b> {f_breaks}\n"
         f"   ▫️ <i>Уведомления о перерывах внутри пар в ЛС</i>\n\n"
-        f"👇 <i>Нажмите на пункт ниже для переключения или обновите меню:</i>"
+        f"👇 <i>Нажмите на пункт ниже для переключения или смените группу:</i>"
     )
 
 
-def get_user_settings_keyboard(user_id: int, is_admin: bool = False) -> InlineKeyboardMarkup:
-    """Генерирует клавиатуру настроек с чекбоксами."""
+def get_user_settings_keyboard(
+    user_id: int,
+    is_admin: bool = False,
+    is_starosta: bool = False,
+    group_name: str | None = None
+) -> InlineKeyboardMarkup:
+    """Генерирует клавиатуру настроек с чекбоксами и кнопками управления группой."""
     settings = get_user_settings(user_id)
     
     icon_10 = "✅" if settings.get("remind_10min") else "❌"
@@ -166,11 +181,25 @@ def get_user_settings_keyboard(user_id: int, is_admin: bool = False) -> InlineKe
         ],
         [
             InlineKeyboardButton(
+                text=f"👥 Сменить группу ({group_name or '9ПО-43к'})",
+                callback_data="user_change_group"
+            )
+        ],
+        [
+            InlineKeyboardButton(
                 text="🔄 Обновить интерфейс и меню",
                 callback_data="user_refresh_ui"
             )
         ]
     ]
+
+    if is_starosta or is_admin:
+        buttons.append([
+            InlineKeyboardButton(
+                text="⭐️ Панель старосты",
+                callback_data="open_starosta_panel"
+            )
+        ])
 
     if is_admin:
         buttons.append([

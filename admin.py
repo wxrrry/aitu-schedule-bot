@@ -64,7 +64,13 @@ def run_git_pull() -> tuple[bool, str]:
         return False, str(e)
 
 
-def get_admin_dashboard_text(start_time: datetime | None = None) -> str:
+from config import BOT_TZ, CHAT_ID, ADMIN_ID, ADMIN_IDS
+
+def get_admin_dashboard_text(
+    start_time: datetime | None = None,
+    total_users_db: int | None = None,
+    total_groups_db: int | None = None
+) -> str:
     """Генерирует сводку панели администратора."""
     now = datetime.now(BOT_TZ)
     
@@ -92,6 +98,9 @@ def get_admin_dashboard_text(start_time: datetime | None = None) -> str:
     
     reps = load_replacements()
     total_reps = sum(len(pairs) for pairs in reps.values())
+    admin_ids_str = ", ".join(map(str, sorted(list(ADMIN_IDS)))) if ADMIN_IDS else "Не заданы"
+    users_cnt = total_users_db if total_users_db is not None else len(all_users)
+    groups_str = f"▫️ Академических групп в базе: <b>{total_groups_db}</b>\n" if total_groups_db is not None else ""
 
     return (
         f"👑 <b>Панель управления администратора</b>\n"
@@ -102,14 +111,15 @@ def get_admin_dashboard_text(start_time: datetime | None = None) -> str:
         f"📦 <b>Версия и Git:</b>\n"
         f"▫️ Коммит: <code>{git_info['commit']}</code> ({git_info.get('date', '')})\n"
         f"▫️ Сообщение: <i>{git_info['message']}</i>\n\n"
-        f"👥 <b>Пользователи и подписки:</b>\n"
-        f"▫️ Всего пользователей в базе: <b>{len(all_users)}</b>\n"
+        f"👥 <b>Пользователи и группы:</b>\n"
+        f"▫️ Всего пользователей в базе: <b>{users_cnt}</b>\n"
+        f"{groups_str}"
         f"▫️ Напоминания за 10 мин: <b>{sub_10min}</b> чел.\n"
         f"▫️ Утренние сводки (08:00): <b>{sub_morning}</b> чел.\n"
         f"▫️ Пятиминутки в ЛС: <b>{sub_breaks}</b> чел.\n\n"
         f"⚠️ <b>Замены в расписании:</b> <b>{total_reps}</b> активных\n"
         f"💬 <b>Привязанный чат группы:</b> <code>{CHAT_ID or 'Не задан'}</code>\n"
-        f"🆔 <b>ID администратора:</b> <code>{ADMIN_ID or 'Все пользователи'}</code>\n"
+        f"🆔 <b>Главные администраторы:</b> <code>{admin_ids_str}</code>\n"
     )
 
 
@@ -125,10 +135,11 @@ def get_admin_main_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📢 Рассылка сообщения", callback_data="admin_broadcast_menu")
         ],
         [
-            InlineKeyboardButton(text="🧪 Тестирование рассылок", callback_data="admin_tests_menu"),
-            InlineKeyboardButton(text="📲 Обновить меню всем", callback_data="admin_refresh_all_commands")
+            InlineKeyboardButton(text="👥 Роли и старосты", callback_data="admin_roles_menu"),
+            InlineKeyboardButton(text="🧪 Тестирование рассылок", callback_data="admin_tests_menu")
         ],
         [
+            InlineKeyboardButton(text="📲 Обновить меню всем", callback_data="admin_refresh_all_commands"),
             InlineKeyboardButton(text="◀️ Закрыть панель", callback_data="admin_close")
         ]
     ]

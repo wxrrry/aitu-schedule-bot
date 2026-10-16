@@ -290,3 +290,66 @@ def get_lecture_reader_keyboard(lecture_id: str, current_page: int, total_pages:
         ]
     )
 
+
+# -------------------------------------------------------------
+# Клавиатуры выбора академической группы и курса
+# -------------------------------------------------------------
+def get_courses_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура выбора курса (1..4) + ручной ввод."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="1️⃣ 1 курс", callback_data="sel_course_1"),
+                InlineKeyboardButton(text="2️⃣ 2 курс", callback_data="sel_course_2")
+            ],
+            [
+                InlineKeyboardButton(text="3️⃣ 3 курс", callback_data="sel_course_3"),
+                InlineKeyboardButton(text="4️⃣ 4 курс", callback_data="sel_course_4")
+            ],
+            [
+                InlineKeyboardButton(text="✍️ Ввести группу вручную", callback_data="sel_group_manual")
+            ]
+        ]
+    )
+
+
+def get_groups_by_course_keyboard(course: int, group_names: list[str]) -> InlineKeyboardMarkup:
+    """Клавиатура списка групп конкретного курса."""
+    buttons = []
+    row = []
+    for g_name in group_names:
+        row.append(InlineKeyboardButton(text=f"👥 {g_name}", callback_data=f"sel_grp_{g_name}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+
+    buttons.append([
+        InlineKeyboardButton(text="◀️ Назад к выбору курса", callback_data="sel_course_back")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_starosta_panel_keyboard(group_name: str) -> InlineKeyboardMarkup:
+    """Клавиатура панели старосты группы."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🚪 Сменить аудиторию пары", callback_data="starosta_change_room"),
+                InlineKeyboardButton(text="⚠️ Добавить замену", callback_data="starosta_add_zam")
+            ],
+            [
+                InlineKeyboardButton(text="❌ Отменить пару", callback_data="starosta_cancel_pair"),
+                InlineKeyboardButton(text="🗑 Удалить замену", callback_data="starosta_del_zam")
+            ],
+            [
+                InlineKeyboardButton(text="💬 Привязать беседу группы", callback_data="starosta_bind_info")
+            ],
+            [
+                InlineKeyboardButton(text="◀️ Назад в настройки", callback_data="starosta_back_to_settings")
+            ]
+        ]
+    )
+
+

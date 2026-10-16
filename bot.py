@@ -14,14 +14,64 @@ from aiohttp import web, ClientSession
 
 import html
 
-from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+
+from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS
 from schedule_data import SCHEDULE, DAYS_RU
 from formatter import (
     format_day_schedule,
     format_week_schedule,
     format_weekday_by_index,
     format_morning_alert,
+    get_formatted_day_schedule,
+    get_formatted_week_schedule,
+    get_formatted_weekday_by_index,
+    get_formatted_morning_alert,
     MONTHS_RU
+)
+from db.crud import (
+    get_or_create_user,
+    get_user,
+    get_user_by_username,
+    update_user_group,
+    update_user_role,
+    update_user_setting,
+    get_users_by_group,
+    get_users_for_notification,
+    count_all_users,
+    get_all_groups,
+    get_group_by_name,
+    add_group,
+    get_all_courses,
+    get_lessons_for_day,
+    update_lesson_room,
+    get_replacements_for_date_and_group,
+    add_replacement_record,
+    delete_replacement_record,
+    bind_chat_to_group,
+    get_chat_group,
+    get_chats_for_group,
+    get_all_chat_bindings
+)
+from permissions import (
+    is_superadmin,
+    is_admin,
+    is_starosta,
+    is_starosta_or_zam,
+    can_manage_group,
+    get_user_role_display
+)
+from keyboards import (
+    get_courses_keyboard,
+    get_groups_by_course_keyboard,
+    get_starosta_panel_keyboard
+)
+from features import get_formatted_now_status
+from starosta import (
+    parse_weekday_input,
+    DAYS_NAMES_RU,
+    get_starosta_dashboard_text
 )
 from parity import get_week_parity
 from keyboards import (
@@ -97,6 +147,28 @@ from lectures import (
 # Время запуска для расчета Uptime
 BOT_START_TIME = datetime.now(BOT_TZ)
 
+
+class RegistrationState(StatesGroup):
+    waiting_manual_group = State()
+
+
+async def resolve_target_group(chat: types.Chat | None = None, user: types.User | None = None) -> str:
+    """
+    Определяет целевую учебную группу:
+    - Если сообщение из группы/супергруппы -> привязанная к чату группа.
+    - Если личные сообщения -> группа пользователя из БД (по умолчанию 9ПО-43к).
+    """
+    if chat and chat.type in ("group", "supergroup"):
+        bound_grp = await get_chat_group(chat.id)
+        if bound_grp:
+            return bound_grp
+    if user:
+        db_user = await get_user(user.id)
+        if db_user and db_user.group_name:
+            return db_user.group_name
+    return "9ПО-43к"
+
+
 async def register_bot_commands(bot_instance: Bot):
     """Регистрирует команды в меню Telegram."""
     try:
@@ -108,6 +180,9 @@ async def register_bot_commands(bot_instance: Bot):
             types.BotCommand(command="lectures", description="📚 Конспекты лекций 4 курса"),
             types.BotCommand(command="zameny", description="⚠️ Замены и отмены пар"),
             types.BotCommand(command="settings", description="⚙️ Настройки уведомлений"),
+            types.BotCommand(command="group", description="👥 Сменить учебную группу"),
+            types.BotCommand(command="starosta", description="⭐️ Панель старосты"),
+            types.BotCommand(command="bind", description="💬 Привязать беседу к группе"),
             types.BotCommand(command="refresh", description="🔄 Обновить интерфейс"),
             types.BotCommand(command="moodle", description="📁 СДО Moodle и материалы"),
             types.BotCommand(command="maket", description="📄 Титульный лист (.docx)"),
@@ -160,95 +235,66 @@ BELLS_TEXT = (
 
 async def send_midnight_schedule():
     """
-    Задача, запускаемая ежедневно в 00:00:
-    отправляет расписание на наступающий день в целевой чат.
+    Задача в 00:00: рассылка подробного расписания на день по всем привязанным чатам.
     """
-    if not bot or not CHAT_ID:
-        logger.warning("Бот или CHAT_ID не настроен. Рассылка в 00:00 пропущена.")
-        return
-
     now = datetime.now(BOT_TZ)
     target_date = now.date()
     
-    logger.info(f"Запуск полночной рассылки на {target_date} в чат {CHAT_ID}")
-    text = format_day_schedule(target_date, title_prefix="Расписание на сегодня")
-    
-    try:
-        if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
-            try:
-                await bot.send_photo(
-                    chat_id=CHAT_ID,
-                    photo=types.FSInputFile(WEEKEND_IMG),
-                    caption=text,
-                    reply_markup=main_keyboard
-                )
-                logger.info("Полночное расписание (выходной с фото) успешно доставлено.")
-                return
-            except Exception as e:
-                logger.debug(f"Не удалось отправить фото расписания: {e}")
+    bindings = await get_all_chat_bindings()
+    # Если бесед в базе нет, используем legacy CHAT_ID
+    if not bindings and CHAT_ID:
+        try:
+            text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name="9ПО-43к")
+            await bot.send_message(chat_id=CHAT_ID, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+        except Exception as e:
+            logger.error(f"Ошибка полночной рассылки в legacy чат {CHAT_ID}: {e}")
 
-        await bot.send_message(
-            chat_id=CHAT_ID,
-            text=text,
-            reply_markup=main_keyboard,
-            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-        )
-        logger.info("Полночное расписание успешно доставлено.")
-    except Exception as e:
-        logger.error(f"Ошибка при отправке расписания в чат {CHAT_ID}: {e}", exc_info=True)
+    for b in bindings:
+        try:
+            text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name=b.group_name)
+            await bot.send_message(chat_id=b.chat_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+            await asyncio.sleep(0.05)
+        except Exception as e:
+            logger.warning(f"Ошибка полночной рассылки в чат {b.chat_id} ({b.group_name}): {e}")
 
 
 async def send_morning_alert():
     """
-    Задача, запускаемая по будням в 08:00:
-    короткое бодрое напоминание о первой паре на сегодня.
+    Задача по будням в 08:00: утреннее напоминание о 1-й паре студентам и привязанным беседам.
     """
-    if not bot or not CHAT_ID:
+    today = datetime.now(BOT_TZ).date()
+    if today.weekday() >= 5:
         return
 
-    now = datetime.now(BOT_TZ)
-    text = format_morning_alert(now.date())
-    if not text:
-        return  # На выходных пропускаем
-        
-    logger.info(f"Запуск утреннего напоминания на {now.date()} в чат {CHAT_ID}")
-    try:
-        if os.path.exists(MORNING_IMG):
+    # 1. Отправка в привязанные беседы
+    bindings = await get_all_chat_bindings()
+    if not bindings and CHAT_ID:
+        text = await get_formatted_morning_alert(today, group_name="9ПО-43к")
+        if text:
             try:
-                await bot.send_photo(
-                    chat_id=CHAT_ID,
-                    photo=types.FSInputFile(MORNING_IMG),
-                    caption=text,
-                    reply_markup=main_keyboard
-                )
-                logger.info("Утреннее напоминание (с фото) успешно доставлено.")
-                return
+                await bot.send_message(chat_id=CHAT_ID, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
             except Exception as e:
-                logger.debug(f"Не удалось отправить утреннее фото: {e}")
+                logger.error(f"Ошибка утренней рассылки в legacy чат {CHAT_ID}: {e}")
 
-        await bot.send_message(
-            chat_id=CHAT_ID,
-            text=text,
-            reply_markup=main_keyboard,
-            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-        )
-        logger.info("Утреннее напоминание успешно доставлено.")
-        
-        # Личная рассылка подписанным пользователям
-        for uid in get_users_with_setting("morning_alert"):
-            if uid == CHAT_ID:
-                continue
+    for b in bindings:
+        text = await get_formatted_morning_alert(today, group_name=b.group_name)
+        if text:
             try:
-                await bot.send_message(
-                    chat_id=uid,
-                    text=text,
-                    reply_markup=main_keyboard,
-                    link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-                )
+                await bot.send_message(chat_id=b.chat_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+                await asyncio.sleep(0.05)
+            except Exception as e:
+                logger.warning(f"Ошибка утренней рассылки в чат {b.chat_id} ({b.group_name}): {e}")
+
+    # 2. Персональная рассылка студентам
+    users = await get_users_for_notification("morning_alert")
+    for u in users:
+        text = await get_formatted_morning_alert(today, group_name=u.group_name or "9ПО-43к")
+        if text:
+            try:
+                await bot.send_message(chat_id=u.user_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+                await asyncio.sleep(0.05)
             except Exception:
                 pass
-    except Exception as e:
-        logger.error(f"Ошибка при отправке утреннего напоминания: {e}", exc_info=True)
 
 
 FIVE_MIN_BREAKS = {
@@ -285,10 +331,10 @@ FIVE_MIN_BREAKS = {
 
 async def send_five_minute_break(pair_num: int):
     """
-    Отправляет уведомление в группу о начале пятиминутного перерыва внутри пары.
-    Отправляется только по будням и только если пара сегодня есть по расписанию!
+    Отправляет уведомление о начале пятиминутного перерыва внутри пары.
+    Проверяет расписание каждой группы в БД и отправляет только если пара есть.
     """
-    if not bot or not CHAT_ID:
+    if not bot:
         return
 
     now = datetime.now(BOT_TZ)
@@ -296,72 +342,91 @@ async def send_five_minute_break(pair_num: int):
     if weekday >= 5:
         return
 
-    parity_code, parity_name = get_week_parity(now.date())
-    day_pairs = SCHEDULE.get(weekday, {})
-    pair_val = day_pairs.get(pair_num)
-    if not pair_val:
-        return
-
-    if pair_val.get("split"):
-        pair_info = pair_val["chislitel"] if parity_code == "chislitel" else pair_val["znamenatel"]
-    else:
-        pair_info = pair_val
-
-    if not pair_info:
-        return  # Пары нет по текущей четности (окно)
-
+    parity_code, _ = get_week_parity(now.date())
     break_data = FIVE_MIN_BREAKS.get(pair_num, {
         "start": "—", "end": "—", "resume": "—", "pair_end": "—", "tip": ""
     })
 
-    subject = html.escape(str(pair_info.get("subject", "Не указан")))
-    room = html.escape(str(pair_info.get("room", "—")))
-    teacher = html.escape(str(pair_info.get("teacher", "—")))
+    # 1. Отправка в привязанные беседы
+    bindings = await get_all_chat_bindings()
+    for b in bindings:
+        pairs = await get_lessons_for_day(b.group_name, weekday, parity_code)
+        reps = await get_replacements_for_date_and_group(now.date(), b.group_name)
+        if reps.get(pair_num, {}).get("type") == "cancel":
+            continue
+        p_info = pairs.get(pair_num)
+        if not p_info:
+            continue
 
-    text = (
-        f"🔔 <b>Звонок на пятиминутку! (Перерыв 5 минут) · {pair_num}-я пара</b>\n"
-        f"──────────────────────\n"
-        f"<blockquote>"
-        f"⏱ <b>Время перерыва:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
-        f"📚 <b>{subject}</b>\n"
-        f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>\n"
-        f"🔔 <i>Звонок на 2-ю половину пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
-        f"</blockquote>\n"
-        f"💡 <i>{break_data['tip']}</i>"
-    )
-
-    logger.info(f"Отправка уведомления о пятиминутке {pair_num}-й пары в чат {CHAT_ID}")
-    try:
-        await bot.send_message(
-            chat_id=CHAT_ID,
-            text=text,
-            reply_markup=main_keyboard,
-            link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+        subj = p_info.get("subject", "")
+        room = p_info.get("room", "—")
+        text = (
+            f"🔔 <b>Звонок на пятиминутку! (Перерыв 5 минут) · {pair_num}-я пара</b>\n"
+            f"──────────────────────\n"
+            f"<blockquote>"
+            f"⏱ <b>Время перерыва:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+            f"📚 <b>{html.escape(subj)}</b>\n"
+            f"📍 Кабинет: <code>{html.escape(room)}</code>\n"
+            f"🔔 <i>Звонок на 2-ю половину пары: в {break_data['resume']} (до {break_data['pair_end']})</i>"
+            f"</blockquote>\n"
+            f"💡 <i>{break_data['tip']}</i>"
         )
-        logger.info(f"Уведомление о пятиминутке {pair_num}-й пары успешно доставлено.")
-        
-        # Личная рассылка пользователям с включёнными пятиминутками
-        for uid in get_users_with_setting("five_min_breaks"):
-            if uid == CHAT_ID:
-                continue
-            try:
-                await bot.send_message(
-                    chat_id=uid,
-                    text=text,
-                    reply_markup=main_keyboard,
-                    link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-                )
-            except Exception:
-                pass
-    except Exception as e:
-        logger.error(f"Ошибка при отправке уведомления о пятиминутке: {e}", exc_info=True)
+        try:
+            await bot.send_message(chat_id=b.chat_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+            await asyncio.sleep(0.05)
+        except Exception:
+            pass
+
+    # 2. Личная рассылка пользователям с включёнными пятиминутками
+    users = await get_users_for_notification("five_min_breaks")
+    for u in users:
+        grp = u.group_name or "9ПО-43к"
+        pairs = await get_lessons_for_day(grp, weekday, parity_code)
+        reps = await get_replacements_for_date_and_group(now.date(), grp)
+        if reps.get(pair_num, {}).get("type") == "cancel":
+            continue
+        p_info = pairs.get(pair_num)
+        if not p_info:
+            continue
+
+        text = (
+            f"🔔 <b>Звонок на пятиминутку! · {pair_num}-я пара</b>\n"
+            f"──────────────────────\n"
+            f"<blockquote>"
+            f"⏱ <b>Перерыв:</b> <code>{break_data['start']} — {break_data['end']}</code>\n"
+            f"📚 <b>{html.escape(p_info.get('subject', ''))}</b> (каб. <code>{p_info.get('room', '—')}</code>)\n"
+            f"🔔 <i>Звонок на 2-ю половину: в {break_data['resume']}</i>"
+            f"</blockquote>"
+        )
+        try:
+            await bot.send_message(chat_id=u.user_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+            await asyncio.sleep(0.05)
+        except Exception:
+            pass
 
 
 @dp.message(CommandStart())
-async def handle_start(message: types.Message):
+async def handle_start(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    full_name = message.from_user.full_name or ""
+    
+    user, created = await get_or_create_user(user_id, username=username, full_name=full_name)
+    
+    if message.chat.type == "private" and (created or not user.group_name):
+        courses_kb = get_courses_keyboard()
+        await message.answer(
+            "👋 <b>Добро пожаловать в бот расписания колледжа!</b>\n\n"
+            "Для начала работы выберите ваш <b>курс</b>:",
+            reply_markup=courses_kb
+        )
+        return
+
+    grp = user.group_name or "9ПО-43к"
     parity_code, parity_name = get_week_parity(datetime.now(BOT_TZ).date())
     welcome_text = (
-        f"👋 <b>Добро пожаловать в бот расписания группы 9ПО-43к!</b>\n\n"
+        f"👋 <b>Добро пожаловать в бот расписания!</b>\n"
+        f"👥 <b>Ваша группа:</b> <code>{grp}</code>\n\n"
         f"🏷 <b>Текущая неделя:</b> {parity_name}\n\n"
         f"⏰ <b>Автоматические рассылки:</b>\n"
         f"▫️ <b>00:00</b> — детальное расписание на наступающий день\n"
@@ -371,7 +436,7 @@ async def handle_start(message: types.Message):
         f"• <b>Быстрый доступ</b> — пара сейчас, сегодня, завтра\n"
         f"• <b>🗓 Расписание 📂</b> — недели, выбор дня, чётность\n"
         f"• <b>🛠 Полезное 📂</b> — звонки, замены, СДО/макет, напоминания, преподаватели\n\n"
-        f"💬 <b>Инлайн-режим:</b> напишите <code>@aituraspisaniebot</code> в любом чате!\n\n"
+        f"⚙️ <i>Сменить группу можно в любой момент в «⚙️ Настройки»</i>\n\n"
         f"👇 <i>Используйте кнопки меню внизу или команды в меню [ / ]:</i>"
     )
     if os.path.exists(WELCOME_IMG):
@@ -388,10 +453,103 @@ async def handle_start(message: types.Message):
     await message.answer(welcome_text, reply_markup=main_keyboard)
 
 
+# -------------------------------------------------------------
+# Раздел: Выбор и смена учебной группы (FSM)
+# -------------------------------------------------------------
+@dp.message(Command("group"))
+@dp.callback_query(F.data == "user_change_group")
+async def handle_change_group_prompt(event: types.Message | types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    kb = get_courses_keyboard()
+    text = (
+        "🎓 <b>Выбор академической группы</b>\n"
+        "──────────────────────\n"
+        "Выберите ваш курс или введите название группы вручную:"
+    )
+    if isinstance(event, types.CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("sel_course_"))
+async def handle_select_course(call: types.CallbackQuery, state: FSMContext):
+    parts = call.data.split("_")
+    if len(parts) >= 3 and parts[2] == "back":
+        kb = get_courses_keyboard()
+        await call.message.edit_text(
+            "🎓 <b>Выбор курса:</b>\nВыберите ваш курс:",
+            reply_markup=kb
+        )
+        await call.answer()
+        return
+
+    course_num = int(parts[2])
+    groups = await get_all_groups(course=course_num)
+    group_names = [g.name for g in groups]
+    kb = get_groups_by_course_keyboard(course_num, group_names)
+    await call.message.edit_text(
+        f"🎓 <b>{course_num} курс:</b> Выберите вашу учебную группу:\n"
+        f"<i>(Если вашей группы нет в списке, вернитесь назад и нажмите «Ввести вручную»)</i>",
+        reply_markup=kb
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("sel_grp_"))
+async def handle_select_group_finish(call: types.CallbackQuery, state: FSMContext):
+    chosen_grp = call.data.replace("sel_grp_", "").strip()
+    user_id = call.from_user.id
+    await update_user_group(user_id, chosen_grp)
+    await state.clear()
+    await call.answer(f"Группа {chosen_grp} выбрана! ✅")
+    await call.message.answer(
+        f"✅ <b>Группа успешно сохранена: <code>{chosen_grp}</code>!</b>\n\n"
+        f"Теперь расписание (/today, /tomorrow, /week, /now) и персональные напоминания звонков "
+        f"настроены именно для группы <b>{chosen_grp}</b>.",
+        reply_markup=main_keyboard
+    )
+
+
+@dp.callback_query(F.data == "sel_group_manual")
+async def handle_select_group_manual(call: types.CallbackQuery, state: FSMContext):
+    await state.set_state(RegistrationState.waiting_manual_group)
+    await call.message.answer(
+        "✍️ <b>Ручной ввод группы:</b>\n\n"
+        "Напишите в ответ точное название вашей учебной группы (например: <code>9ПО-43к</code> или <code>9ВТ-21</code>):"
+    )
+    await call.answer()
+
+
+@dp.message(RegistrationState.waiting_manual_group)
+async def handle_manual_group_input(message: types.Message, state: FSMContext):
+    grp_input = (message.text or "").strip().upper()
+    if len(grp_input) < 2 or len(grp_input) > 20:
+        await message.answer("❌ Название группы должно быть от 2 до 20 символов. Попробуйте ещё раз:")
+        return
+
+    existing = await get_group_by_name(grp_input)
+    if not existing:
+        await add_group(grp_input, course=4)
+
+    await update_user_group(message.from_user.id, grp_input)
+    await state.clear()
+    await message.answer(
+        f"✅ <b>Группа успешно сохранена: <code>{grp_input}</code>!</b>\n\n"
+        f"Все расписания и звонки настроены под вашу группу.",
+        reply_markup=main_keyboard
+    )
+
+
 @dp.message(Command("now"))
 @dp.message(F.text == "⚡️ Какая пара сейчас?")
 async def handle_now(message: types.Message):
-    text = get_now_status()
+    grp = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_now_status(group_name=grp)
     refresh_kb = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [types.InlineKeyboardButton(text="🔄 Обновить статус", callback_data="refresh_now")]
@@ -402,7 +560,8 @@ async def handle_now(message: types.Message):
 
 @dp.callback_query(F.data == "refresh_now")
 async def handle_refresh_now_callback(call: types.CallbackQuery):
-    text = get_now_status()
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    text = await get_formatted_now_status(group_name=grp)
     refresh_kb = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [types.InlineKeyboardButton(text="🔄 Обновить статус", callback_data="refresh_now")]
@@ -423,7 +582,8 @@ async def handle_refresh_now_callback(call: types.CallbackQuery):
 async def handle_today(message: types.Message):
     now = datetime.now(BOT_TZ)
     current_time_str = now.strftime("%H:%M")
-    text = format_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str)
+    grp = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_day_schedule(now.date(), title_prefix="Расписание на сегодня", current_time_str=current_time_str, group_name=grp)
     nav_kb = get_day_nav_keyboard(now.date())
     
     if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
@@ -444,7 +604,8 @@ async def handle_today(message: types.Message):
 @dp.message(F.text == "🔜 Завтра")
 async def handle_tomorrow(message: types.Message):
     tomorrow = datetime.now(BOT_TZ).date() + timedelta(days=1)
-    text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
+    grp = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_day_schedule(tomorrow, title_prefix="Расписание на завтра", group_name=grp)
     nav_kb = get_day_nav_keyboard(tomorrow)
     
     if "Пар нет!" in text and os.path.exists(WEEKEND_IMG):
@@ -510,7 +671,8 @@ async def handle_back_to_main(message: types.Message):
 async def handle_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     monday = today - timedelta(days=today.weekday())
-    text = format_week_schedule(monday)
+    grp = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_week_schedule(monday, group_name=grp)
     await message.answer(text, reply_markup=schedule_keyboard)
 
 
@@ -519,7 +681,8 @@ async def handle_week(message: types.Message):
 async def handle_next_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     next_monday = today - timedelta(days=today.weekday()) + timedelta(days=7)
-    text = format_week_schedule(next_monday)
+    grp = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_week_schedule(next_monday, group_name=grp)
     await message.answer(text, reply_markup=schedule_keyboard)
 
 
@@ -542,7 +705,8 @@ async def handle_show_day_callback(call: types.CallbackQuery):
     day_idx = int(parts[1])
     parity_code = parts[2]
     
-    text = format_weekday_by_index(day_idx, parity_code)
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    text = await get_formatted_weekday_by_index(day_idx, parity_code, group_name=grp)
     kb = get_back_to_days_keyboard(parity_code)
     try:
         await call.message.edit_text(text, reply_markup=kb)
@@ -639,16 +803,57 @@ async def handle_navdate_callback(call: types.CallbackQuery):
     else:
         prefix = "Расписание на"
 
-    text = format_day_schedule(target_date, title_prefix=prefix, current_time_str=current_time_str)
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    text = await get_formatted_day_schedule(target_date, title_prefix=prefix, current_time_str=current_time_str, group_name=grp)
     nav_kb = get_day_nav_keyboard(target_date)
+    is_weekend = "Пар нет!" in text and os.path.exists(WEEKEND_IMG)
     
-    try:
-        await call.message.edit_text(text, reply_markup=nav_kb)
-    except TelegramBadRequest as e:
-        if "message is not modified" not in str(e).lower():
-            logger.debug(f"Navdate error: {e}")
-    except Exception:
-        pass
+    if call.message.photo:
+        if is_weekend:
+            try:
+                await call.message.edit_caption(caption=text, reply_markup=nav_kb)
+                await call.answer()
+                return
+            except TelegramBadRequest as e:
+                if "message is not modified" in str(e).lower():
+                    await call.answer()
+                    return
+            except Exception:
+                pass
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
+        if is_weekend:
+            await call.message.answer_photo(photo=types.FSInputFile(WEEKEND_IMG), caption=text, reply_markup=nav_kb)
+        else:
+            await call.message.answer(text, reply_markup=nav_kb)
+    else:
+        if is_weekend:
+            try:
+                await call.message.delete()
+                await call.message.answer_photo(photo=types.FSInputFile(WEEKEND_IMG), caption=text, reply_markup=nav_kb)
+                await call.answer()
+                return
+            except Exception:
+                pass
+        try:
+            await call.message.edit_text(text, reply_markup=nav_kb)
+        except TelegramBadRequest as e:
+            if "message is not modified" not in str(e).lower():
+                logger.debug(f"Navdate error: {e}")
+                try:
+                    await call.message.delete()
+                except Exception:
+                    pass
+                await call.message.answer(text, reply_markup=nav_kb)
+        except Exception:
+            try:
+                await call.message.delete()
+            except Exception:
+                pass
+            await call.message.answer(text, reply_markup=nav_kb)
+            
     await call.answer()
 
 
@@ -657,16 +862,25 @@ async def handle_nav_chooseday_callback(call: types.CallbackQuery):
     today = datetime.now(BOT_TZ).date()
     curr_parity, parity_name = get_week_parity(today)
     kb = get_days_inline_keyboard(curr_parity)
-    try:
-        await call.message.edit_text(
-            f"🗓 <b>Выберите день недели:</b>\n"
-            f"Отображаются пары для: <b>{parity_name}</b>",
-            reply_markup=kb
-        )
-    except Exception:
-        pass
+    text = (
+        f"🗓 <b>Выберите день недели:</b>\n"
+        f"Отображаются пары для: <b>{parity_name}</b>"
+    )
+    if call.message.photo:
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
+        await call.message.answer(text, reply_markup=kb)
+    else:
+        try:
+            await call.message.edit_text(text, reply_markup=kb)
+        except TelegramBadRequest as e:
+            if "message is not modified" not in str(e).lower():
+                await call.message.answer(text, reply_markup=kb)
+        except Exception:
+            await call.message.answer(text, reply_markup=kb)
     await call.answer()
-
 
 @dp.message(Command("teachers"))
 @dp.message(F.text == "👨‍🏫 Преподаватели")
@@ -799,8 +1013,8 @@ async def handle_nav_today_callback(call: types.CallbackQuery):
 
 
 async def check_admin_privileges(user_id: int, chat: types.Chat | None = None) -> bool:
-    """Проверяет права админа бота или администратора текущей группы."""
-    if ADMIN_ID and user_id == ADMIN_ID:
+    """Проверяет права админа бота или создателя/администратора текущего чата."""
+    if await is_admin(user_id):
         return True
     if chat and chat.type in ("group", "supergroup"):
         try:
@@ -809,8 +1023,6 @@ async def check_admin_privileges(user_id: int, chat: types.Chat | None = None) -
                 return True
         except Exception:
             pass
-    if not ADMIN_ID:
-        return True
     return False
 
 
@@ -1013,9 +1225,13 @@ async def handle_download_maket(event: types.Message | types.CallbackQuery):
 async def handle_user_settings(message: types.Message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name or ""
-    is_admin = await check_admin_privileges(user_id, message.chat)
-    text = format_user_settings_text(user_id, user_name)
-    kb = get_user_settings_keyboard(user_id, is_admin=is_admin)
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+    role_disp, _ = await get_user_role_display(user_id)
+    is_adm = await is_admin(user_id)
+    is_star = await is_starosta_or_zam(user_id, grp)
+    text = format_user_settings_text(user_id, user_name, group_name=grp, role_display=role_disp)
+    kb = get_user_settings_keyboard(user_id, is_admin=is_adm, is_starosta=is_star, group_name=grp)
     await message.answer(text, reply_markup=kb)
 
 
@@ -1024,6 +1240,7 @@ async def handle_toggle_user_setting(call: types.CallbackQuery):
     key = call.data.replace("toggle_set_", "")
     user_id = call.from_user.id
     new_val = toggle_user_setting(user_id, key)
+    await update_user_setting(user_id, key, new_val)
     
     titles = {
         "remind_10min": "Колокольчик за 10 мин",
@@ -1035,9 +1252,13 @@ async def handle_toggle_user_setting(call: types.CallbackQuery):
     await call.answer(f"{title}: {state_str}")
 
     user_name = call.from_user.first_name or ""
-    is_admin = await check_admin_privileges(user_id, call.message.chat)
-    text = format_user_settings_text(user_id, user_name)
-    kb = get_user_settings_keyboard(user_id, is_admin=is_admin)
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+    role_disp, _ = await get_user_role_display(user_id)
+    is_adm = await is_admin(user_id)
+    is_star = await is_starosta_or_zam(user_id, grp)
+    text = format_user_settings_text(user_id, user_name, group_name=grp, role_display=role_disp)
+    kb = get_user_settings_keyboard(user_id, is_admin=is_adm, is_starosta=is_star, group_name=grp)
     try:
         await call.message.edit_text(text, reply_markup=kb)
     except TelegramBadRequest as e:
@@ -1080,17 +1301,22 @@ async def handle_refresh_command(message: types.Message):
 @dp.callback_query(F.data == "admin_back_to_main")
 async def handle_admin_panel(event: types.Message | types.CallbackQuery):
     user_id = event.from_user.id
-    chat = event.message.chat if isinstance(event, types.CallbackQuery) else event.chat
     
-    if not await check_admin_privileges(user_id, chat):
-        msg = "⛔️ Панель администратора доступна только доверенным пользователям."
+    if not await is_admin(user_id):
+        msg = "⛔️ Панель администратора доступна только главным администраторам бота."
         if isinstance(event, types.CallbackQuery):
             await event.answer(msg, show_alert=True)
         else:
             await event.answer(msg)
         return
 
-    text = get_admin_dashboard_text(BOT_START_TIME)
+    all_grps = await get_all_groups()
+    users_cnt = await count_all_users()
+    text = get_admin_dashboard_text(
+        start_time=BOT_START_TIME,
+        total_users_db=users_cnt,
+        total_groups_db=len(all_grps)
+    )
     kb = get_admin_main_keyboard()
 
     if isinstance(event, types.CallbackQuery):
@@ -1229,49 +1455,73 @@ async def handle_admin_broadcast_menu(call: types.CallbackQuery):
 
 @dp.message(Command("broadcast"))
 async def handle_broadcast_command(message: types.Message):
-    if not await check_admin_privileges(message.from_user.id, message.chat):
+    if not await is_admin(message.from_user.id):
         await message.answer("⛔️ Эта команда доступна только администраторам бота.")
         return
 
-    parts = message.text.split(maxsplit=1)
+    parts = message.text.split(maxsplit=2)
     if len(parts) < 2 or not parts[1].strip():
         await message.answer(
-            "ℹ️ <b>Формат рассылки:</b>\n<code>/broadcast &lt;текст объявления&gt;</code>",
+            "ℹ️ <b>Формат рассылки:</b>\n"
+            "▫️ Всем: <code>/broadcast &lt;текст сообщения&gt;</code>\n"
+            "▫️ Или конкретной группе: <code>/broadcast &lt;группа&gt; &lt;текст сообщения&gt;</code>\n\n"
+            "<i>Пример: <code>/broadcast 9ПО-43к Завтра первая пара отменена!</code></i>",
             reply_markup=main_keyboard
         )
         return
 
+    first_arg = parts[1].strip()
+    target_group = None
+    existing_grp = await get_group_by_name(first_arg)
+    if existing_grp and len(parts) >= 3:
+        target_group = existing_grp.name
+        message_body = parts[2].strip()
+    else:
+        message_body = message.text.split(maxsplit=1)[1].strip()
+
+    title_grp = f"ДЛЯ ГРУППЫ {target_group}" if target_group else "ДЛЯ ВСЕХ СТУДЕНТОВ"
     broadcast_text = (
-        f"📢 <b>ОБЪЯВЛЕНИЕ ДЛЯ ГРУППЫ 9ПО-43к</b>\n"
+        f"📢 <b>ОБЪЯВЛЕНИЕ {title_grp}</b>\n"
         f"──────────────────────\n"
-        f"{parts[1].strip()}\n\n"
+        f"{message_body}\n\n"
         f"👤 <i>От: {html.escape(message.from_user.full_name or 'Администрация')}</i>"
     )
 
-    status_msg = await message.answer("⏳ <i>Рассылаю сообщение...</i>")
+    status_msg = await message.answer(f"⏳ <i>Рассылаю сообщение ({title_grp})...</i>")
     sent_count = 0
     fail_count = 0
 
-    if CHAT_ID:
-        try:
-            await bot.send_message(
-                chat_id=CHAT_ID,
-                text=broadcast_text,
-                link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-            )
-            sent_count += 1
-        except Exception as e:
-            logger.warning(f"Ошибка broadcast в группу {CHAT_ID}: {e}")
-            fail_count += 1
+    if target_group:
+        bound_chats = await get_chats_for_group(target_group)
+        for b in bound_chats:
+            try:
+                await bot.send_message(chat_id=b.chat_id, text=broadcast_text, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+                sent_count += 1
+                await asyncio.sleep(0.05)
+            except Exception:
+                fail_count += 1
+    else:
+        all_chats = await get_all_chat_bindings()
+        for b in all_chats:
+            try:
+                await bot.send_message(chat_id=b.chat_id, text=broadcast_text, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+                sent_count += 1
+                await asyncio.sleep(0.05)
+            except Exception:
+                fail_count += 1
 
-    all_users = load_all_settings()
-    for uid_str in all_users.keys():
+    if target_group:
+        target_users = await get_users_by_group(target_group)
+    else:
+        all_users_settings = load_all_settings()
+        target_users = [types.SimpleNamespace(user_id=int(uid)) for uid in all_users_settings.keys() if uid.isdigit()]
+
+    for u in target_users:
+        if u.user_id == message.from_user.id:
+            continue
         try:
-            uid = int(uid_str)
-            if uid == CHAT_ID or uid == message.from_user.id:
-                continue
             await bot.send_message(
-                chat_id=uid,
+                chat_id=u.user_id,
                 text=broadcast_text,
                 link_preview_options=types.LinkPreviewOptions(is_disabled=True)
             )
@@ -1282,9 +1532,514 @@ async def handle_broadcast_command(message: types.Message):
 
     await status_msg.edit_text(
         f"✅ <b>Рассылка успешно завершена!</b>\n\n"
+        f"▫️ Получатели: <b>{title_grp}</b>\n"
         f"▫️ Доставлено: <b>{sent_count}</b> получателям\n"
         f"▫️ Ошибок: <b>{fail_count}</b>"
     )
+
+
+# -------------------------------------------------------------
+# Раздел: Привязка бесед Telegram к академическим группам
+# -------------------------------------------------------------
+@dp.message(Command("bind"))
+async def handle_bind_command(message: types.Message):
+    if message.chat.type not in ("group", "supergroup"):
+        await message.answer(
+            "ℹ️ Команда <code>/bind</code> используется в групповых чатах (беседах).\n"
+            "Добавьте бота в беседу вашей группы и отправьте:\n"
+            "<code>/bind &lt;название группы&gt;</code>"
+        )
+        return
+
+    user_id = message.from_user.id
+    is_chat_admin = False
+    try:
+        member = await message.chat.get_member(user_id)
+        if member.status in ("creator", "administrator"):
+            is_chat_admin = True
+    except Exception:
+        pass
+
+    bot_admin = await is_admin(user_id)
+    if not (is_chat_admin or bot_admin or await is_starosta_or_zam(user_id)):
+        await message.answer("⛔️ Привязывать беседу к группе могут только администраторы чата или старосты групп.")
+        return
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2 or not parts[1].strip():
+        await message.answer(
+            "ℹ️ <b>Укажите название группы для привязки:</b>\n"
+            "<code>/bind &lt;название группы&gt;</code>\n"
+            "<i>Пример: <code>/bind 9ПО-43к</code></i>"
+        )
+        return
+
+    target_group = parts[1].strip()
+    grp_obj = await get_group_by_name(target_group)
+    if not grp_obj:
+        await add_group(target_group, course=4)
+
+    await bind_chat_to_group(
+        chat_id=message.chat.id,
+        chat_title=message.chat.title or "Групповой чат",
+        group_name=target_group,
+        user_id=user_id
+    )
+
+    await message.answer(
+        f"✅ <b>Беседа успешно привязана к группе: <code>{target_group}</code>!</b>\n\n"
+        f"Теперь команды расписания (/today, /tomorrow, /week, /now) и автоматические рассылки звонков "
+        f"работают для группы <b>{target_group}</b>."
+    )
+
+
+@dp.message(Command("unbind"))
+async def handle_unbind_command(message: types.Message):
+    if message.chat.type not in ("group", "supergroup"):
+        await message.answer("ℹ️ Команда <code>/unbind</code> используется в групповых чатах.")
+        return
+
+    user_id = message.from_user.id
+    bot_admin = await is_admin(user_id)
+    is_chat_admin = False
+    try:
+        member = await message.chat.get_member(user_id)
+        if member.status in ("creator", "administrator"):
+            is_chat_admin = True
+    except Exception:
+        pass
+
+    if not (is_chat_admin or bot_admin):
+        await message.answer("⛔️ Отвязать беседу могут только администраторы чата.")
+        return
+
+    curr_group = await get_chat_group(message.chat.id)
+    if not curr_group:
+        await message.answer("ℹ️ Эта беседа ещё не была привязана ни к какой группе.")
+        return
+
+    from sqlalchemy import delete
+    from db.models import ChatBinding
+    from db.database import async_session
+    async with async_session() as session:
+        await session.execute(delete(ChatBinding).where(ChatBinding.chat_id == message.chat.id))
+        await session.commit()
+
+    await message.answer(f"✅ Беседа отвязана от группы <b>{curr_group}</b>.")
+
+
+@dp.message(Command("chat_info"))
+async def handle_chat_info_command(message: types.Message):
+    if message.chat.type in ("group", "supergroup"):
+        grp = await get_chat_group(message.chat.id)
+        if grp:
+            await message.answer(f"💬 <b>Привязка чата:</b>\nГруппа: <code>{grp}</code>\nID чата: <code>{message.chat.id}</code>")
+        else:
+            await message.answer(f"💬 Беседа ещё не привязана к группе.\nИспользуйте <code>/bind &lt;группа&gt;</code>.")
+    else:
+        user = await get_user(message.from_user.id)
+        grp = user.group_name if user else "9ПО-43к"
+        role_disp, _ = await get_user_role_display(message.from_user.id)
+        await message.answer(f"👤 <b>Ваш профиль:</b>\n👥 Группа: <code>{grp}</code>\n🎖 Роль: {role_disp}\nID: <code>{message.from_user.id}</code>")
+
+
+# -------------------------------------------------------------
+# Раздел: Панель старосты и управление расписанием группы
+# -------------------------------------------------------------
+@dp.message(Command("starosta"))
+@dp.callback_query(F.data == "open_starosta_panel")
+async def handle_starosta_panel(event: types.Message | types.CallbackQuery):
+    user_id = event.from_user.id
+    chat = event.message.chat if isinstance(event, types.CallbackQuery) else event.chat
+    grp = await resolve_target_group(chat, event.from_user)
+
+    if not (await is_starosta_or_zam(user_id, grp) or await is_admin(user_id)):
+        msg = "⛔️ Панель старосты доступна только старостам, их заместителям и администраторам бота."
+        if isinstance(event, types.CallbackQuery):
+            await event.answer(msg, show_alert=True)
+        else:
+            await event.answer(msg)
+        return
+
+    role_disp, _ = await get_user_role_display(user_id)
+    text = get_starosta_dashboard_text(user_id, role_disp, grp)
+    kb = get_starosta_panel_keyboard(grp)
+
+    if isinstance(event, types.CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "starosta_back_to_settings")
+async def handle_starosta_back(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+    role_disp, _ = await get_user_role_display(user_id)
+    is_adm = await is_admin(user_id)
+    is_star = await is_starosta_or_zam(user_id, grp)
+    text = format_user_settings_text(user_id, call.from_user.first_name or "", group_name=grp, role_display=role_disp)
+    kb = get_user_settings_keyboard(user_id, is_admin=is_adm, is_starosta=is_star, group_name=grp)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data == "starosta_change_room")
+async def handle_starosta_change_room_btn(call: types.CallbackQuery):
+    await call.message.answer(
+        "🚪 <b>Смена аудитории пары:</b>\n\n"
+        "Используйте команду:\n"
+        "<code>/edit_room &lt;день 1-6&gt; &lt;пара 1-4&gt; &lt;кабинет&gt;</code>\n\n"
+        "<i>Пример: <code>/edit_room 1 2 305</code> (Понедельник, 2 пара, каб. 305)</i>"
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data == "starosta_add_zam")
+async def handle_starosta_add_zam_btn(call: types.CallbackQuery):
+    await call.message.answer(
+        "⚠️ <b>Добавление замены:</b>\n\n"
+        "Используйте команду:\n"
+        "<code>/add_zam &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt; &lt;предмет&gt; [кабинет] [преподаватель]</code>\n\n"
+        "<i>Пример: <code>/add_zam 2026-10-20 2 Информатика 204 Иванов И.И.</code></i>"
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data == "starosta_cancel_pair")
+async def handle_starosta_cancel_pair_btn(call: types.CallbackQuery):
+    await call.message.answer(
+        "❌ <b>Отмена пары:</b>\n\n"
+        "Используйте команду:\n"
+        "<code>/cancel_pair &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt; [причина]</code>\n\n"
+        "<i>Пример: <code>/cancel_pair 2026-10-20 3 Болезнь преподавателя</code></i>"
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data == "starosta_del_zam")
+async def handle_starosta_del_zam_btn(call: types.CallbackQuery):
+    await call.message.answer(
+        "🗑 <b>Удаление замены:</b>\n\n"
+        "Используйте команду:\n"
+        "<code>/del_zam &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt;</code>\n\n"
+        "<i>Пример: <code>/del_zam 2026-10-20 2</code></i>"
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data == "starosta_bind_info")
+async def handle_starosta_bind_info_btn(call: types.CallbackQuery):
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    await call.message.answer(
+        f"💬 <b>Привязка беседы Telegram к группе {grp}:</b>\n\n"
+        f"1. Добавьте бота в групповой чат вашей группы.\n"
+        f"2. Сделайте бота администратором беседы.\n"
+        f"3. Отправьте в беседе команду: <code>/bind {grp}</code>\n\n"
+        f"После этого бот начнёт присылать звонки и расписание в вашу беседу!"
+    )
+    await call.answer()
+
+
+@dp.message(Command("edit_room"))
+async def handle_edit_room_command(message: types.Message):
+    user_id = message.from_user.id
+    grp = await resolve_target_group(message.chat, message.from_user)
+
+    if not await can_manage_group(user_id, grp):
+        await message.answer(f"⛔️ Вы не можете менять расписание группы <b>{grp}</b>.")
+        return
+
+    parts = message.text.split(maxsplit=3)
+    if len(parts) < 4:
+        await message.answer(
+            "ℹ️ <b>Формат:</b>\n"
+            "<code>/edit_room &lt;день 1-6&gt; &lt;пара 1-4&gt; &lt;кабинет&gt;</code>\n"
+            "<i>Пример: <code>/edit_room 1 2 305</code></i>"
+        )
+        return
+
+    day_idx = parse_weekday_input(parts[1])
+    if day_idx is None:
+        await message.answer("❌ Неверный день недели. Укажите число 1-6 (1=Пн, 2=Вт, ..., 6=Сб) или название.")
+        return
+
+    if not parts[2].isdigit() or not (1 <= int(parts[2]) <= 4):
+        await message.answer("❌ Номер пары должен быть от 1 до 4.")
+        return
+    pair_num = int(parts[2])
+    new_room = parts[3].strip()
+
+    updated = await update_lesson_room(grp, day_idx, pair_num, new_room)
+    day_name = DAYS_NAMES_RU[day_idx]
+    if updated:
+        await message.answer(f"✅ Аудитория для <b>{pair_num}-й пары</b> ({day_name}) группы <b>{grp}</b> успешно обновлена на: <code>{new_room}</code>!")
+    else:
+        await message.answer(f"⚠️ Пары №{pair_num} в день {day_name} для группы {grp} не найдено в базе расписания.")
+
+
+@dp.message(Command("add_zam"))
+async def handle_add_zam_command(message: types.Message):
+    user_id = message.from_user.id
+    grp = await resolve_target_group(message.chat, message.from_user)
+
+    if not await can_manage_group(user_id, grp):
+        await message.answer(f"⛔️ Вы не можете добавлять замены для группы <b>{grp}</b>.")
+        return
+
+    parts = message.text.split(maxsplit=4)
+    if len(parts) < 4:
+        await message.answer(
+            "ℹ️ <b>Формат:</b>\n"
+            "<code>/add_zam &lt;дата&gt; &lt;пара 1-4&gt; &lt;предмет&gt; [кабинет] [преподаватель]</code>\n"
+            "<i>Пример: <code>/add_zam 2026-10-20 2 Информатика 204 Иванов И.И.</code></i>"
+        )
+        return
+
+    d_obj = parse_date_input(parts[1])
+    if not d_obj:
+        await message.answer("❌ Неверный формат даты. Используйте ГГГГ-ММ-ДД (или сегодня/завтра).")
+        return
+
+    if not parts[2].isdigit() or not (1 <= int(parts[2]) <= 4):
+        await message.answer("❌ Номер пары должен быть от 1 до 4.")
+        return
+    pair_num = int(parts[2])
+
+    rest = parts[3]
+    if len(parts) == 5:
+        rest = f"{parts[3]} {parts[4]}"
+    
+    tokens = rest.split()
+    room = "—"
+    teacher = "—"
+    subj = rest
+    if len(tokens) >= 3 and tokens[-2].isdigit():
+        room = tokens[-2]
+        teacher = tokens[-1]
+        subj = " ".join(tokens[:-2])
+    elif len(tokens) >= 2 and tokens[-1].isdigit():
+        room = tokens[-1]
+        subj = " ".join(tokens[:-1])
+
+    await add_replacement_record(
+        target_date=d_obj,
+        pair_num=pair_num,
+        action_type="replace",
+        subject=subj,
+        room=room,
+        teacher=teacher,
+        raw_text=rest,
+        group_name=grp,
+        created_by=user_id
+    )
+    add_replacement(d_obj, pair_num, "replace", raw_text=rest, subject=subj, room=room, teacher=teacher)
+    await message.answer(
+        f"✅ <b>Замена успешно добавлена!</b>\n\n"
+        f"📅 Дата: <b>{d_obj.strftime('%d.%m.%Y')}</b>\n"
+        f"🔢 Пара: <b>№{pair_num}</b>\n"
+        f"👥 Группа: <b>{grp}</b>\n"
+        f"📚 Предмет: <b>{html.escape(subj)}</b>\n"
+        f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>"
+    )
+
+
+@dp.message(Command("cancel_pair"))
+async def handle_cancel_pair_command(message: types.Message):
+    user_id = message.from_user.id
+    grp = await resolve_target_group(message.chat, message.from_user)
+
+    if not await can_manage_group(user_id, grp):
+        await message.answer(f"⛔️ Вы не можете отменять пары для группы <b>{grp}</b>.")
+        return
+
+    parts = message.text.split(maxsplit=3)
+    if len(parts) < 3:
+        await message.answer(
+            "ℹ️ <b>Формат:</b>\n"
+            "<code>/cancel_pair &lt;дата&gt; &lt;пара 1-4&gt; [причина]</code>\n"
+            "<i>Пример: <code>/cancel_pair 2026-10-20 3 Болезнь преподавателя</code></i>"
+        )
+        return
+
+    d_obj = parse_date_input(parts[1])
+    if not d_obj:
+        await message.answer("❌ Неверный формат даты.")
+        return
+
+    if not parts[2].isdigit() or not (1 <= int(parts[2]) <= 4):
+        await message.answer("❌ Номер пары должен быть от 1 до 4.")
+        return
+    pair_num = int(parts[2])
+    reason = parts[3].strip() if len(parts) > 3 else "Отмена пары"
+
+    await add_replacement_record(
+        target_date=d_obj,
+        pair_num=pair_num,
+        action_type="cancel",
+        raw_text=reason,
+        group_name=grp,
+        created_by=user_id
+    )
+    add_replacement(d_obj, pair_num, "cancel", raw_text=reason)
+    await message.answer(
+        f"🚫 <b>Пара успешно отменена!</b>\n\n"
+        f"📅 Дата: <b>{d_obj.strftime('%d.%m.%Y')}</b>\n"
+        f"🔢 Пара: <b>№{pair_num}</b>\n"
+        f"👥 Группа: <b>{grp}</b>\n"
+        f"ℹ️ Причина: <i>{html.escape(reason)}</i>"
+    )
+
+
+@dp.message(Command("del_zam"))
+async def handle_del_zam_command(message: types.Message):
+    user_id = message.from_user.id
+    grp = await resolve_target_group(message.chat, message.from_user)
+
+    if not await can_manage_group(user_id, grp):
+        await message.answer(f"⛔️ Вы не можете удалять замены для группы <b>{grp}</b>.")
+        return
+
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer("ℹ️ <b>Формат:</b> <code>/del_zam &lt;дата&gt; &lt;пара 1-4&gt;</code>")
+        return
+
+    d_obj = parse_date_input(parts[1])
+    if not d_obj:
+        await message.answer("❌ Неверный формат даты.")
+        return
+
+    if not parts[2].isdigit():
+        await message.answer("❌ Номер пары должен быть числом.")
+        return
+    pair_num = int(parts[2])
+
+    deleted = await delete_replacement_record(d_obj, pair_num, group_name=grp)
+    delete_replacement(d_obj, pair_num)
+    if deleted:
+        await message.answer(f"✅ Замена на <b>{d_obj.strftime('%d.%m.%Y')}</b> (пара №{pair_num}) для группы {grp} удалена.")
+    else:
+        await message.answer(f"ℹ️ Замена не найдена.")
+
+
+@dp.message(Command("set_role"))
+async def handle_set_role_command(message: types.Message):
+    if not await is_admin(message.from_user.id):
+        await message.answer("⛔️ Эта команда доступна только администраторам бота.")
+        return
+
+    parts = message.text.split()
+    if len(parts) < 3:
+        await message.answer(
+            "ℹ️ <b>Формат назначения роли:</b>\n"
+            "<code>/set_role &lt;@username или user_id&gt; &lt;роль&gt; [группа]</code>\n\n"
+            "Доступные роли: <code>student</code>, <code>zam_starosty</code>, <code>starosta</code>, <code>admin</code>\n"
+            "<i>Пример: <code>/set_role @ivanov starosta 9ПО-43к</code></i>"
+        )
+        return
+
+    target_user_str = parts[1].strip()
+    role_str = parts[2].strip().lower()
+    valid_roles = {"student", "zam_starosty", "starosta", "admin"}
+    if role_str not in valid_roles:
+        await message.answer(f"❌ Неверная роль. Выберите одну из: {', '.join(valid_roles)}")
+        return
+
+    group_str = parts[3].strip() if len(parts) > 3 else None
+
+    target_user = None
+    if target_user_str.isdigit():
+        target_user = await get_user(int(target_user_str))
+    else:
+        target_user = await get_user_by_username(target_user_str)
+
+    if not target_user:
+        await message.answer(f"❌ Пользователь «{html.escape(target_user_str)}» не найден в базе бота. Попросите его сначала написать /start боту.")
+        return
+
+    await update_user_role(target_user.user_id, role_str)
+    if group_str:
+        await update_user_group(target_user.user_id, group_str)
+
+    roles_ru = {
+        "student": "Студент",
+        "zam_starosty": "Заместитель старосты",
+        "starosta": "Староста",
+        "admin": "Администратор"
+    }
+    await message.answer(
+        f"✅ <b>Роль успешно обновлена!</b>\n\n"
+        f"👤 Пользователь: <b>{target_user.full_name or target_user.username or target_user.user_id}</b>\n"
+        f"🎖 Новая роль: <b>{roles_ru.get(role_str, role_str)}</b>\n"
+        f"👥 Группа: <b>{group_str or target_user.group_name or '9ПО-43к'}</b>"
+    )
+
+
+@dp.message(Command("my_role"))
+async def handle_my_role_command(message: types.Message):
+    role_disp, grp = await get_user_role_display(message.from_user.id)
+    await message.answer(
+        f"👤 <b>Информация о вашем профиле:</b>\n\n"
+        f"🎖 <b>Роль:</b> {role_disp}\n"
+        f"👥 <b>Группа:</b> <code>{grp or 'Не выбрана'}</code>\n"
+        f"🆔 <b>ID:</b> <code>{message.from_user.id}</code>"
+    )
+
+
+@dp.message(Command("roles"))
+@dp.message(Command("starostas"))
+@dp.callback_query(F.data == "admin_roles_menu")
+async def handle_roles_command(event: types.Message | types.CallbackQuery):
+    user_id = event.from_user.id
+    if not await is_admin(user_id):
+        msg = "⛔️ Доступно только администраторам бота."
+        if isinstance(event, types.CallbackQuery):
+            await event.answer(msg, show_alert=True)
+        else:
+            await event.answer(msg)
+        return
+
+    from sqlalchemy import select
+    from db.models import User
+    from db.database import async_session
+
+    async with async_session() as session:
+        stmt = select(User).where(User.role.in_(["admin", "starosta", "zam_starosty"])).order_by(User.role, User.group_name)
+        res = await session.execute(stmt)
+        officers = res.scalars().all()
+
+    lines = ["👥 <b>Администраторы и старосты колледжа:</b>\n──────────────────────"]
+    if ADMIN_IDS:
+        lines.append(f"👑 <b>Superadmins (.env):</b> <code>{', '.join(map(str, sorted(list(ADMIN_IDS))))}</code>\n")
+
+    if not officers:
+        lines.append("<i>В базе данных пока нет назначенных старост. Используйте /set_role</i>")
+    else:
+        for u in officers:
+            u_name = f"@{u.username}" if u.username else (u.full_name or str(u.user_id))
+            lines.append(f"• <b>{u.role.upper()}</b> | {u_name} | Группа: <code>{u.group_name or '—'}</code> (ID: <code>{u.user_id}</code>)")
+
+    lines.append("\n💡 <i>Назначить старосту: <code>/set_role &lt;@username&gt; starosta &lt;группа&gt;</code></i>")
+    text = "\n".join(lines)
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад в админку", callback_data="admin_back_to_main")]])
+
+    if isinstance(event, types.CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=back_kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=back_kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=back_kb)
 
 
 @dp.callback_query(F.data == "admin_tests_menu")
@@ -1956,6 +2711,12 @@ async def main():
 
     try:
         logger.info("Запуск бота и планировщика APScheduler...")
+        
+        # Инициализация базы данных и авто-миграция
+        from db.database import init_db
+        from db.migration import run_migration
+        await init_db()
+        await run_migration()
         
         await register_bot_commands(bot)
 

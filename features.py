@@ -17,7 +17,11 @@ def get_progress_bar(percentage: float, length: int = 10) -> str:
     return "▓" * filled + "░" * (length - filled)
 
 
-def get_now_status(now_dt: datetime | None = None) -> str:
+def get_now_status(
+    now_dt: datetime | None = None,
+    group_name: str | None = None,
+    custom_pairs: dict[int, dict] | None = None
+) -> str:
     """
     Определяет текущий статус занятий:
     - какая пара идёт прямо сейчас (с прогресс-баром и оставшимися минутами)
@@ -32,11 +36,13 @@ def get_now_status(now_dt: datetime | None = None) -> str:
     curr_time_str = now_dt.strftime("%H:%M")
     curr_minutes = now_dt.hour * 60 + now_dt.minute
     parity_code, parity_name = get_week_parity(now_dt.date())
+    target_group = group_name or GROUP_NAME
 
     header = (
         f"⚡️ <b>Статус занятий прямо сейчас</b>\n"
         f"🕒 Время: <b>{curr_time_str}</b> · {day_name}\n"
         f"🏷 Неделя: <b>{parity_name}</b>\n"
+        f"👥 Группа: <code>{target_group}</code>\n"
         "──────────────────────\n"
     )
 
@@ -48,22 +54,25 @@ def get_now_status(now_dt: datetime | None = None) -> str:
             "👉 Нажмите <b>«🔜 Завтра»</b> или <b>«🗓 Текущая неделя»</b> для расписания."
         )
 
-    day_schedule = SCHEDULE.get(weekday, {})
-    # Собираем актуальные пары на сегодня
-    today_pairs = {}
-    for num in sorted(day_schedule.keys()):
-        pair = day_schedule[num]
-        if pair.get("split"):
-            info = pair["chislitel"] if parity_code == "chislitel" else pair["znamenatel"]
-        else:
-            info = pair
-        if info:
-            today_pairs[num] = info
+    if custom_pairs is not None:
+        today_pairs = custom_pairs
+    else:
+        day_schedule = SCHEDULE.get(weekday, {})
+        # Собираем актуальные пары на сегодня
+        today_pairs = {}
+        for num in sorted(day_schedule.keys()):
+            pair = day_schedule[num]
+            if pair.get("split"):
+                info = pair["chislitel"] if parity_code == "chislitel" else pair["znamenatel"]
+            else:
+                info = pair
+            if info:
+                today_pairs[num] = info
 
     if not today_pairs:
         return (
             f"{header}"
-            "🎉 <b>Сегодня у группы нет пар!</b> Свободный день ☕️"
+            f"🎉 <b>Сегодня у группы {target_group} нет пар!</b> Свободный день ☕️"
         )
 
     pair_nums = sorted(today_pairs.keys())
@@ -320,6 +329,40 @@ def get_now_status(now_dt: datetime | None = None) -> str:
             )
 
     return f"{header}Занятия на сегодня завершены."
+
+
+async def get_formatted_now_status(group_name: str | None = None, now_dt: datetime | None = None) -> str:
+    """Загружает расписание группы из БД и определяет статус занятий прямо сейчас."""
+    from db.crud import get_lessons_for_day, get_replacements_for_date_and_group
+
+    target_group = group_name or GROUP_NAME
+    if now_dt is None:
+        now_dt = datetime.now(BOT_TZ)
+    weekday = now_dt.weekday()
+    parity_code, _ = get_week_parity(now_dt.date())
+
+    db_pairs = await get_lessons_for_day(target_group, weekday, parity_code)
+    db_reps = await get_replacements_for_date_and_group(now_dt.date(), target_group)
+
+    if not db_pairs and target_group == GROUP_NAME:
+        return get_now_status(now_dt=now_dt, group_name=target_group)
+
+    actual_pairs = {}
+    for num, lesson_data in db_pairs.items():
+        rep = db_reps.get(num)
+        if rep and rep.get("type") == "cancel":
+            continue
+        elif rep and rep.get("type") == "replace":
+            actual_pairs[num] = {
+                "subject": rep.get("subject") or rep.get("text") or lesson_data["subject"],
+                "room": rep.get("room") or lesson_data["room"],
+                "teacher": rep.get("teacher") or lesson_data["teacher"]
+            }
+        else:
+            actual_pairs[num] = lesson_data
+
+    return get_now_status(now_dt=now_dt, group_name=target_group, custom_pairs=actual_pairs)
+
 
 
 # -------------------------------------------------------------

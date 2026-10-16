@@ -188,3 +188,8 @@ async def run_data_migrations():
                 ))
                 await session.commit()
                 logger.info(f"Основной чат {CHAT_ID} привязан к группе {GROUP_NAME}.")
+
+
+# Псевдоним для удобства импорта
+run_migration = run_data_migrations
+
