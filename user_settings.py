@@ -187,6 +187,12 @@ def get_user_settings_keyboard(
         ],
         [
             InlineKeyboardButton(
+                text=f"👥 Старостат группы ({group_name or '9ПО-43к'})",
+                callback_data="starostat_menu"
+            )
+        ],
+        [
+            InlineKeyboardButton(
                 text="🔄 Обновить интерфейс и меню",
                 callback_data="user_refresh_ui"
             )

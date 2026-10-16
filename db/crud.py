@@ -418,3 +418,106 @@ async def get_all_chat_bindings() -> list[ChatBinding]:
         stmt = select(ChatBinding)
         res = await session.execute(stmt)
         return list(res.scalars().all())
+
+
+# =============================================================
+# GROUP OFFICERS (STAROSTA / ZAM_STAROSTY) MANAGEMENT
+# =============================================================
+async def get_group_officers(group_name: str) -> dict[str, User | None]:
+    """Возвращает текущего старосту и заместителя старосты указанной группы."""
+    clean_grp = group_name.strip()
+    async with async_session() as session:
+        stmt = select(User).where(
+            and_(
+                User.group_name.ilike(clean_grp),
+                User.role.in_([UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value])
+            )
+        )
+        res = await session.execute(stmt)
+        users = res.scalars().all()
+
+        officers = {"starosta": None, "zam_starosty": None}
+        for u in users:
+            if u.role == UserRole.STAROSTA.value:
+                officers["starosta"] = u
+            elif u.role == UserRole.ZAM_STAROSTY.value:
+                officers["zam_starosty"] = u
+        return officers
+
+
+async def assign_group_officer(group_name: str, officer_role: str, new_user_id: int) -> tuple[bool, str]:
+    """
+    Назначает старосту или заместителя старосты для группы:
+    - Для одной группы не может быть больше 1 старосты и 1 зама.
+    - Если слот уже занят, предыдущий офицер с этой ролью разжалуется до student.
+    - Новый пользователь получает указанную роль и привязывается к группе.
+    """
+    if officer_role not in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
+        return False, "Недопустимая роль офицера."
+
+    clean_grp = group_name.strip()
+    async with async_session() as session:
+        target_stmt = select(User).where(User.user_id == new_user_id)
+        res = await session.execute(target_stmt)
+        target_user = res.scalar_one_or_none()
+        if not target_user:
+            return False, "Пользователь не найден в базе данных бота."
+
+        curr_stmt = select(User).where(
+            and_(
+                User.group_name.ilike(clean_grp),
+                User.role == officer_role,
+                User.user_id != new_user_id
+            )
+        )
+        curr_res = await session.execute(curr_stmt)
+        old_officers = curr_res.scalars().all()
+        for old in old_officers:
+            old.role = UserRole.STUDENT.value
+
+        target_user.role = officer_role
+        target_user.group_name = clean_grp
+
+        await session.commit()
+        return True, "Успешно назначено."
+
+
+async def demote_group_officer(group_name: str, officer_role: str) -> bool:
+    """Снимает старосту или заместителя группы, возвращая им роль student."""
+    clean_grp = group_name.strip()
+    async with async_session() as session:
+        stmt = update(User).where(
+            and_(
+                User.group_name.ilike(clean_grp),
+                User.role == officer_role
+            )
+        ).values(role=UserRole.STUDENT.value)
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
+async def get_group_replacements(group_name: str, since_date: date | None = None) -> list[Replacement]:
+    """Возвращает все активные замены для указанной группы."""
+    if since_date is None:
+        since_date = date.today()
+    clean_grp = group_name.strip()
+    async with async_session() as session:
+        stmt = select(Replacement).where(
+            and_(
+                Replacement.date >= since_date,
+                or_(Replacement.group_name.is_(None), Replacement.group_name.ilike(clean_grp))
+            )
+        ).order_by(Replacement.date, Replacement.pair_num)
+        res = await session.execute(stmt)
+        return list(res.scalars().all())
+
+
+async def delete_replacement_by_id(rep_id: int) -> bool:
+    """Удаляет замену по её первичному ключу ID."""
+    async with async_session() as session:
+        stmt = delete(Replacement).where(Replacement.id == rep_id)
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+

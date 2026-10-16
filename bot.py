@@ -59,7 +59,12 @@ from db.crud import (
     bind_chat_to_group,
     get_chat_group,
     get_chats_for_group,
-    get_all_chat_bindings
+    get_all_chat_bindings,
+    get_group_officers,
+    assign_group_officer,
+    demote_group_officer,
+    get_group_replacements,
+    delete_replacement_by_id
 )
 from permissions import (
     is_superadmin,
@@ -78,7 +83,16 @@ from features import get_formatted_now_status
 from starosta import (
     parse_weekday_input,
     DAYS_NAMES_RU,
-    get_starosta_dashboard_text
+    get_starosta_dashboard_text,
+    get_starosta_dashboard_keyboard,
+    format_starostat_menu_text,
+    get_starostat_menu_keyboard,
+    get_officer_election_keyboard,
+    get_starosta_days_keyboard,
+    get_starosta_pairs_keyboard,
+    get_starosta_date_picker_keyboard,
+    get_starosta_cancel_reasons_keyboard,
+    get_group_replacements_keyboard
 )
 from parity import get_week_parity
 from keyboards import (
@@ -157,6 +171,18 @@ BOT_START_TIME = datetime.now(BOT_TZ)
 
 class RegistrationState(StatesGroup):
     waiting_manual_group = State()
+
+
+class StarostatState(StatesGroup):
+    waiting_officer_username = State()
+
+
+class StarostaUIState(StatesGroup):
+    waiting_room_number = State()
+    waiting_cancel_custom_date = State()
+    waiting_cancel_custom_reason = State()
+    waiting_zam_custom_date = State()
+    waiting_zam_details = State()
 
 
 async def resolve_target_group(chat: types.Chat | None = None, user: types.User | None = None) -> str:
@@ -1832,40 +1858,28 @@ async def handle_chat_info_command(message: types.Message):
         await message.answer(f"👤 <b>Ваш профиль:</b>\n👥 Группа: <code>{grp}</code>\n🎖 Роль: {role_disp}\nID: <code>{message.from_user.id}</code>")
 
 
-# -------------------------------------------------------------
-# Раздел: Панель старосты и управление расписанием группы
-# -------------------------------------------------------------
-@dp.message(Command("starosta"))
-@dp.callback_query(F.data == "open_starosta_panel")
-async def handle_starosta_panel(event: types.Message | types.CallbackQuery):
-    user_id = event.from_user.id
-    chat = event.message.chat if isinstance(event, types.CallbackQuery) else event.chat
-    grp = await resolve_target_group(chat, event.from_user)
-
-    if not (await is_starosta_or_zam(user_id, grp) or await is_admin(user_id)):
-        msg = "⛔️ Панель старосты доступна только старостам, их заместителям и администраторам бота."
-        if isinstance(event, types.CallbackQuery):
-            await event.answer(msg, show_alert=True)
-        else:
-            await event.answer(msg)
-        return
-
-    role_disp, _ = await get_user_role_display(user_id)
-    text = get_starosta_dashboard_text(user_id, role_disp, grp)
-    kb = get_starosta_panel_keyboard(grp)
-
-    if isinstance(event, types.CallbackQuery):
-        try:
-            await event.message.edit_text(text, reply_markup=kb)
-        except Exception:
-            await event.message.answer(text, reply_markup=kb)
-        await event.answer()
-    else:
-        await event.answer(text, reply_markup=kb)
+# =============================================================
+# РАЗДЕЛ: СТАРОСТАТ ГРУППЫ В НАСТРОЙКАХ (ВЫБОР СТУДЕНТАМИ)
+# =============================================================
+@dp.callback_query(F.data == "starostat_menu")
+async def handle_starostat_menu(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = call.from_user.id
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+    officers = await get_group_officers(grp)
+    text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
 
 
-@dp.callback_query(F.data == "starosta_back_to_settings")
-async def handle_starosta_back(call: types.CallbackQuery):
+@dp.callback_query(F.data == "settings_back_to_menu")
+async def handle_settings_back_to_menu(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     user_id = call.from_user.id
     user = await get_user(user_id)
     grp = user.group_name if user else "9ПО-43к"
@@ -1881,59 +1895,580 @@ async def handle_starosta_back(call: types.CallbackQuery):
     await call.answer()
 
 
-@dp.callback_query(F.data == "starosta_change_room")
-async def handle_starosta_change_room_btn(call: types.CallbackQuery):
-    await call.message.answer(
-        "🚪 <b>Смена аудитории пары:</b>\n\n"
-        "Используйте команду:\n"
-        "<code>/edit_room &lt;день 1-6&gt; &lt;пара 1-4&gt; &lt;кабинет&gt;</code>\n\n"
-        "<i>Пример: <code>/edit_room 1 2 305</code> (Понедельник, 2 пара, каб. 305)</i>"
+@dp.callback_query(F.data.startswith("starostat_pick_"))
+async def handle_starostat_pick_role(call: types.CallbackQuery):
+    role_key = call.data.replace("starostat_pick_", "")  # 'starosta' или 'zam'
+    actual_role = "starosta" if role_key == "starosta" else "zam_starosty"
+    role_title = "старосты" if role_key == "starosta" else "заместителя старосты"
+    user = await get_user(call.from_user.id)
+    grp = user.group_name if user else "9ПО-43к"
+
+    kb = get_officer_election_keyboard(actual_role)
+    text = (
+        f"👑 <b>Назначение {role_title} для группы {grp}:</b>\n\n"
+        f"• Вы можете <b>назначить себя</b> в 1 клик\n"
+        f"• Либо <b>указать другого студента</b> по его @username или Telegram ID\n\n"
+        f"<i>ℹ️ В группе может быть максимум 1 староста и 1 заместитель. "
+        f"При назначении нового предыдущий автоматически переводится в обычные студенты.</i>"
     )
+    await call.message.edit_text(text, reply_markup=kb)
     await call.answer()
 
 
-@dp.callback_query(F.data == "starosta_add_zam")
-async def handle_starosta_add_zam_btn(call: types.CallbackQuery):
-    await call.message.answer(
-        "⚠️ <b>Добавление замены:</b>\n\n"
-        "Используйте команду:\n"
-        "<code>/add_zam &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt; &lt;предмет&gt; [кабинет] [преподаватель]</code>\n\n"
-        "<i>Пример: <code>/add_zam 2026-10-20 2 Информатика 204 Иванов И.И.</code></i>"
+@dp.callback_query(F.data.startswith("starostat_self_"))
+async def handle_starostat_self_assign(call: types.CallbackQuery):
+    role = call.data.replace("starostat_self_", "")  # 'starosta' или 'zam_starosty'
+    user_id = call.from_user.id
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+
+    success, msg = await assign_group_officer(grp, role, user_id)
+    role_name = "старостой" if role == "starosta" else "заместителем старосты"
+    if success:
+        await call.answer(f"Вы успешно назначены {role_name} группы {grp}! 🎉", show_alert=True)
+    else:
+        await call.answer(f"Ошибка: {msg}", show_alert=True)
+
+    officers = await get_group_officers(grp)
+    text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        pass
+
+
+@dp.callback_query(F.data.startswith("starostat_demote_"))
+async def handle_starostat_demote(call: types.CallbackQuery):
+    role_key = call.data.replace("starostat_demote_", "")  # 'starosta' или 'zam'
+    actual_role = "starosta" if role_key == "starosta" else "zam_starosty"
+    user = await get_user(call.from_user.id)
+    grp = user.group_name if user else "9ПО-43к"
+
+    await demote_group_officer(grp, actual_role)
+    role_name = "Староста" if actual_role == "starosta" else "Заместитель старосты"
+    await call.answer(f"{role_name} группы {grp} снят.", show_alert=True)
+
+    officers = await get_group_officers(grp)
+    text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        pass
+
+
+@dp.callback_query(F.data.startswith("starostat_manual_"))
+async def handle_starostat_manual_prompt(call: types.CallbackQuery, state: FSMContext):
+    role = call.data.replace("starostat_manual_", "")  # 'starosta' или 'zam_starosty'
+    user = await get_user(call.from_user.id)
+    grp = user.group_name if user else "9ПО-43к"
+
+    await state.update_data(target_role=role, group_name=grp)
+    await state.set_state(StarostatState.waiting_officer_username)
+
+    role_title = "старостой" if role == "starosta" else "заместителем старосты"
+    text = (
+        f"✍️ <b>Назначение {role_title} группы {grp}:</b>\n\n"
+        f"Отправьте сообщением <b>@username</b> или числовой <b>Telegram ID</b> студента.\n"
+        f"<i>(Студент должен хотя бы 1 раз запустить этого бота командой /start)</i>\n\n"
+        f"Для отмены отправьте /cancel или нажмите кнопку ниже."
     )
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="starostat_menu"))
+    await call.message.edit_text(text, reply_markup=builder.as_markup())
     await call.answer()
 
 
-@dp.callback_query(F.data == "starosta_cancel_pair")
-async def handle_starosta_cancel_pair_btn(call: types.CallbackQuery):
-    await call.message.answer(
-        "❌ <b>Отмена пары:</b>\n\n"
-        "Используйте команду:\n"
-        "<code>/cancel_pair &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt; [причина]</code>\n\n"
-        "<i>Пример: <code>/cancel_pair 2026-10-20 3 Болезнь преподавателя</code></i>"
-    )
+@dp.message(StarostatState.waiting_officer_username)
+async def handle_starostat_officer_input(message: types.Message, state: FSMContext):
+    if message.text and message.text.strip().lower() in ("/cancel", "отмена", "❌ отмена"):
+        await state.clear()
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="👥 К старостату группы", callback_data="starostat_menu"))
+        await message.answer("❌ Назначение отменено.", reply_markup=builder.as_markup())
+        return
+
+    data = await state.get_data()
+    role = data.get("target_role", "starosta")
+    grp = data.get("group_name", "9ПО-43к")
+    raw_val = message.text.strip()
+
+    target_user = None
+    if raw_val.isdigit():
+        target_user = await get_user(int(raw_val))
+    else:
+        clean_username = raw_val.lstrip("@").strip()
+        target_user = await get_user_by_username(clean_username)
+
+    if not target_user:
+        await message.answer(
+            f"❌ Пользователь «{html.escape(raw_val)}» не найден в базе данных бота.\n\n"
+            f"Попросите студента сначала написать /start боту, затем отправьте его @username ещё раз (или отправьте /cancel для отмены)."
+        )
+        return
+
+    success, msg = await assign_group_officer(grp, role, target_user.user_id)
+    await state.clear()
+    if success:
+        role_name = "старостой" if role == "starosta" else "заместителем старосты"
+        name_str = f"@{target_user.username}" if target_user.username else (target_user.full_name or str(target_user.user_id))
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="👥 К старостату группы", callback_data="starostat_menu"))
+        await message.answer(
+            f"🎉 <b>Студент {name_str} успешно назначен {role_name} группы {grp}!</b>",
+            reply_markup=builder.as_markup()
+        )
+    else:
+        await message.answer(f"❌ Ошибка назначения: {msg}")
+
+
+# =============================================================
+# РАЗДЕЛ: ИНТЕРАКТИВНЫЙ КАБИНЕТ СТАРОСТЫ
+# =============================================================
+@dp.message(Command("starosta"))
+@dp.callback_query(F.data.in_(["open_starosta_panel", "st_ui_panel"]))
+async def handle_starosta_panel(event: types.Message | types.CallbackQuery, state: FSMContext | None = None):
+    if state:
+        await state.clear()
+    user_id = event.from_user.id
+    chat = event.message.chat if isinstance(event, types.CallbackQuery) else event.chat
+    grp = await resolve_target_group(chat, event.from_user)
+
+    if not (await is_starosta_or_zam(user_id, grp) or await is_admin(user_id)):
+        msg = "⛔️ Кабинет старосты доступен только старосте, заместителю и администраторам бота."
+        if isinstance(event, types.CallbackQuery):
+            await event.answer(msg, show_alert=True)
+        else:
+            await event.answer(msg)
+        return
+
+    role_disp, _ = await get_user_role_display(user_id)
+    text = get_starosta_dashboard_text(user_id, role_disp, grp)
+    kb = get_starosta_dashboard_keyboard(grp)
+
+    if isinstance(event, types.CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "starosta_back_to_settings")
+async def handle_starosta_back(call: types.CallbackQuery, state: FSMContext | None = None):
+    if state:
+        await state.clear()
+    user_id = call.from_user.id
+    user = await get_user(user_id)
+    grp = user.group_name if user else "9ПО-43к"
+    role_disp, _ = await get_user_role_display(user_id)
+    is_adm = await is_admin(user_id)
+    is_star = await is_starosta_or_zam(user_id, grp)
+    text = format_user_settings_text(user_id, call.from_user.first_name or "", group_name=grp, role_display=role_disp)
+    kb = get_user_settings_keyboard(user_id, is_admin=is_adm, is_starosta=is_star, group_name=grp)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
     await call.answer()
 
 
-@dp.callback_query(F.data == "starosta_del_zam")
-async def handle_starosta_del_zam_btn(call: types.CallbackQuery):
-    await call.message.answer(
-        "🗑 <b>Удаление замены:</b>\n\n"
-        "Используйте команду:\n"
-        "<code>/del_zam &lt;дата ГГГГ-ММ-ДД&gt; &lt;пара 1-4&gt;</code>\n\n"
-        "<i>Пример: <code>/del_zam 2026-10-20 2</code></i>"
-    )
+# 1. Интерактивная смена кабинета
+@dp.callback_query(F.data.in_(["starosta_change_room", "st_ui_room_start"]))
+async def handle_starosta_ui_room_start(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = call.from_user.id
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    if not await can_manage_group(user_id, grp):
+        await call.answer("⛔️ У вас нет прав старосты для этой группы.", show_alert=True)
+        return
+
+    text = "🚪 <b>Смена кабинета:</b>\nВыберите день недели для изменения кабинета:"
+    kb = get_starosta_days_keyboard(prefix="st_room_day_")
+    await call.message.edit_text(text, reply_markup=kb)
     await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_room_day_"))
+async def handle_starosta_ui_room_day(call: types.CallbackQuery, state: FSMContext):
+    day_idx = int(call.data.replace("st_room_day_", ""))
+    await state.update_data(room_day_idx=day_idx)
+    day_name = DAYS_NAMES_RU[day_idx]
+    text = f"🚪 <b>Смена кабинета ({day_name}):</b>\nВыберите номер пары:"
+    kb = get_starosta_pairs_keyboard(prefix="st_room_pair_")
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_room_pair_"))
+async def handle_starosta_ui_room_pair(call: types.CallbackQuery, state: FSMContext):
+    pair_num = int(call.data.replace("st_room_pair_", ""))
+    await state.update_data(room_pair_num=pair_num)
+    await state.set_state(StarostaUIState.waiting_room_number)
+
+    data = await state.get_data()
+    day_idx = data.get("room_day_idx", 0)
+    day_name = DAYS_NAMES_RU[day_idx]
+
+    text = (
+        f"🚪 <b>Смена кабинета ({day_name}, {pair_num} пара):</b>\n\n"
+        f"✍️ Отправьте номер нового кабинета (например: <code>305</code> или <code>Спортзал</code>):\n\n"
+        f"<i>Для отмены отправьте /cancel</i>"
+    )
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="open_starosta_panel"))
+    await call.message.edit_text(text, reply_markup=builder.as_markup())
+    await call.answer()
+
+
+@dp.message(StarostaUIState.waiting_room_number)
+async def handle_starosta_ui_room_input(message: types.Message, state: FSMContext):
+    if message.text and message.text.strip().lower() in ("/cancel", "отмена", "❌ отмена"):
+        await state.clear()
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="⭐️ В кабинет старосты", callback_data="open_starosta_panel"))
+        await message.answer("❌ Смена кабинета отменена.", reply_markup=builder.as_markup())
+        return
+
+    room_val = message.text.strip()
+    data = await state.get_data()
+    day_idx = data.get("room_day_idx", 0)
+    pair_num = data.get("room_pair_num", 1)
+    grp = await resolve_target_group(message.chat, message.from_user)
+
+    updated = await update_lesson_room(grp, day_idx, pair_num, room_val)
+    await state.clear()
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="⭐️ В кабинет старосты", callback_data="open_starosta_panel"))
+
+    day_name = DAYS_NAMES_RU[day_idx]
+    if updated:
+        await message.answer(
+            f"✅ <b>Кабинет успешно обновлён!</b>\n\n"
+            f"👥 Группа: <code>{grp}</code>\n"
+            f"📅 День: <b>{day_name}</b>\n"
+            f"🔢 Пара: <b>№{pair_num}</b>\n"
+            f"📍 Новый кабинет: <code>{html.escape(room_val)}</code>",
+            reply_markup=builder.as_markup()
+        )
+    else:
+        await message.answer(
+            f"ℹ️ Пара №{pair_num} в {day_name} не найдена в расписании группы {grp}, кабинет сохранён.",
+            reply_markup=builder.as_markup()
+        )
+
+
+# 2. Интерактивная отмена пары
+@dp.callback_query(F.data.in_(["starosta_cancel_pair", "st_ui_cancel_start"]))
+async def handle_starosta_ui_cancel_start(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = call.from_user.id
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    if not await can_manage_group(user_id, grp):
+        await call.answer("⛔️ У вас нет прав старосты для этой группы.", show_alert=True)
+        return
+
+    text = "❌ <b>Отмена пары:</b>\nВыберите дату, на которую хотите отменить пару:"
+    kb = get_starosta_date_picker_keyboard(prefix="st_c_date_")
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_c_date_"))
+async def handle_starosta_ui_cancel_date(call: types.CallbackQuery, state: FSMContext):
+    date_val = call.data.replace("st_c_date_", "")
+    if date_val == "custom":
+        await state.set_state(StarostaUIState.waiting_cancel_custom_date)
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="open_starosta_panel"))
+        await call.message.edit_text(
+            "📆 <b>Введите дату отмены:</b>\n\nОтправьте дату в формате <code>ГГГГ-ММ-ДД</code> (например: <code>2026-10-20</code>):",
+            reply_markup=builder.as_markup()
+        )
+        await call.answer()
+        return
+
+    await state.update_data(cancel_date=date_val)
+    text = f"❌ <b>Отмена пары на {date_val}:</b>\nВыберите номер пары:"
+    kb = get_starosta_pairs_keyboard(prefix="st_c_pair_")
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.message(StarostaUIState.waiting_cancel_custom_date)
+async def handle_starosta_ui_cancel_custom_date(message: types.Message, state: FSMContext):
+    d_obj = parse_date_input(message.text.strip())
+    if not d_obj:
+        await message.answer("❌ Неверный формат даты. Введите в формате ГГГГ-ММ-ДД или ДД.ММ (например: 2026-10-20):")
+        return
+
+    date_val = d_obj.isoformat()
+    await state.update_data(cancel_date=date_val)
+    text = f"❌ <b>Отмена пары на {date_val}:</b>\nВыберите номер пары:"
+    kb = get_starosta_pairs_keyboard(prefix="st_c_pair_")
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("st_c_pair_"))
+async def handle_starosta_ui_cancel_pair(call: types.CallbackQuery, state: FSMContext):
+    pair_num = int(call.data.replace("st_c_pair_", ""))
+    await state.update_data(cancel_pair=pair_num)
+    data = await state.get_data()
+    date_val = data.get("cancel_date", "")
+
+    text = f"❌ <b>Отмена пары №{pair_num} на {date_val}:</b>\nВыберите причину отмены занятия:"
+    kb = get_starosta_cancel_reasons_keyboard()
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_c_reason_"))
+async def handle_starosta_ui_cancel_reason(call: types.CallbackQuery, state: FSMContext):
+    reason_key = call.data.replace("st_c_reason_", "")
+    if reason_key == "custom":
+        await state.set_state(StarostaUIState.waiting_cancel_custom_reason)
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="open_starosta_panel"))
+        await call.message.edit_text(
+            "✍️ Отправьте причину отмены пары сообщением (например: <i>Преподаватель на больничном</i>):",
+            reply_markup=builder.as_markup()
+        )
+        await call.answer()
+        return
+
+    reason_map = {
+        "sick": "Болезнь преподавателя",
+        "cancelled": "Занятия отменены"
+    }
+    reason = reason_map.get(reason_key, "Отмена занятия")
+    await _finalize_cancel_pair(call.message, state, reason, user=call.from_user)
+    await call.answer()
+
+
+@dp.message(StarostaUIState.waiting_cancel_custom_reason)
+async def handle_starosta_ui_cancel_custom_reason_input(message: types.Message, state: FSMContext):
+    reason = message.text.strip()
+    await _finalize_cancel_pair(message, state, reason, user=message.from_user)
+
+
+async def _finalize_cancel_pair(event_msg: types.Message, state: FSMContext, reason: str, user: types.User):
+    data = await state.get_data()
+    date_str = data.get("cancel_date")
+    pair_num = data.get("cancel_pair", 1)
+    grp = await resolve_target_group(event_msg.chat, user)
+    await state.clear()
+
+    d_obj = date.fromisoformat(date_str) if date_str else date.today()
+
+    await add_replacement_record(
+        target_date=d_obj,
+        pair_num=pair_num,
+        action_type="cancel",
+        raw_text=reason,
+        group_name=grp,
+        created_by=user.id
+    )
+    add_replacement(d_obj, pair_num, "cancel", text=reason)
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="⭐️ В кабинет старосты", callback_data="open_starosta_panel"))
+    text = (
+        f"🚫 <b>Пара успешно отменена!</b>\n\n"
+        f"📅 Дата: <b>{d_obj.strftime('%d.%m.%Y')}</b>\n"
+        f"🔢 Пара: <b>№{pair_num}</b>\n"
+        f"👥 Группа: <code>{grp}</code>\n"
+        f"ℹ️ Причина: <i>{html.escape(reason)}</i>"
+    )
+    await event_msg.answer(text, reply_markup=builder.as_markup())
+
+
+# 3. Интерактивное добавление замены
+@dp.callback_query(F.data.in_(["starosta_add_zam", "st_ui_zam_start"]))
+async def handle_starosta_ui_zam_start(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = call.from_user.id
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    if not await can_manage_group(user_id, grp):
+        await call.answer("⛔️ У вас нет прав старосты для этой группы.", show_alert=True)
+        return
+
+    text = "🔄 <b>Добавление замены:</b>\nВыберите дату замены:"
+    kb = get_starosta_date_picker_keyboard(prefix="st_z_date_")
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_z_date_"))
+async def handle_starosta_ui_zam_date(call: types.CallbackQuery, state: FSMContext):
+    date_val = call.data.replace("st_z_date_", "")
+    if date_val == "custom":
+        await state.set_state(StarostaUIState.waiting_zam_custom_date)
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="open_starosta_panel"))
+        await call.message.edit_text(
+            "📆 <b>Введите дату замены:</b>\n\nОтправьте дату в формате <code>ГГГГ-ММ-ДД</code> (например: <code>2026-10-20</code>):",
+            reply_markup=builder.as_markup()
+        )
+        await call.answer()
+        return
+
+    await state.update_data(zam_date=date_val)
+    text = f"🔄 <b>Замена на {date_val}:</b>\nВыберите номер пары:"
+    kb = get_starosta_pairs_keyboard(prefix="st_z_pair_")
+    await call.message.edit_text(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.message(StarostaUIState.waiting_zam_custom_date)
+async def handle_starosta_ui_zam_custom_date(message: types.Message, state: FSMContext):
+    d_obj = parse_date_input(message.text.strip())
+    if not d_obj:
+        await message.answer("❌ Неверный формат даты. Введите в формате ГГГГ-ММ-ДД:")
+        return
+
+    date_val = d_obj.isoformat()
+    await state.update_data(zam_date=date_val)
+    text = f"🔄 <b>Замена на {date_val}:</b>\nВыберите номер пары:"
+    kb = get_starosta_pairs_keyboard(prefix="st_z_pair_")
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("st_z_pair_"))
+async def handle_starosta_ui_zam_pair(call: types.CallbackQuery, state: FSMContext):
+    pair_num = int(call.data.replace("st_z_pair_", ""))
+    await state.update_data(zam_pair=pair_num)
+    await state.set_state(StarostaUIState.waiting_zam_details)
+
+    data = await state.get_data()
+    date_val = data.get("zam_date", "")
+
+    text = (
+        f"🔄 <b>Замена для пары №{pair_num} на {date_val}:</b>\n\n"
+        f"✍️ Отправьте название предмета, кабинет и преподавателя.\n"
+        f"<i>Пример: <code>Информатика 204 Смирнов А.В.</code></i>\n\n"
+        f"Для отмены отправьте /cancel"
+    )
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="◀️ Отмена", callback_data="open_starosta_panel"))
+    await call.message.edit_text(text, reply_markup=builder.as_markup())
+    await call.answer()
+
+
+@dp.message(StarostaUIState.waiting_zam_details)
+async def handle_starosta_ui_zam_details_input(message: types.Message, state: FSMContext):
+    if message.text and message.text.strip().lower() in ("/cancel", "отмена", "❌ отмена"):
+        await state.clear()
+        builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="⭐️ В кабинет старосты", callback_data="open_starosta_panel"))
+        await message.answer("❌ Добавление замены отменено.", reply_markup=builder.as_markup())
+        return
+
+    data = await state.get_data()
+    date_str = data.get("zam_date")
+    pair_num = data.get("zam_pair", 1)
+    grp = await resolve_target_group(message.chat, message.from_user)
+    await state.clear()
+
+    d_obj = date.fromisoformat(date_str) if date_str else date.today()
+
+    parts = message.text.strip().split()
+    subj = parts[0] if parts else "Замена"
+    room = "—"
+    teacher = "—"
+    if len(parts) > 1:
+        room = parts[1]
+    if len(parts) > 2:
+        teacher = " ".join(parts[2:])
+
+    await add_replacement_record(
+        target_date=d_obj,
+        pair_num=pair_num,
+        action_type="replace",
+        subject=subj,
+        room=room,
+        teacher=teacher,
+        group_name=grp,
+        created_by=message.from_user.id
+    )
+    add_replacement(d_obj, pair_num, "replace", subject=subj, room=room, teacher=teacher)
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="⭐️ В кабинет старосты", callback_data="open_starosta_panel"))
+    text = (
+        f"✅ <b>Замена успешно добавлена!</b>\n\n"
+        f"📅 Дата: <b>{d_obj.strftime('%d.%m.%Y')}</b>\n"
+        f"🔢 Пара: <b>№{pair_num}</b>\n"
+        f"📚 Предмет: <b>{html.escape(subj)}</b>\n"
+        f"📍 Кабинет: <code>{html.escape(room)}</code>\n"
+        f"👨‍🏫 Преподаватель: <i>{html.escape(teacher)}</i>\n"
+        f"👥 Группа: <code>{grp}</code>"
+    )
+    await message.answer(text, reply_markup=builder.as_markup())
+
+
+# 4. Просмотр и удаление замен группы в 1 клик
+@dp.callback_query(F.data.in_(["starosta_del_zam", "st_ui_list_zam"]))
+async def handle_starosta_ui_list_zam(call: types.CallbackQuery):
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+    reps = await get_group_replacements(grp)
+
+    if not reps:
+        text = f"📋 <b>Активные замены группы {grp}:</b>\n\n<i>Нет активных замен на ближайшие дни.</i>"
+    else:
+        text = f"📋 <b>Активные замены группы {grp}:</b>\nНажмите на кнопку ниже, чтобы удалить замену в 1 клик:\n"
+
+    kb = get_group_replacements_keyboard(reps)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("st_del_rep_"))
+async def handle_starosta_ui_delete_rep(call: types.CallbackQuery):
+    rep_id = int(call.data.replace("st_del_rep_", ""))
+    grp = await resolve_target_group(call.message.chat, call.from_user)
+
+    deleted = await delete_replacement_by_id(rep_id)
+    if deleted:
+        await call.answer("Замена удалена! 🗑", show_alert=False)
+    else:
+        await call.answer("Замена не найдена.", show_alert=False)
+
+    reps = await get_group_replacements(grp)
+    if not reps:
+        text = f"📋 <b>Активные замены группы {grp}:</b>\n\n<i>Все замены удалены. Расписание стандартное.</i>"
+    else:
+        text = f"📋 <b>Активные замены группы {grp}:</b>\nНажмите на замену, чтобы удалить её в 1 клик:\n"
+    kb = get_group_replacements_keyboard(reps)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        pass
 
 
 @dp.callback_query(F.data == "starosta_bind_info")
 async def handle_starosta_bind_info_btn(call: types.CallbackQuery):
     grp = await resolve_target_group(call.message.chat, call.from_user)
-    await call.message.answer(
+    bot_info = await call.bot.get_me()
+    bot_user = bot_info.username or "aitu_schedule_bot"
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="➕ Добавить бота в группу", url=f"https://t.me/{bot_user}?startgroup=true"))
+    builder.row(InlineKeyboardButton(text="◀️ В кабинет старосты", callback_data="open_starosta_panel"))
+
+    await call.message.edit_text(
         f"💬 <b>Привязка беседы Telegram к группе {grp}:</b>\n\n"
-        f"1. Добавьте бота в групповой чат вашей группы.\n"
-        f"2. Сделайте бота администратором беседы.\n"
-        f"3. Отправьте в беседе команду: <code>/bind {grp}</code>\n\n"
-        f"После этого бот начнёт присылать звонки и расписание в вашу беседу!"
+        f"1. Добавьте бота в групповой чат вашей группы (нажмите кнопку ниже).\n"
+        f"2. Дайте боту права администратора в беседе.\n"
+        f"3. Отправьте в беседе команду:\n"
+        f"<code>/bind {grp}</code>\n\n"
+        f"После этого бот начнёт присылать звонки, замены и расписание прямо в вашу беседу!",
+        reply_markup=builder.as_markup()
     )
     await call.answer()
 
@@ -2173,16 +2708,26 @@ async def handle_set_role_command(message: types.Message):
     )
 
 
-@dp.message(Command("id"))
-@dp.message(Command("myid"))
-@dp.message(Command("whois"))
+@dp.message(Command("id", ignore_case=True))
+@dp.message(Command("myid", ignore_case=True))
+@dp.message(Command("whois", ignore_case=True))
+@dp.message(F.text.lower().in_(["/id", "id", "/myid", "myid", "мой id", "узнать id", "айди"]))
 async def handle_id_command(message: types.Message):
     """Показывает Telegram ID пользователя/чата с возможностью копирования в 1 клик."""
-    target_user = message.reply_to_message.from_user if message.reply_to_message else message.from_user
+    target_user = None
+    if message.reply_to_message and message.reply_to_message.from_user:
+        target_user = message.reply_to_message.from_user
+        reply_type = " (из пересланного сообщения)"
+    else:
+        target_user = message.from_user
+        reply_type = ""
+
+    if not target_user:
+        await message.answer("⚠️ Не удалось определить пользователя для получения ID.")
+        return
+
     username_str = f"@{target_user.username}" if target_user.username else "—"
     full_name_str = html.escape(target_user.full_name or "Без имени")
-    
-    reply_type = " (из пересланного сообщения)" if message.reply_to_message else ""
     role_disp, grp = await get_user_role_display(target_user.id)
 
     reply_text = (
