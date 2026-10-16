@@ -281,12 +281,9 @@ def get_teachers_inline_keyboard() -> InlineKeyboardMarkup:
     """Генерирует инлайн-кнопки со списком преподавателей."""
     teachers = sorted(get_teachers_data().keys())
     buttons = []
-    # По 2 кнопки в ряд
-    for i in range(0, len(teachers), 2):
-        row = [InlineKeyboardButton(text=teachers[i], callback_data=f"teacher_{i}")]
-        if i + 1 < len(teachers):
-            row.append(InlineKeyboardButton(text=teachers[i + 1], callback_data=f"teacher_{i + 1}"))
-        buttons.append(row)
+    # По 1 кнопке в ряд для комфортного чтения полного ФИО
+    for i, teacher in enumerate(teachers):
+        buttons.append([InlineKeyboardButton(text=f"👨‍🏫 {teacher}", callback_data=f"teacher_{i}")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
