@@ -1,0 +1,24 @@
+[Unit]
+Description=AITU College Schedule Telegram Bot
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/aitu-schedule-bot
+EnvironmentFile=/opt/aitu-schedule-bot/.env
+ExecStart=/opt/aitu-schedule-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=5
+KillMode=process
+TimeoutStopSec=10
+
+# Безопасность и лимиты
+LimitNOFILE=65535
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aitu-bot
+
+[Install]
+WantedBy=multi-user.target

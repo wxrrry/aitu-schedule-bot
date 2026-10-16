@@ -202,19 +202,13 @@ async def send_pair_reminder(bot: Bot, pair_num: int, target_courses: list[int] 
         else:
             continue
 
-        try:
-            await bot.send_message(
-                chat_id=uid,
-                text=msg_text,
-                link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-            )
+        from services.broadcaster import safe_send_message
+        sent = await safe_send_message(bot, uid, msg_text)
+        if sent:
             success_count += 1
-            await asyncio.sleep(0.05)  # Лимит Telegram API на массовую рассылку
-        except (TelegramForbiddenError, TelegramBadRequest) as e:
-            logger.warning(f"Пользователь {uid} недоступен: {e}")
+        else:
             dead_users.append(uid)
-        except Exception as e:
-            logger.error(f"Ошибка отправки напоминания пользователю {uid}: {e}")
+        await asyncio.sleep(0.05)
 
     if dead_users:
         legacy_subs.difference_update(dead_users)

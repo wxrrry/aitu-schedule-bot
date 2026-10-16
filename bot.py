@@ -243,6 +243,13 @@ dp = Dispatcher()
 scheduler = AsyncIOScheduler(timezone=BOT_TZ)
 bot: Bot | None = None
 
+# Регистрация Middlewares (Anti-Flood throttling и Database Session / User Tracking)
+from middlewares import ThrottlingMiddleware, DbSessionMiddleware
+dp.message.middleware(ThrottlingMiddleware(rate_limit=0.35))
+dp.callback_query.middleware(ThrottlingMiddleware(rate_limit=0.35))
+dp.message.middleware(DbSessionMiddleware())
+dp.callback_query.middleware(DbSessionMiddleware())
+
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 WELCOME_IMG = os.path.join(ASSETS_DIR, "welcome.jpg")
 MORNING_IMG = os.path.join(ASSETS_DIR, "morning.jpg")
@@ -1706,44 +1713,29 @@ async def handle_broadcast_command(message: types.Message):
     sent_count = 0
     fail_count = 0
 
+    from services.broadcaster import safe_send_message
+
+    target_chat_ids = []
     if target_group:
         bound_chats = await get_chats_for_group(target_group)
-        for b in bound_chats:
-            try:
-                await bot.send_message(chat_id=b.chat_id, text=broadcast_text, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
-                sent_count += 1
-                await asyncio.sleep(0.05)
-            except Exception:
-                fail_count += 1
+        target_chat_ids.extend([b.chat_id for b in bound_chats])
+        target_users = await get_users_by_group(target_group)
+        target_chat_ids.extend([u.user_id for u in target_users if u.user_id != message.from_user.id])
     else:
         all_chats = await get_all_chat_bindings()
-        for b in all_chats:
-            try:
-                await bot.send_message(chat_id=b.chat_id, text=broadcast_text, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
-                sent_count += 1
-                await asyncio.sleep(0.05)
-            except Exception:
-                fail_count += 1
-
-    if target_group:
-        target_users = await get_users_by_group(target_group)
-    else:
+        target_chat_ids.extend([b.chat_id for b in all_chats])
         all_users_settings = load_all_settings()
-        target_users = [types.SimpleNamespace(user_id=int(uid)) for uid in all_users_settings.keys() if uid.isdigit()]
+        target_chat_ids.extend([int(uid) for uid in all_users_settings.keys() if uid.isdigit() and int(uid) != message.from_user.id])
 
-    for u in target_users:
-        if u.user_id == message.from_user.id:
-            continue
-        try:
-            await bot.send_message(
-                chat_id=u.user_id,
-                text=broadcast_text,
-                link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-            )
+    # Удаляем дубликаты сохраняя порядок
+    unique_ids = list(dict.fromkeys(target_chat_ids))
+    for cid in unique_ids:
+        ok = await safe_send_message(bot=bot, chat_id=cid, text=broadcast_text)
+        if ok:
             sent_count += 1
-            await asyncio.sleep(0.05)
-        except Exception:
+        else:
             fail_count += 1
+        await asyncio.sleep(0.05)
 
     await status_msg.edit_text(
         f"✅ <b>Рассылка успешно завершена!</b>\n\n"
@@ -3469,7 +3461,24 @@ async def main():
     http_runner = None
     keep_alive_task = None
 
+    PID_FILE = "bot.pid"
+    STATUS_FILE = ".bot_status.json"
+
     try:
+        # Записываем PID для мониторинга и бота-контроллера на VPS
+        try:
+            with open(PID_FILE, "w", encoding="utf-8") as pf:
+                pf.write(str(os.getpid()))
+            with open(STATUS_FILE, "w", encoding="utf-8") as sf:
+                json.dump({
+                    "status": "starting",
+                    "pid": os.getpid(),
+                    "started_at": datetime.now(BOT_TZ).isoformat(),
+                    "version": "2.0.0"
+                }, sf, indent=2)
+        except Exception as pe:
+            logger.debug(f"PID/Status write warning: {pe}")
+
         logger.info("Запуск бота и планировщика APScheduler...")
         
         # Инициализация базы данных и авто-миграция
@@ -3653,6 +3662,19 @@ async def main():
             await http_runner.cleanup()
         if bot and bot.session:
             await bot.session.close()
+
+        # Очистка PID и статуса
+        try:
+            if os.path.exists(PID_FILE):
+                os.remove(PID_FILE)
+            with open(STATUS_FILE, "w", encoding="utf-8") as sf:
+                json.dump({
+                    "status": "stopped",
+                    "stopped_at": datetime.now(BOT_TZ).isoformat()
+                }, sf, indent=2)
+        except Exception:
+            pass
+
         logger.info("Все сервисы бота корректно остановлены.")
 
 

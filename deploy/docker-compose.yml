@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  aitu-schedule-bot:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: aitu-schedule-bot
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - aitu_data:/app/data
+      - ../assets:/app/assets:ro
+      - ../schedule_bot.db:/app/schedule_bot.db
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Almaty
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  aitu_data:
