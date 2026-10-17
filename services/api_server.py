@@ -12,7 +12,9 @@ from db.crud import (
     get_all_tournaments,
     get_tournament_by_id,
     upsert_tournament,
+    delete_tournament,
     add_or_update_team,
+    delete_team,
     get_system_stats,
     get_all_groups,
     get_lessons_for_day,
@@ -97,9 +99,12 @@ async def handle_tournament_save(request: web.Request):
     except Exception:
         return web.json_response({"error": "Invalid JSON"}, status=400)
     
+    if not data.get("id"):
+        data["id"] = f"tourn_{int(datetime.utcnow().timestamp())}"
+    
     success = await upsert_tournament(data)
     if success:
-        return web.json_response({"status": "saved", "id": data.get("id")})
+        return web.json_response({"status": "saved", "id": data.get("id"), "tournament": data})
     return web.json_response({"error": "Failed to save tournament"}, status=500)
 
 
@@ -110,10 +115,52 @@ async def handle_team_save(request: web.Request):
     except Exception:
         return web.json_response({"error": "Invalid JSON"}, status=400)
 
+    if not data.get("id"):
+        data["id"] = f"reg_{int(datetime.utcnow().timestamp())}"
+
     success = await add_or_update_team(tournament_id, data)
     if success:
-        return web.json_response({"status": "saved", "team_id": data.get("id")})
+        return web.json_response({"status": "saved", "team_id": data.get("id"), "team": data})
     return web.json_response({"error": "Failed to save team"}, status=500)
+
+
+async def handle_tournament_get(request: web.Request):
+    t_id = request.match_info.get("id", "").strip()
+    tourn = await get_tournament_by_id(t_id)
+    if not tourn:
+        return web.json_response({"error": "Tournament not found"}, status=404)
+    return web.json_response(tourn)
+
+
+async def handle_tournament_delete(request: web.Request):
+    t_id = request.match_info.get("id", "").strip()
+    success = await delete_tournament(t_id)
+    if success:
+        return web.json_response({"status": "deleted", "id": t_id})
+    return web.json_response({"error": "Tournament not found or could not be deleted"}, status=404)
+
+
+async def handle_team_delete(request: web.Request):
+    tournament_id = request.match_info.get("id", "").strip()
+    team_id = request.match_info.get("team_id", "").strip()
+    success = await delete_team(team_id, tournament_id=tournament_id)
+    if success:
+        return web.json_response({"status": "deleted", "team_id": team_id})
+    return web.json_response({"error": "Team not found or could not be deleted"}, status=404)
+
+
+async def handle_bracket_save(request: web.Request):
+    tournament_id = request.match_info.get("id", "").strip()
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    
+    bracket_data = data.get("bracketData") if "bracketData" in data else data
+    success = await upsert_tournament({"id": tournament_id, "bracketData": bracket_data})
+    if success:
+        return web.json_response({"status": "saved", "id": tournament_id})
+    return web.json_response({"error": "Failed to save bracket"}, status=500)
 
 
 async def handle_profile_get(request: web.Request):
@@ -176,7 +223,11 @@ def setup_api_routes(app: web.Application):
     # Tournaments & Teams
     app.router.add_get("/api/tournaments", handle_tournaments_list)
     app.router.add_post("/api/tournaments", handle_tournament_save)
+    app.router.add_get("/api/tournaments/{id}", handle_tournament_get)
+    app.router.add_delete("/api/tournaments/{id}", handle_tournament_delete)
     app.router.add_post("/api/tournaments/{id}/teams", handle_team_save)
+    app.router.add_delete("/api/tournaments/{id}/teams/{team_id}", handle_team_delete)
+    app.router.add_post("/api/tournaments/{id}/bracket", handle_bracket_save)
 
     # User Profile
     app.router.add_get("/api/profile", handle_profile_get)

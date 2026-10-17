@@ -34,7 +34,8 @@ import {
   generateSingleEliminationBracket,
   exportAllTournamentData,
   importAllTournamentData,
-  restoreDefaultTournaments
+  restoreDefaultTournaments,
+  syncTournamentsFromApi
 } from '../utils/tournamentManager';
 import { isSuperAdmin, SUPERADMIN_IDS } from '../utils/userProfile';
 import { triggerHaptic, openBotCommand, tg } from '../utils/telegram';
@@ -124,6 +125,18 @@ export default function AdminTab({ profile }) {
     const list = getAllTournaments();
     setTournaments(list);
   };
+
+  useEffect(() => {
+    syncTournamentsFromApi();
+
+    const handleUpdated = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setTournaments(e.detail);
+      }
+    };
+    window.addEventListener('aitu_tournaments_updated', handleUpdated);
+    return () => window.removeEventListener('aitu_tournaments_updated', handleUpdated);
+  }, []);
 
   // 1. Управление турнирами
   const handleSaveTournament = (e) => {

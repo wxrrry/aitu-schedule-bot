@@ -34,34 +34,40 @@ export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpen
           </div>
         </div>
 
-        {/* Right: Starosta Badge, Pinned Profile Button & Version */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Superadmin Root Access Quick Button */}
-          {isSuperAdmin(currentProfile?.id) && onOpenAdmin && (
-            <button
-              onClick={() => {
-                onOpenAdmin();
-                triggerHaptic('medium');
-              }}
-              className="flex items-center gap-1 px-2 py-1 bg-amber-400 hover:bg-amber-300 text-black font-mono text-[10px] font-black tracking-wider uppercase transition-all rounded-xs shadow-md cursor-pointer animate-pulse"
-              title="Открыть Root панель администратора"
-            >
-              <span>👑 АДМИН</span>
-            </button>
-          )}
-
-          {/* Starosta Hub quick button */}
-          {isStarostaOrAdmin && onOpenStarosta && (
-            <button
-              onClick={() => {
-                onOpenStarosta();
-                triggerHaptic('medium');
-              }}
-              className="flex items-center gap-1 px-2 py-1 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase transition-all rounded-xs"
-              title="Панель старосты"
-            >
-              <span>🎖 СТАРОСТА</span>
-            </button>
+        {/* Right: Role Badge (Mutually exclusive: Admin OR Starosta), Pinned Profile Button & Version */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Superadmin Root Access Quick Button (Only for Superadmins) */}
+          {isSuperAdmin(currentProfile?.id) ? (
+            onOpenAdmin && (
+              <button
+                onClick={() => {
+                  onOpenAdmin();
+                  triggerHaptic('medium');
+                }}
+                className={`flex items-center gap-1 px-2 py-1 font-mono text-[10px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer border ${
+                  activeTab === 'admin'
+                    ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
+                    : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/40 text-amber-300'
+                }`}
+                title="Панель администратора"
+              >
+                <span>👑 АДМИН</span>
+              </button>
+            )
+          ) : (
+            /* Starosta Hub quick button (Only for Starostas who are not Superadmins) */
+            isStarostaOrAdmin && onOpenStarosta && (
+              <button
+                onClick={() => {
+                  onOpenStarosta();
+                  triggerHaptic('medium');
+                }}
+                className="flex items-center gap-1 px-2 py-1 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer"
+                title="Панель старосты"
+              >
+                <span>🎖 СТАРОСТА</span>
+              </button>
+            )
           )}
 
           {/* Always Pinned Profile Button */}

@@ -794,6 +794,34 @@ async def add_or_update_team(tournament_id: str, team_data: dict) -> bool:
         return True
 
 
+async def delete_tournament(t_id: str) -> bool:
+    """Удаляет турнир и все связанные с ним команды."""
+    clean_id = str(t_id).strip()
+    if not clean_id:
+        return False
+    async with async_session() as session:
+        await session.execute(delete(Team).where(Team.tournament_id == clean_id))
+        stmt = delete(Tournament).where(Tournament.id == clean_id)
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
+async def delete_team(team_id: str, tournament_id: str | None = None) -> bool:
+    """Удаляет команду по ID (и опционально tournament_id)."""
+    clean_team_id = str(team_id).strip()
+    if not clean_team_id:
+        return False
+    async with async_session() as session:
+        conditions = [Team.id == clean_team_id]
+        if tournament_id:
+            conditions.append(Team.tournament_id == str(tournament_id).strip())
+        stmt = delete(Team).where(and_(*conditions))
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
 async def get_system_stats() -> dict:
     """Возвращает общую статистику базы данных колледжа."""
     async with async_session() as session:

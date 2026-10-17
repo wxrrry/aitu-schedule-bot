@@ -28,7 +28,8 @@ import TeamRegistrationModal from './TeamRegistrationModal';
 import TournamentOrganizerModal from './TournamentOrganizerModal';
 import { 
   getAllTournaments, 
-  getTournamentRegistrations 
+  getTournamentRegistrations,
+  syncTournamentsFromApi 
 } from '../utils/tournamentManager';
 import { getUserProfile } from '../utils/userProfile';
 import { useTelegramBackButton, triggerHaptic, openBotCommand } from '../utils/telegram';
@@ -48,6 +49,22 @@ export default function HLTVTab() {
   const [registerTournament, setRegisterTournament] = useState(null);
 
   const profile = getUserProfile();
+
+  useEffect(() => {
+    syncTournamentsFromApi();
+
+    const handleUpdated = (e) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setTournamentsList(e.detail);
+        if (selectedTournament) {
+          const refreshedSelected = e.detail.find(t => t.id === selectedTournament.id);
+          if (refreshedSelected) setSelectedTournament(refreshedSelected);
+        }
+      }
+    };
+    window.addEventListener('aitu_tournaments_updated', handleUpdated);
+    return () => window.removeEventListener('aitu_tournaments_updated', handleUpdated);
+  }, [selectedTournament]);
 
   const handleTournamentsUpdated = (updatedList) => {
     setTournamentsList(updatedList);

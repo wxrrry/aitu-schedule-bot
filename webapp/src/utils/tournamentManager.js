@@ -1,11 +1,13 @@
-// Менеджер турниров колледжа: регистрация команд, организация, генерация сеток и скоринг
+// Менеджер турниров колледжа: регистрация команд, организация, генерация сеток и скоринг с полной поддержкой базы данных
 import { OFFICIAL_BRACKET, TOURNAMENT_MATCHES, TOURNAMENTS_LIST } from '../data/cs2TournamentData';
 import { sendDataToBot } from './telegram';
 
-const TOURNAMENTS_STORAGE_KEY = 'aitu_tournaments_v2';
-const REGISTRATIONS_STORAGE_KEY = 'aitu_tournament_registrations_v2';
+const TOURNAMENTS_STORAGE_KEY = 'aitu_tournaments_v3';
+const REGISTRATIONS_STORAGE_KEY = 'aitu_tournament_registrations_v3';
 
-// Базовый реестр турниров
+const API_BASE = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
+
+// Базовый реестр турниров по умолчанию (для первого запуска)
 const DEFAULT_SYSTEM_TOURNAMENTS = [
   ...TOURNAMENTS_LIST,
   {
@@ -59,25 +61,105 @@ const DEFAULT_SYSTEM_TOURNAMENTS = [
         captainTg: "@m1hnessy",
         group: "9ПО-32к",
         status: "ПОДТВЕРЖДЕНА",
-        players: ["sh3f1eld", "N1x0", "FeRtEx", "ion !"],
+        players: ["senya_kdr", "d1sslove", "N0_NAME", "x_God"],
         createdAt: "16.10.2026"
       },
       {
-        id: "reg_dodo",
-        teamName: "DODO TEAM",
-        tag: "DODO",
-        captainNick: "Astronif",
-        captainTg: "@astronif",
-        group: "9ИС-21к",
+        id: "reg_cyber",
+        teamName: "CyberAITU",
+        tag: "CA",
+        captainNick: "f1rst_k1ng",
+        captainTg: "@f1rst_k1ng",
+        group: "9ПО-21к",
         status: "ПОДТВЕРЖДЕНА",
-        players: ["prokllat", "kotanye", "Ganzhubus", "yaponec_3"],
+        players: ["frosty99", "vortex_q", "shadow_step", "aim_star"],
         createdAt: "17.10.2026"
       }
     ]
   }
 ];
 
-// Получить все турниры (с автоматическим восстановлением системных турниров)
+// Синхронизация турниров и команд напрямую из базы данных
+export async function syncTournamentsFromApi() {
+  try {
+    const res = await fetch(`${API_BASE}/api/tournaments`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && Array.isArray(data.tournaments)) {
+      const serverTournaments = data.tournaments.map(t => {
+        let rulesArr = t.rules;
+        if (typeof rulesArr === 'string') {
+          try { rulesArr = JSON.parse(rulesArr); } catch (e) { rulesArr = []; }
+        }
+        let bracketObj = t.bracketData;
+        if (typeof bracketObj === 'string') {
+          try { bracketObj = JSON.parse(bracketObj); } catch (e) { bracketObj = {}; }
+        }
+        let teamsArr = t.teams || [];
+        teamsArr = teamsArr.map(tm => {
+          let pList = tm.players;
+          if (typeof pList === 'string') {
+            try { pList = JSON.parse(pList); } catch (e) { pList = []; }
+          }
+          return {
+            id: tm.id,
+            teamName: tm.teamName || tm.name,
+            tag: tm.tag,
+            captainNick: tm.captainNick || tm.captain_nick,
+            captainTg: tm.captainTg || tm.captain_tg,
+            group: tm.group || tm.group_name,
+            avatar: tm.avatar || '',
+            avatarUrl: tm.avatar || null,
+            players: pList,
+            status: tm.status || 'ПОДТВЕРЖДЕНА',
+            seed: tm.seed || 0,
+            score: tm.score || 0
+          };
+        });
+
+        // Сохраняем команды турнира в локальный кэш
+        try {
+          localStorage.setItem(`${REGISTRATIONS_STORAGE_KEY}_${t.id}`, JSON.stringify(teamsArr));
+        } catch (e) {
+          // ignore
+        }
+
+        return {
+          id: t.id,
+          title: t.title,
+          subTitle: t.subTitle || t.sub_title,
+          type: t.status === 'completed' ? 'past' : (t.status === 'ongoing' ? 'ongoing' : 'upcoming'),
+          status: t.status === 'registration' ? 'ПРИЁМ ЗАЯВОК' : (t.status === 'ongoing' ? 'ИДЁТ' : (t.status === 'completed' ? 'ЗАВЕРШЁН' : t.status)),
+          statusBadge: t.status === 'registration'
+            ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300 font-bold'
+            : (t.status === 'ongoing' ? 'bg-amber-950/60 border-amber-500/40 text-amber-300 font-bold' : 'bg-zinc-800 border-zinc-700 text-zinc-400'),
+          date: t.date || t.dates,
+          format: t.format,
+          discipline: t.discipline || t.game || 'CS2',
+          maxTeams: t.maxTeams || t.max_teams || 8,
+          registeredTeamsCount: teamsArr.length,
+          prizePool: t.prizePool || t.prize_pool,
+          rules: Array.isArray(rulesArr) ? rulesArr : [],
+          bracketData: bracketObj || {},
+          initialRegisteredTeams: teamsArr
+        };
+      });
+
+      if (serverTournaments.length > 0) {
+        saveAllTournaments(serverTournaments);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: serverTournaments }));
+        }
+        return serverTournaments;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not sync tournaments from API:", err);
+  }
+  return null;
+}
+
+// Получить все турниры (возвращает актуальный локальный кэш и синхронизирует с БД)
 export function getAllTournaments() {
   let list = [];
   try {
@@ -95,20 +177,13 @@ export function getAllTournaments() {
   if (list.length === 0) {
     list = [...DEFAULT_SYSTEM_TOURNAMENTS];
     saveAllTournaments(list);
-    return list;
   }
 
-  // Гарантируем, что базовые системные турниры (autumn_2026 и winter_major_2026) не пропадают
-  let changed = false;
-  DEFAULT_SYSTEM_TOURNAMENTS.forEach(defT => {
-    if (!list.some(t => t.id === defT.id)) {
-      list.unshift(defT);
-      changed = true;
-    }
-  });
-
-  if (changed) {
-    saveAllTournaments(list);
+  // Фоновая синхронизация с базой данных на сервере
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      syncTournamentsFromApi();
+    }, 50);
   }
 
   return list;
@@ -129,10 +204,34 @@ export function restoreDefaultTournaments() {
     }
   }
 
+  // Синхронизируем базовый турнир с БД
+  if (winter) {
+    fetch(`${API_BASE}/api/tournaments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: winter.id,
+        title: winter.title,
+        subTitle: winter.subTitle,
+        game: winter.discipline,
+        status: 'registration',
+        date: winter.date,
+        format: winter.format,
+        maxTeams: winter.maxTeams,
+        prizePool: winter.prizePool,
+        rules: winter.rules
+      })
+    }).catch(() => {});
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: list }));
+  }
+
   return list;
 }
 
-// Сохранить турниры
+// Сохранить турниры в локальный кэш
 export function saveAllTournaments(tournaments) {
   try {
     localStorage.setItem(TOURNAMENTS_STORAGE_KEY, JSON.stringify(tournaments));
@@ -158,7 +257,7 @@ export function getTournamentRegistrations(tournamentId) {
   return tourn?.initialRegisteredTeams || [];
 }
 
-// Зарегистрировать команду на турнир
+// Зарегистрировать команду на турнир (сохранение в БД)
 export function registerTeamForTournament(tournamentId, form) {
   const currentRegs = getTournamentRegistrations(tournamentId);
 
@@ -193,6 +292,25 @@ export function registerTeamForTournament(tournamentId, form) {
     saveAllTournaments(tournaments);
   }
 
+  // Сохраняем команду в базу данных на VPS
+  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: newEntry.id,
+      teamName: newEntry.teamName,
+      tag: newEntry.tag,
+      captainNick: newEntry.captainNick,
+      captainTg: newEntry.captainTg,
+      group: newEntry.group,
+      avatar: '',
+      players: newEntry.players,
+      status: newEntry.status,
+      seed: updatedRegs.length,
+      score: 0
+    })
+  }).catch(err => console.warn("Failed to persist team to DB:", err));
+
   // Уведомление в бота
   sendDataToBot({
     action: 'tournament_registration',
@@ -204,10 +322,14 @@ export function registerTeamForTournament(tournamentId, form) {
     playersCount: newEntry.players.length + 1
   });
 
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: tournaments }));
+  }
+
   return newEntry;
 }
 
-// Создать новый турнир (для организаторов)
+// Создать новый турнир (сохранение в БД)
 export function createNewTournament(tournamentData) {
   const tournaments = getAllTournaments();
 
@@ -234,6 +356,30 @@ export function createNewTournament(tournamentData) {
 
   const updated = [newTourn, ...tournaments];
   saveAllTournaments(updated);
+
+  // Сохраняем в базу данных PostgreSQL на VPS
+  fetch(`${API_BASE}/api/tournaments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: newTourn.id,
+      title: newTourn.title,
+      subTitle: newTourn.subTitle,
+      game: newTourn.discipline,
+      status: 'registration',
+      date: newTourn.date,
+      format: newTourn.format,
+      maxTeams: newTourn.maxTeams,
+      prizePool: newTourn.prizePool,
+      rules: newTourn.rules,
+      bracketData: {}
+    })
+  }).catch(err => console.warn("Failed to persist tournament to DB:", err));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: updated }));
+  }
+
   return newTourn;
 }
 
@@ -241,7 +387,6 @@ export function createNewTournament(tournamentData) {
 export function generateSingleEliminationBracket(teamNames) {
   const count = teamNames.length;
   if (count <= 4) {
-    // Сетка на 4 команды (Полуфиналы + Финал + 3 место)
     const t = [...teamNames];
     while (t.length < 4) t.push(`TBD ${t.length + 1}`);
 
@@ -272,7 +417,6 @@ export function generateSingleEliminationBracket(teamNames) {
     };
   }
 
-  // Сетка на 8 команд (1/4 финала + 1/2 финала + Финал + 3 место)
   const t = [...teamNames];
   while (t.length < 8) t.push(`TBD ${t.length + 1}`);
 
@@ -324,19 +468,34 @@ export function generateSingleEliminationBracket(teamNames) {
   };
 }
 
-// Обновить турнир
+// Обновить турнир (в БД и локально)
 export function updateTournament(tournamentId, patch) {
   const tournaments = getAllTournaments();
   const idx = tournaments.findIndex(t => t.id === tournamentId);
   if (idx !== -1) {
     tournaments[idx] = { ...tournaments[idx], ...patch };
     saveAllTournaments(tournaments);
+
+    // Сохраняем изменения в БД на VPS
+    fetch(`${API_BASE}/api/tournaments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: tournamentId,
+        ...patch
+      })
+    }).catch(err => console.warn("Failed to update tournament in DB:", err));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: tournaments }));
+    }
+
     return tournaments[idx];
   }
   return null;
 }
 
-// Удалить турнир
+// Удалить турнир (из БД и локально)
 export function deleteTournament(tournamentId) {
   const tournaments = getAllTournaments();
   const updated = tournaments.filter(t => t.id !== tournamentId);
@@ -346,10 +505,20 @@ export function deleteTournament(tournamentId) {
   } catch (e) {
     // ignore
   }
+
+  // Удаляем турнир из базы данных на VPS
+  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}`, {
+    method: 'DELETE'
+  }).catch(err => console.warn("Failed to delete tournament from DB:", err));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: updated }));
+  }
+
   return updated;
 }
 
-// Удалить команду из турнира
+// Удалить команду из турнира (из БД и локально)
 export function deleteTournamentRegistration(tournamentId, teamId) {
   const regs = getTournamentRegistrations(tournamentId);
   const updated = regs.filter(r => r.id !== teamId);
@@ -366,10 +535,20 @@ export function deleteTournamentRegistration(tournamentId, teamId) {
     tournaments[idx].registeredTeamsCount = updated.length;
     saveAllTournaments(tournaments);
   }
+
+  // Удаляем команду из базы данных на VPS
+  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams/${encodeURIComponent(teamId)}`, {
+    method: 'DELETE'
+  }).catch(err => console.warn("Failed to delete team from DB:", err));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: tournaments }));
+  }
+
   return updated;
 }
 
-// Добавить или обновить команду с поддержкой аватарки
+// Добавить или обновить команду с поддержкой аватарки (сохранение в БД)
 export function saveTeamWithAvatar(tournamentId, teamData) {
   const currentRegs = getTournamentRegistrations(tournamentId);
   const existingIdx = currentRegs.findIndex(r => r.id === teamData.id || (teamData.id && r.id === teamData.id));
@@ -385,9 +564,12 @@ export function saveTeamWithAvatar(tournamentId, teamData) {
     group: teamData.group?.trim() || '9ПО-43к',
     players: (teamData.players || []).filter(Boolean).map(p => p.trim()),
     substitute: teamData.substitute?.trim() || '',
-    avatarUrl: teamData.avatarUrl || null,
+    avatarUrl: teamData.avatarUrl || teamData.avatar || null,
+    avatar: teamData.avatarUrl || teamData.avatar || '',
     avatarPreset: teamData.avatarPreset || null,
     status: teamData.status || 'ПОДТВЕРЖДЕНА',
+    seed: teamData.seed || (existingIdx !== -1 ? currentRegs[existingIdx].seed : currentRegs.length + 1),
+    score: teamData.score || 0,
     createdAt: teamData.createdAt || new Date().toLocaleDateString('ru-RU')
   };
 
@@ -412,6 +594,29 @@ export function saveTeamWithAvatar(tournamentId, teamData) {
     saveAllTournaments(tournaments);
   }
 
+  // Сохраняем команду в базу данных PostgreSQL на VPS
+  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: entry.id,
+      teamName: entry.teamName,
+      tag: entry.tag,
+      captainNick: entry.captainNick,
+      captainTg: entry.captainTg,
+      group: entry.group,
+      avatar: entry.avatarUrl || entry.avatar || '',
+      players: entry.players,
+      status: entry.status,
+      seed: entry.seed || 0,
+      score: entry.score || 0
+    })
+  }).catch(err => console.warn("Failed to persist team with avatar to DB:", err));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: tournaments }));
+  }
+
   return entry;
 }
 
@@ -425,7 +630,7 @@ export function exportAllTournamentData() {
 
   return JSON.stringify({
     timestamp: new Date().toISOString(),
-    version: "v3.14",
+    version: "v3.16",
     tournaments,
     registrations: allRegistrations
   }, null, 2);
@@ -442,7 +647,19 @@ export function importAllTournamentData(jsonString) {
           localStorage.setItem(`${REGISTRATIONS_STORAGE_KEY}_${tournId}`, JSON.stringify(data.registrations[tournId]));
         });
       }
-      return { success: true, message: `Успешно импортировано ${data.tournaments.length} турниров` };
+      // Также синхронизируем импортированные турниры в БД
+      data.tournaments.forEach(t => {
+        fetch(`${API_BASE}/api/tournaments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(t)
+        }).catch(() => {});
+      });
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: data.tournaments }));
+      }
+      return { success: true, message: `Успешно импортировано ${data.tournaments.length} турниров в БД` };
     }
     return { success: false, message: 'Неверный формат JSON' };
   } catch (e) {
