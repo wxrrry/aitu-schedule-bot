@@ -82,11 +82,6 @@ export default function TelegramOnlyGuard() {
         </div>
 
       </main>
-
-      {/* Footer info */}
-      <footer className="max-w-md mx-auto w-full text-center border-t border-neutral-800/80 pt-3 font-mono text-[9px] text-zinc-600">
-        <div>AITU COLLEGE SYSTEM // 51 ГРУППА · РАСПИСАНИЕ И ТУРНИРЫ</div>
-      </footer>
     </div>
   );
 }
