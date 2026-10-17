@@ -23,6 +23,7 @@ import { useTelegramBackButton, triggerHaptic, openBotCommand, tg } from '../uti
 import { getRoleDisplay } from '../utils/userProfile';
 import { 
   getStoredReplacements, 
+  fetchReplacementsFromApi,
   saveCustomReplacement, 
   removeCustomReplacement, 
   getTodayDateKey 
@@ -78,6 +79,15 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
   const [repReason, setRepReason] = useState('');
   const [copiedCmd, setCopiedCmd] = useState(null);
 
+  // Синхронизация замен с базой данных при открытии
+  useEffect(() => {
+    if (isOpen && currentGroup) {
+      fetchReplacementsFromApi(currentGroup).then(data => {
+        if (data) setReplacements(data);
+      }).catch(err => console.warn('Could not fetch replacements in StarostaModal', err));
+    }
+  }, [isOpen, currentGroup]);
+
   // --- 2. ОБЪЯВЛЕНИЯ СТАРОСТЫ ---
   const [noticeTag, setNoticeTag] = useState('ВАЖНО');
   const [noticeTitle, setNoticeTitle] = useState('');
@@ -121,7 +131,15 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
       text = `${repSubject || 'Замена'}${repRoom ? ` (каб. ${repRoom})` : ''}${repTeacher ? ` · ${repTeacher}` : ''}`;
     }
 
-    const updated = saveCustomReplacement(repDate, repPair, repType, text);
+    const updated = saveCustomReplacement(repDate, repPair, {
+      type: repType,
+      text,
+      subject: repSubject || text,
+      room: repRoom || '—',
+      teacher: repTeacher || '—',
+      group: currentGroup,
+      author: 'Староста'
+    });
     setReplacements({ ...updated });
     triggerHaptic('success');
 
@@ -133,7 +151,8 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
   };
 
   const handleRemoveReplacement = (dateKey, pairNum) => {
-    const updated = removeCustomReplacement(dateKey, pairNum);
+    const existing = replacements[dateKey]?.[pairNum];
+    const updated = removeCustomReplacement(dateKey, pairNum, existing?.id);
     setReplacements({ ...updated });
     triggerHaptic('light');
   };

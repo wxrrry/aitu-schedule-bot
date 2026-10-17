@@ -964,3 +964,57 @@ async def get_system_stats() -> dict:
         }
 
 
+# =============================================================
+# USER TASKS / DEADLINES CRUD
+# =============================================================
+async def get_user_tasks(user_id: int | str) -> list[UserTask]:
+    """Возвращает список персональных заметок/заданий пользователя."""
+    u_id = int(user_id)
+    async with async_session() as session:
+        stmt = select(UserTask).where(UserTask.user_id == u_id).order_by(UserTask.created_at.desc())
+        res = await session.execute(stmt)
+        return list(res.scalars().all())
+
+
+async def add_or_update_user_task(
+    user_id: int | str,
+    task_key: str,
+    text: str,
+    is_done: bool = False,
+    task_id: int | None = None
+) -> UserTask:
+    """Создает или обновляет задачу пользователя."""
+    u_id = int(user_id)
+    async with async_session() as session:
+        if task_id:
+            stmt = select(UserTask).where(and_(UserTask.id == task_id, UserTask.user_id == u_id))
+            res = await session.execute(stmt)
+            t = res.scalar_one_or_none()
+            if t:
+                t.text = text
+                t.is_done = is_done
+                await session.commit()
+                return t
+
+        new_task = UserTask(
+            user_id=u_id,
+            task_key=task_key,
+            text=text,
+            is_done=is_done
+        )
+        session.add(new_task)
+        await session.commit()
+        await session.refresh(new_task)
+        return new_task
+
+
+async def delete_user_task(user_id: int | str, task_id: int) -> bool:
+    """Удаляет задачу пользователя."""
+    u_id = int(user_id)
+    async with async_session() as session:
+        stmt = delete(UserTask).where(and_(UserTask.id == task_id, UserTask.user_id == u_id))
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+

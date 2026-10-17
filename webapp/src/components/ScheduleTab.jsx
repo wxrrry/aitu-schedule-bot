@@ -16,6 +16,7 @@ import {
 } from '../data/scheduleData';
 import { 
   getStoredReplacements, 
+  fetchReplacementsFromApi,
   saveCustomReplacement, 
   removeCustomReplacement, 
   getTodayDateKey 
@@ -169,6 +170,41 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
     return () => clearInterval(timer);
   }, [selectedGroup]);
 
+  // Загрузка активных замен из базы данных при смене группы
+  useEffect(() => {
+    fetchReplacementsFromApi(selectedGroup).then(data => {
+      if (data) setReplacements(data);
+    }).catch(err => console.warn('Could not load replacements for group', err));
+  }, [selectedGroup]);
+
+  // Синхронизация задач пользователя с PostgreSQL
+  useEffect(() => {
+    const userId = profile?.telegramId || profile?.id;
+    if (userId) {
+      fetch(`/api/tasks?user_id=${userId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.tasks && Array.isArray(data.tasks)) {
+            const grouped = {};
+            for (const t of data.tasks) {
+              const k = t.task_key || 'general';
+              if (!grouped[k]) grouped[k] = [];
+              grouped[k].push({ id: String(t.id), text: t.text, done: t.is_done });
+            }
+            setTasks(prev => {
+              const merged = { ...prev };
+              for (const [k, arr] of Object.entries(grouped)) {
+                merged[k] = arr;
+              }
+              localStorage.setItem('aitu_pair_tasks', JSON.stringify(merged));
+              return merged;
+            });
+          }
+        })
+        .catch(err => console.warn('Could not sync user tasks with database', err));
+    }
+  }, [profile?.telegramId, profile?.id]);
+
   const toggleDayAccordion = (dayId) => {
     setExpandedDays(prev => ({
       ...prev,
@@ -204,31 +240,77 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   // Управление заданиями
   const handleAddTask = (subjectName) => {
     if (!newTaskInput.trim()) return;
+    const taskText = newTaskInput.trim();
+    const tempId = Date.now().toString();
     const currentSubjectTasks = tasks[subjectName] || [];
     const updated = {
       ...tasks,
       [subjectName]: [
         ...currentSubjectTasks,
-        { id: Date.now().toString(), text: newTaskInput.trim(), done: false }
+        { id: tempId, text: taskText, done: false }
       ]
     };
     setTasks(updated);
     localStorage.setItem('aitu_pair_tasks', JSON.stringify(updated));
     setNewTaskInput('');
     triggerHaptic('success');
+
+    const userId = profile?.telegramId || profile?.id;
+    if (userId) {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          task_key: subjectName,
+          text: taskText,
+          is_done: false
+        })
+      }).then(res => res.ok ? res.json() : null).then(resData => {
+        if (resData?.task?.id) {
+          setTasks(prev => {
+            const list = prev[subjectName] || [];
+            const fresh = {
+              ...prev,
+              [subjectName]: list.map(t => t.id === tempId ? { ...t, id: String(resData.task.id) } : t)
+            };
+            localStorage.setItem('aitu_pair_tasks', JSON.stringify(fresh));
+            return fresh;
+          });
+        }
+      }).catch(e => console.warn('Offline task save', e));
+    }
   };
 
   const handleToggleTask = (subjectName, taskId) => {
     const currentSubjectTasks = tasks[subjectName] || [];
+    const targetTask = currentSubjectTasks.find(t => t.id === taskId);
+    const newDone = targetTask ? !targetTask.done : true;
+
     const updated = {
       ...tasks,
       [subjectName]: currentSubjectTasks.map(t => 
-        t.id === taskId ? { ...t, done: !t.done } : t
+        t.id === taskId ? { ...t, done: newDone } : t
       )
     };
     setTasks(updated);
     localStorage.setItem('aitu_pair_tasks', JSON.stringify(updated));
     triggerHaptic('selection');
+
+    const userId = profile?.telegramId || profile?.id;
+    if (userId && targetTask) {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: /^\d+$/.test(taskId) ? Number(taskId) : null,
+          user_id: userId,
+          task_key: subjectName,
+          text: targetTask.text,
+          is_done: newDone
+        })
+      }).catch(e => console.warn('Offline task update', e));
+    }
   };
 
   const handleDeleteTask = (subjectName, taskId) => {
@@ -240,6 +322,13 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
     setTasks(updated);
     localStorage.setItem('aitu_pair_tasks', JSON.stringify(updated));
     triggerHaptic('light');
+
+    const userId = profile?.telegramId || profile?.id;
+    if (userId && /^\d+$/.test(taskId)) {
+      fetch(`/api/tasks/${taskId}?user_id=${userId}`, {
+        method: 'DELETE'
+      }).catch(e => console.warn('Offline task delete', e));
+    }
   };
 
   // Управление заменами
@@ -247,7 +336,8 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
     const updated = saveCustomReplacement(dateKey, pairNum, {
       type,
       text: text || (type === 'cancel' ? 'Пара отменена' : 'Замена пары'),
-      author: 'Студент'
+      author: 'Студент',
+      group: selectedGroup
     });
     setReplacements({ ...updated });
     setShowAddReplacement(false);
@@ -256,7 +346,8 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   };
 
   const handleRemoveReplacement = (dateKey, pairNum) => {
-    const updated = removeCustomReplacement(dateKey, pairNum);
+    const existing = replacements[dateKey]?.[pairNum];
+    const updated = removeCustomReplacement(dateKey, pairNum, existing?.id);
     setReplacements({ ...updated });
     triggerHaptic('light');
   };

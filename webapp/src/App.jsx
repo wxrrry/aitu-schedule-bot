@@ -135,11 +135,11 @@ export default function App() {
               onOpenStarosta={() => setIsStarostaOpen(true)}
               onOpenTeam={(teamName) => {
                 setIsProfileOpen(false);
-                setActiveTab('hltv');
+                setActiveTab('esports');
               }}
               onOpenPlayer={(playerNick) => {
                 setIsProfileOpen(false);
-                setActiveTab('hltv');
+                setActiveTab('esports');
               }}
             />
           )}

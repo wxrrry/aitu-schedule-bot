@@ -19,10 +19,17 @@ from db.crud import (
     get_all_groups,
     get_lessons_for_day,
     get_replacements_for_date_and_group,
+    get_group_replacements,
+    get_all_active_replacements,
+    add_replacement_record,
     add_replacement,
+    delete_replacement_by_id,
     get_or_create_user,
     update_user_group,
-    update_user_notifications
+    update_user_notifications,
+    get_user_tasks,
+    add_or_update_user_task,
+    delete_user_task
 )
 from schedule_data import get_schedule_for_group, ALL_COLLEGE_GROUPS, GROUPS_BY_COURSE, get_course_from_group_name
 
@@ -77,13 +84,196 @@ async def handle_schedule(request: web.Request):
     group = request.query.get("group", "9ПО-43к").strip()
     course = get_course_from_group_name(group)
     sched = get_schedule_for_group(group)
-    # Преобразуем целочисленные ключи дней для JSON
     serializable_sched = {str(d): pairs for d, pairs in sched.items()}
+
+    # Активные замены для группы
+    reps = await get_group_replacements(group)
+    serializable_reps = []
+    for r in reps:
+        d_val = r.date.strftime("%Y-%m-%d") if hasattr(r.date, "strftime") else str(r.date)
+        serializable_reps.append({
+            "id": r.id,
+            "date": d_val,
+            "pair_num": r.pair_num,
+            "action_type": r.action_type,
+            "subject": r.subject,
+            "room": r.room,
+            "teacher": r.teacher,
+            "raw_text": r.raw_text
+        })
+
     return web.json_response({
         "group": group,
         "course": course,
-        "days": serializable_sched
+        "days": serializable_sched,
+        "replacements": serializable_reps
     })
+
+
+async def handle_replacements_get(request: web.Request):
+    group = request.query.get("group", "").strip()
+    since_date_str = request.query.get("since", "").strip()
+    since_date = date.today()
+    if since_date_str:
+        try:
+            since_date = date.fromisoformat(since_date_str)
+        except Exception:
+            pass
+
+    if group:
+        reps = await get_group_replacements(group, since_date=since_date)
+    else:
+        reps = await get_all_active_replacements(since_date=since_date)
+
+    result = []
+    for r in reps:
+        d_val = r.date.strftime("%Y-%m-%d") if hasattr(r.date, "strftime") else str(r.date)
+        result.append({
+            "id": r.id,
+            "group": r.group_name or "ALL",
+            "date": d_val,
+            "pair_num": r.pair_num,
+            "action_type": r.action_type,
+            "subject": r.subject,
+            "room": r.room,
+            "teacher": r.teacher,
+            "raw_text": r.raw_text,
+            "created_by": r.created_by
+        })
+    return web.json_response({
+        "group": group or "ALL",
+        "total": len(result),
+        "replacements": result
+    })
+
+
+async def handle_replacement_create(request: web.Request):
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+
+    target_date_raw = data.get("date")
+    if not target_date_raw:
+        return web.json_response({"error": "Date required"}, status=400)
+
+    try:
+        d_obj = date.fromisoformat(str(target_date_raw))
+    except Exception:
+        d_obj = date.today()
+
+    pair_num = int(data.get("pair_num", 1))
+    action_type = data.get("action_type", "replace")
+    subject = data.get("subject", "")
+    room = data.get("room", "—")
+    teacher = data.get("teacher", "—")
+    raw_text = data.get("raw_text", "")
+    group_name = data.get("group")
+    created_by = int(data.get("created_by", 0))
+
+    rep = await add_replacement_record(
+        target_date=d_obj,
+        pair_num=pair_num,
+        action_type=action_type,
+        subject=subject,
+        room=room,
+        teacher=teacher,
+        raw_text=raw_text,
+        group_name=group_name,
+        created_by=created_by
+    )
+
+    d_val = rep.date.strftime("%Y-%m-%d") if hasattr(rep.date, "strftime") else str(rep.date)
+    return web.json_response({
+        "status": "saved",
+        "replacement": {
+            "id": rep.id,
+            "date": d_val,
+            "pair_num": rep.pair_num,
+            "action_type": rep.action_type,
+            "subject": rep.subject,
+            "room": rep.room,
+            "teacher": rep.teacher,
+            "group": rep.group_name
+        }
+    })
+
+
+async def handle_replacement_delete(request: web.Request):
+    rep_id = request.match_info.get("id", "").strip()
+    if not rep_id.isdigit():
+        return web.json_response({"error": "Valid integer ID required"}, status=400)
+
+    success = await delete_replacement_by_id(int(rep_id))
+    if success:
+        return web.json_response({"status": "deleted", "id": int(rep_id)})
+    return web.json_response({"error": "Replacement not found"}, status=404)
+
+
+async def handle_tasks_get(request: web.Request):
+    user_id_str = request.query.get("user_id", "")
+    if not user_id_str.isdigit():
+        return web.json_response({"error": "Valid user_id required"}, status=400)
+
+    tasks = await get_user_tasks(int(user_id_str))
+    return web.json_response({
+        "tasks": [
+            {
+                "id": t.id,
+                "task_key": t.task_key,
+                "text": t.text,
+                "is_done": t.is_done,
+                "created_at": t.created_at.isoformat() if t.created_at else ""
+            }
+            for t in tasks
+        ]
+    })
+
+
+async def handle_task_save(request: web.Request):
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+
+    user_id = data.get("user_id")
+    task_key = data.get("task_key", "general")
+    text = data.get("text", "")
+    is_done = bool(data.get("is_done", False))
+    task_id = data.get("id")
+
+    if not user_id or not text.strip():
+        return web.json_response({"error": "user_id and text required"}, status=400)
+
+    t = await add_or_update_user_task(
+        user_id=int(user_id),
+        task_key=task_key,
+        text=text.strip(),
+        is_done=is_done,
+        task_id=int(task_id) if task_id else None
+    )
+
+    return web.json_response({
+        "status": "saved",
+        "task": {
+            "id": t.id,
+            "task_key": t.task_key,
+            "text": t.text,
+            "is_done": t.is_done
+        }
+    })
+
+
+async def handle_task_delete(request: web.Request):
+    task_id = request.match_info.get("id", "").strip()
+    user_id_str = request.query.get("user_id", "")
+    if not task_id.isdigit() or not user_id_str.isdigit():
+        return web.json_response({"error": "Valid integer task_id and user_id required"}, status=400)
+
+    success = await delete_user_task(int(user_id_str), int(task_id))
+    if success:
+        return web.json_response({"status": "deleted", "id": int(task_id)})
+    return web.json_response({"error": "Task not found"}, status=404)
 
 
 async def handle_tournaments_list(request: web.Request):
@@ -228,6 +418,16 @@ def setup_api_routes(app: web.Application):
     app.router.add_post("/api/tournaments/{id}/teams", handle_team_save)
     app.router.add_delete("/api/tournaments/{id}/teams/{team_id}", handle_team_delete)
     app.router.add_post("/api/tournaments/{id}/bracket", handle_bracket_save)
+
+    # Replacements
+    app.router.add_get("/api/replacements", handle_replacements_get)
+    app.router.add_post("/api/replacements", handle_replacement_create)
+    app.router.add_delete("/api/replacements/{id}", handle_replacement_delete)
+
+    # User Tasks
+    app.router.add_get("/api/tasks", handle_tasks_get)
+    app.router.add_post("/api/tasks", handle_task_save)
+    app.router.add_delete("/api/tasks/{id}", handle_task_delete)
 
     # User Profile
     app.router.add_get("/api/profile", handle_profile_get)
