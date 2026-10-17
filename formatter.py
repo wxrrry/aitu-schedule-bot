@@ -512,7 +512,7 @@ async def get_formatted_day_schedule(
             title_prefix=title_prefix,
             current_time_str=current_time_str,
             group_name=grp,
-            custom_replacements=db_reps or None
+            custom_replacements=db_reps
         )
 
     return format_day_schedule(
@@ -593,7 +593,7 @@ async def get_formatted_morning_alert(today_date: date, group_name: str | None =
     db_reps = await get_replacements_for_date_and_group(today_date, grp)
 
     if not db_pairs and grp == GROUP_NAME:
-        return format_morning_alert(today_date, group_name=grp, custom_replacements=db_reps or None)
+        return format_morning_alert(today_date, group_name=grp, custom_replacements=db_reps)
 
     return format_morning_alert(
         today_date,
@@ -609,7 +609,6 @@ async def get_formatted_replacements_summary(group_name: str | None = None) -> s
     Поддерживает числитель/знаменатель и время звонков по курсу.
     """
     from db.crud import get_group_replacements, get_all_active_replacements
-    from replacements import format_replacements_summary
     from config import BOT_TZ
     from datetime import datetime
 
@@ -621,7 +620,7 @@ async def get_formatted_replacements_summary(group_name: str | None = None) -> s
     # Сначала ищем замены для конкретной группы
     db_reps = await get_group_replacements(grp, since_date=today)
 
-    if not db_reps and grp != GROUP_NAME:
+    if not db_reps:
         all_reps = await get_all_active_replacements(since_date=today)
         if not all_reps:
             return (
@@ -639,9 +638,6 @@ async def get_formatted_replacements_summary(group_name: str | None = None) -> s
             "Все занятия проводятся по стандартному расписанию.\n\n"
             f"ℹ️ <i>Опубликованы изменения для других групп:</i>\n<code>{grps_preview}</code>"
         )
-
-    if not db_reps and grp == GROUP_NAME:
-        return format_replacements_summary()
 
     by_date: dict[date, list] = {}
     for r in db_reps:
@@ -665,7 +661,7 @@ async def get_formatted_replacements_summary(group_name: str | None = None) -> s
             t_info = bell_sched.get(p_num, {})
             t_range = t_info.get("range", "") if isinstance(t_info, dict) else str(t_info)
 
-            subj = html.escape(r.subject)
+            subj = html.escape(r.subject or r.raw_text or "Замена")
             room = html.escape(r.room or "—")
             teacher = html.escape(r.teacher or "—")
 

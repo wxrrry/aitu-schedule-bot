@@ -695,7 +695,8 @@ async def handle_select_course(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("sel_grp_"))
 async def handle_select_group_finish(call: types.CallbackQuery, state: FSMContext):
-    chosen_grp = call.data.replace("sel_grp_", "").strip()
+    raw_grp = call.data.replace("sel_grp_", "").strip()
+    chosen_grp = normalize_group_name(raw_grp) or raw_grp
     user_id = call.from_user.id
     await update_user_group(user_id, chosen_grp)
     await state.clear()
@@ -720,14 +721,16 @@ async def handle_select_group_manual(call: types.CallbackQuery, state: FSMContex
 
 @dp.message(RegistrationState.waiting_manual_group)
 async def handle_manual_group_input(message: types.Message, state: FSMContext):
-    grp_input = (message.text or "").strip().upper()
+    raw_text = (message.text or "").strip()
+    grp_input = normalize_group_name(raw_text) or raw_text.upper()
     if len(grp_input) < 2 or len(grp_input) > 20:
         await message.answer("❌ Название группы должно быть от 2 до 20 символов. Попробуйте ещё раз:")
         return
 
+    course = get_course_from_group_name(grp_input)
     existing = await get_group_by_name(grp_input)
     if not existing:
-        await add_group(grp_input, course=4)
+        await add_group(grp_input, course=course)
 
     await update_user_group(message.from_user.id, grp_input)
     await state.clear()

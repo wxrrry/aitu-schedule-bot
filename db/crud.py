@@ -10,18 +10,88 @@ from .models import User, Group, Lesson, Replacement, ChatBinding, UserRole, Tou
 logger = logging.getLogger(__name__)
 
 
-def normalize_group_name(group_name: str | None) -> str:
+def canonical_group_name(group_name: str | None) -> str:
     """
     Приводит название группы к каноническому виду (например, 9ПО-43к).
+    Автоматически преобразует визуально похожие латинские буквы в кириллицу.
     """
     if not group_name:
         return ""
     clean = group_name.strip()
-    m = re.match(r"^(\d{1,2})([а-яА-Яa-zA-Z]+)-(\d{1,3})([а-яА-Яa-zA-Z]?)$", clean)
+
+    lat_to_cyr = {
+        'A': 'А', 'a': 'а',
+        'B': 'В', 'b': 'в',
+        'C': 'С', 'c': 'с',
+        'E': 'Е', 'e': 'е',
+        'H': 'Н', 'h': 'н',
+        'K': 'К', 'k': 'к',
+        'M': 'М', 'm': 'м',
+        'O': 'О', 'o': 'о',
+        'P': 'Р', 'p': 'р',
+        'T': 'Т', 't': 'т',
+        'X': 'Х', 'x': 'х',
+        'Y': 'У', 'y': 'у',
+    }
+    trans = "".join(lat_to_cyr.get(ch, ch) for ch in clean)
+    m = re.match(r"^(\d{1,2})\s*([а-яА-Яa-zA-Z]+)\s*[-–—_]?\s*(\d{1,3})\s*([а-яА-Яa-zA-Z]?)$", trans)
     if m:
         c, dept, num, letter = m.groups()
-        return f"{c}{dept.upper()}-{num}{letter.lower() if letter else ''}"
-    return clean
+        suffix = letter.lower() if letter else ""
+        return f"{c}{dept.upper()}-{num}{suffix}"
+    return trans
+
+
+def normalize_group_name(group_name: str | None) -> str:
+    """Алиас для обратной совместимости."""
+    return canonical_group_name(group_name)
+
+
+def get_group_variants(group_name: str | None) -> list[str]:
+    """
+    Возвращает список всех возможных вариантов написания группы для безопасного
+    поиска через SQL IN (...) в обход ограничения SQLite lower/LIKE для кириллицы.
+    """
+    if not group_name:
+        return []
+    variants = set()
+    raw = group_name.strip()
+    if not raw:
+        return []
+
+    variants.add(raw)
+    variants.add(raw.upper())
+    variants.add(raw.lower())
+
+    canon = canonical_group_name(raw)
+    if canon:
+        variants.add(canon)
+        variants.add(canon.upper())
+        variants.add(canon.lower())
+
+        if canon[-1].isalpha():
+            base = canon[:-1]
+            last = canon[-1]
+            variants.add(f"{base}{last.lower()}")
+            variants.add(f"{base}{last.upper()}")
+            variants.add(f"{base.upper()}{last.lower()}")
+            variants.add(f"{base.upper()}{last.upper()}")
+            variants.add(f"{base.lower()}{last.lower()}")
+            variants.add(f"{base.lower()}{last.upper()}")
+
+        no_dash = canon.replace("-", "")
+        variants.add(no_dash)
+        variants.add(no_dash.upper())
+        variants.add(no_dash.lower())
+
+    return [v for v in variants if v]
+
+
+def is_same_group(grp1: str | None, grp2: str | None) -> bool:
+    """Сравнивает два названия учебных групп без учёта регистра и латиницы/кириллицы."""
+    if not grp1 or not grp2:
+        return False
+    return canonical_group_name(grp1).lower() == canonical_group_name(grp2).lower()
 
 
 # =============================================================
@@ -146,8 +216,9 @@ async def update_user_notifications(
 
 async def get_users_by_group(group_name: str) -> list[User]:
     """Возвращает всех студентов указанной группы."""
+    variants = get_group_variants(group_name)
     async with async_session() as session:
-        stmt = select(User).where(User.group_name == group_name)
+        stmt = select(User).where(User.group_name.in_(variants))
         res = await session.execute(stmt)
         return list(res.scalars().all())
 
@@ -162,7 +233,8 @@ async def get_users_for_notification(setting_key: str, group_name: str | None = 
     async with async_session() as session:
         conditions = [col == True]
         if group_name:
-            conditions.append(User.group_name == group_name)
+            variants = get_group_variants(group_name)
+            conditions.append(User.group_name.in_(variants))
         stmt = select(User).where(and_(*conditions))
         res = await session.execute(stmt)
         return list(res.scalars().all())
@@ -191,24 +263,34 @@ async def get_all_groups(course: int | None = None) -> list[Group]:
 
 
 async def get_group_by_name(name: str) -> Group | None:
-    """Возвращает группу по названию."""
-    clean_name = name.strip()
+    """Возвращает группу по названию с учётом любых вариантов регистра и кириллицы/латиницы."""
+    variants = get_group_variants(name)
+    if not variants:
+        return None
     async with async_session() as session:
-        stmt = select(Group).where(Group.name.ilike(clean_name))
+        stmt = select(Group).where(Group.name.in_(variants))
         res = await session.execute(stmt)
-        return res.scalar_one_or_none()
+        group = res.scalars().first()
+        if group:
+            return group
+
+        # Нечеткий поиск по всем активным группам через каноническое сравнение
+        all_groups = await get_all_groups()
+        for g in all_groups:
+            if is_same_group(g.name, name):
+                return g
+        return None
 
 
 async def add_group(name: str, course: int, department: str = "") -> Group:
     """Добавляет новую группу, если её ещё нет."""
-    clean_name = name.strip()
+    canon_name = canonical_group_name(name) or name.strip()
+    existing = await get_group_by_name(canon_name)
+    if existing:
+        return existing
+
     async with async_session() as session:
-        stmt = select(Group).where(Group.name.ilike(clean_name))
-        res = await session.execute(stmt)
-        existing = res.scalar_one_or_none()
-        if existing:
-            return existing
-        new_g = Group(name=clean_name, course=course, department=department)
+        new_g = Group(name=canon_name, course=course, department=department)
         session.add(new_g)
         await session.commit()
         await session.refresh(new_g)
@@ -231,15 +313,11 @@ async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str = 
     Возвращает пары группы на указанный день недели с учётом чётности.
     Формат словаря: {1: {'subject': '...', 'room': '...', 'teacher': '...'}, ...}
     """
-    norm_grp = normalize_group_name(group_name)
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
             and_(
-                or_(
-                    Lesson.group_name == norm_grp,
-                    func.lower(Lesson.group_name) == norm_grp.lower(),
-                    func.lower(Lesson.group_name) == group_name.strip().lower()
-                ),
+                Lesson.group_name.in_(variants),
                 Lesson.weekday == weekday,
                 or_(Lesson.parity == "both", Lesson.parity == parity_code)
             )
@@ -260,15 +338,9 @@ async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str = 
 
 async def get_all_lessons_for_group(group_name: str) -> list[Lesson]:
     """Возвращает все уроки группы из базы данных."""
-    norm_grp = normalize_group_name(group_name)
+    variants = get_group_variants(group_name)
     async with async_session() as session:
-        stmt = select(Lesson).where(
-            or_(
-                Lesson.group_name == norm_grp,
-                func.lower(Lesson.group_name) == norm_grp.lower(),
-                func.lower(Lesson.group_name) == group_name.strip().lower()
-            )
-        ).order_by(Lesson.weekday, Lesson.pair_num)
+        stmt = select(Lesson).where(Lesson.group_name.in_(variants)).order_by(Lesson.weekday, Lesson.pair_num)
         res = await session.execute(stmt)
         return list(res.scalars().all())
 
@@ -283,14 +355,12 @@ async def add_or_update_lesson(
     teacher: str = "—"
 ) -> Lesson:
     """Добавляет или обновляет урок."""
-    norm_grp = normalize_group_name(group_name)
+    canon_grp = canonical_group_name(group_name) or group_name.strip()
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
             and_(
-                or_(
-                    Lesson.group_name == norm_grp,
-                    func.lower(Lesson.group_name) == norm_grp.lower()
-                ),
+                Lesson.group_name.in_(variants),
                 Lesson.weekday == weekday,
                 Lesson.pair_num == pair_num,
                 Lesson.parity == parity
@@ -302,10 +372,10 @@ async def add_or_update_lesson(
             lesson.subject = subject
             lesson.room = room
             lesson.teacher = teacher
-            lesson.group_name = norm_grp
+            lesson.group_name = canon_grp
         else:
             lesson = Lesson(
-                group_name=norm_grp,
+                group_name=canon_grp,
                 weekday=weekday,
                 pair_num=pair_num,
                 parity=parity,
@@ -321,14 +391,11 @@ async def add_or_update_lesson(
 
 async def update_lesson_room(group_name: str, weekday: int, pair_num: int, new_room: str) -> bool:
     """Староста/Зам: обновляет номер аудитории для всех вариантов пары."""
-    norm_grp = normalize_group_name(group_name)
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = update(Lesson).where(
             and_(
-                or_(
-                    Lesson.group_name == norm_grp,
-                    func.lower(Lesson.group_name) == norm_grp.lower()
-                ),
+                Lesson.group_name.in_(variants),
                 Lesson.weekday == weekday,
                 Lesson.pair_num == pair_num
             )
@@ -344,23 +411,42 @@ async def update_lesson_room(group_name: str, weekday: int, pair_num: int, new_r
 async def get_replacements_for_date_and_group(target_date: date, group_name: str | None = None) -> dict[int, dict]:
     """
     Возвращает замены на дату для конкретной группы (включая общеколледжные замены group_name is NULL).
+    Поддерживает кириллические названия групп и разные форматы хранения дат в SQLite.
     """
+    if isinstance(target_date, datetime):
+        d_obj = target_date.date()
+    elif isinstance(target_date, str):
+        try:
+            d_obj = date.fromisoformat(target_date)
+        except Exception:
+            d_obj = date.today()
+    else:
+        d_obj = target_date
+    d_str = d_obj.strftime("%Y-%m-%d")
+
     async with async_session() as session:
-        conditions = [Replacement.date == target_date]
-        if group_name:
-            norm_grp = normalize_group_name(group_name)
+        date_cond = or_(
+            Replacement.date == d_obj,
+            Replacement.date == d_str,
+            func.date(Replacement.date) == d_str
+        )
+        conditions = [date_cond]
+        variants = get_group_variants(group_name) if group_name else []
+        if variants:
             conditions.append(or_(
                 Replacement.group_name.is_(None),
-                Replacement.group_name == norm_grp,
-                func.lower(Replacement.group_name) == norm_grp.lower(),
-                func.lower(Replacement.group_name) == group_name.strip().lower()
+                Replacement.group_name.in_(variants)
             ))
+
         stmt = select(Replacement).where(and_(*conditions)).order_by(Replacement.pair_num)
         res = await session.execute(stmt)
         reps = res.scalars().all()
 
         reps_dict: dict[int, dict] = {}
         for r in reps:
+            # Если указана группа, проверяем в Python совпадение группы
+            if group_name and r.group_name is not None and not (r.group_name in variants or is_same_group(r.group_name, group_name)):
+                continue
             reps_dict[r.pair_num] = {
                 "type": r.action_type,
                 "subject": r.subject,
@@ -376,8 +462,19 @@ async def get_all_active_replacements(since_date: date | None = None) -> list[Re
     """Возвращает все замены, начиная с указанной даты (по умолчанию с сегодняшнего дня)."""
     if since_date is None:
         since_date = date.today()
+    if isinstance(since_date, datetime):
+        s_obj = since_date.date()
+    else:
+        s_obj = since_date
+    s_str = s_obj.strftime("%Y-%m-%d")
+
     async with async_session() as session:
-        stmt = select(Replacement).where(Replacement.date >= since_date).order_by(Replacement.date, Replacement.pair_num)
+        date_cond = or_(
+            Replacement.date >= s_obj,
+            Replacement.date >= s_str,
+            func.date(Replacement.date) >= s_str
+        )
+        stmt = select(Replacement).where(date_cond).order_by(Replacement.date, Replacement.pair_num)
         res = await session.execute(stmt)
         return list(res.scalars().all())
 
@@ -394,19 +491,28 @@ async def add_replacement_record(
     created_by: int = 0
 ) -> Replacement:
     """Добавляет или заменяет запись о замене/отмене."""
-    norm_grp = normalize_group_name(group_name) if group_name else None
+    norm_grp = canonical_group_name(group_name) if group_name else None
+    variants = get_group_variants(group_name) if group_name else []
+
+    if isinstance(target_date, datetime):
+        d_obj = target_date.date()
+    elif isinstance(target_date, str):
+        try:
+            d_obj = date.fromisoformat(target_date)
+        except Exception:
+            d_obj = date.today()
+    else:
+        d_obj = target_date
+    d_str = d_obj.strftime("%Y-%m-%d")
+
     async with async_session() as session:
-        # Проверяем существующую замену на эту пару
-        stmt = select(Replacement).where(
-            and_(
-                Replacement.date == target_date,
-                Replacement.pair_num == pair_num,
-                or_(
-                    Replacement.group_name == norm_grp,
-                    func.lower(Replacement.group_name) == (norm_grp.lower() if norm_grp else None)
-                ) if norm_grp else Replacement.group_name.is_(None)
-            )
+        date_cond = or_(
+            Replacement.date == d_obj,
+            Replacement.date == d_str,
+            func.date(Replacement.date) == d_str
         )
+        grp_cond = Replacement.group_name.in_(variants) if variants else Replacement.group_name.is_(None)
+        stmt = select(Replacement).where(and_(date_cond, Replacement.pair_num == pair_num, grp_cond))
         res = await session.execute(stmt)
         rep = res.scalar_one_or_none()
         if rep:
@@ -420,7 +526,7 @@ async def add_replacement_record(
         else:
             rep = Replacement(
                 group_name=norm_grp,
-                date=target_date,
+                date=d_obj,
                 pair_num=pair_num,
                 action_type=action_type,
                 subject=subject,
@@ -437,10 +543,27 @@ async def add_replacement_record(
 
 async def delete_replacement_record(target_date: date, pair_num: int, group_name: str | None = None) -> bool:
     """Удаляет замену по дате, номеру пары и группе."""
+    if isinstance(target_date, datetime):
+        d_obj = target_date.date()
+    elif isinstance(target_date, str):
+        try:
+            d_obj = date.fromisoformat(target_date)
+        except Exception:
+            d_obj = date.today()
+    else:
+        d_obj = target_date
+    d_str = d_obj.strftime("%Y-%m-%d")
+
     async with async_session() as session:
-        conditions = [Replacement.date == target_date, Replacement.pair_num == pair_num]
+        date_cond = or_(
+            Replacement.date == d_obj,
+            Replacement.date == d_str,
+            func.date(Replacement.date) == d_str
+        )
+        conditions = [date_cond, Replacement.pair_num == pair_num]
         if group_name is not None:
-            conditions.append(Replacement.group_name.ilike(group_name.strip()))
+            variants = get_group_variants(group_name)
+            conditions.append(Replacement.group_name.in_(variants))
         stmt = delete(Replacement).where(and_(*conditions))
         res = await session.execute(stmt)
         await session.commit()
@@ -458,19 +581,20 @@ async def bind_chat_to_group(chat_id: int | str, chat_title: str, group_name: st
     """Привязывает беседу Telegram к академической группе."""
     c_id = int(chat_id)
     u_id = int(user_id)
+    canon_grp = canonical_group_name(group_name) or group_name.strip()
     async with async_session() as session:
         stmt = select(ChatBinding).where(ChatBinding.chat_id == c_id)
         res = await session.execute(stmt)
         binding = res.scalar_one_or_none()
         if binding:
             binding.chat_title = chat_title
-            binding.group_name = group_name.strip()
+            binding.group_name = canon_grp
             binding.bound_by_user_id = u_id
         else:
             binding = ChatBinding(
                 chat_id=c_id,
                 chat_title=chat_title,
-                group_name=group_name.strip(),
+                group_name=canon_grp,
                 bound_by_user_id=u_id
             )
             session.add(binding)
@@ -493,8 +617,9 @@ async def get_chat_group(chat_id: int | str) -> str | None:
 
 async def get_chats_for_group(group_name: str) -> list[ChatBinding]:
     """Возвращает все чаты Telegram, привязанные к группе."""
+    variants = get_group_variants(group_name)
     async with async_session() as session:
-        stmt = select(ChatBinding).where(ChatBinding.group_name.ilike(group_name.strip()))
+        stmt = select(ChatBinding).where(ChatBinding.group_name.in_(variants))
         res = await session.execute(stmt)
         return list(res.scalars().all())
 
@@ -512,11 +637,11 @@ async def get_all_chat_bindings() -> list[ChatBinding]:
 # =============================================================
 async def get_group_officers(group_name: str) -> dict[str, User | None]:
     """Возвращает текущего старосту и заместителя старосты указанной группы."""
-    clean_grp = group_name.strip()
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = select(User).where(
             and_(
-                User.group_name.ilike(clean_grp),
+                User.group_name.in_(variants),
                 User.role.in_([UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value])
             )
         )
@@ -542,7 +667,8 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
     if officer_role not in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
         return False, "Недопустимая роль офицера."
 
-    clean_grp = group_name.strip()
+    canon_grp = canonical_group_name(group_name) or group_name.strip()
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         target_stmt = select(User).where(User.user_id == new_user_id)
         res = await session.execute(target_stmt)
@@ -552,7 +678,7 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
 
         curr_stmt = select(User).where(
             and_(
-                User.group_name.ilike(clean_grp),
+                User.group_name.in_(variants),
                 User.role == officer_role,
                 User.user_id != new_user_id
             )
@@ -563,7 +689,7 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
             old.role = UserRole.STUDENT.value
 
         target_user.role = officer_role
-        target_user.group_name = clean_grp
+        target_user.group_name = canon_grp
 
         await session.commit()
         return True, "Успешно назначено."
@@ -571,11 +697,11 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
 
 async def demote_group_officer(group_name: str, officer_role: str) -> bool:
     """Снимает старосту или заместителя группы, возвращая им роль student."""
-    clean_grp = group_name.strip()
+    variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = update(User).where(
             and_(
-                User.group_name.ilike(clean_grp),
+                User.group_name.in_(variants),
                 User.role == officer_role
             )
         ).values(role=UserRole.STUDENT.value)
@@ -588,16 +714,38 @@ async def get_group_replacements(group_name: str, since_date: date | None = None
     """Возвращает все активные замены для указанной группы."""
     if since_date is None:
         since_date = date.today()
-    clean_grp = group_name.strip()
+    if isinstance(since_date, datetime):
+        s_obj = since_date.date()
+    elif isinstance(since_date, str):
+        try:
+            s_obj = date.fromisoformat(since_date)
+        except Exception:
+            s_obj = date.today()
+    else:
+        s_obj = since_date
+    s_str = s_obj.strftime("%Y-%m-%d")
+
+    variants = get_group_variants(group_name)
     async with async_session() as session:
-        stmt = select(Replacement).where(
-            and_(
-                Replacement.date >= since_date,
-                or_(Replacement.group_name.is_(None), Replacement.group_name.ilike(clean_grp))
-            )
-        ).order_by(Replacement.date, Replacement.pair_num)
+        date_cond = or_(
+            Replacement.date >= s_obj,
+            Replacement.date >= s_str,
+            func.date(Replacement.date) >= s_str
+        )
+        group_cond = or_(
+            Replacement.group_name.is_(None),
+            Replacement.group_name.in_(variants)
+        )
+        stmt = select(Replacement).where(and_(date_cond, group_cond)).order_by(Replacement.date, Replacement.pair_num)
         res = await session.execute(stmt)
-        return list(res.scalars().all())
+        reps = list(res.scalars().all())
+
+        # Если по строгим variants ничего не найдено, но есть записи в базе - делаем поиск по всем активным
+        if not reps:
+            all_active = await get_all_active_replacements(since_date=s_obj)
+            reps = [r for r in all_active if r.group_name is None or is_same_group(r.group_name, group_name)]
+
+        return reps
 
 
 async def delete_replacement_by_id(rep_id: int | str) -> bool:
