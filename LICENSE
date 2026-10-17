@@ -3,26 +3,39 @@ PROPRIETARY AND CONFIDENTIAL SOFTWARE LICENSE
 Copyright (c) 2026 AITU Schedule Bot Developers. All rights reserved.
 
 NOTICE: This software, its source code, assets, Telegram Mini App, API, 
-documentation, and related materials ("Software") are proprietary and confidential.
+database schemas, documentation, and related materials ("Software") 
+are proprietary and confidential property of the original authors/creators.
 
-1. PERMITTED USE:
-This Software is developed and licensed exclusively for internal educational, 
-informational, and operational use by authorized students, faculty, and administration 
-of AITU College.
+1. DEPLOYMENT AND HOSTING RESTRICTION (ЗАПРЕТ НА РАЗВЁРТЫВАНИЕ):
+Deployment, hosting, installation, configuration, or execution of this Software, 
+in whole or in part, on any public or private server, cloud infrastructure, 
+VPS, container environment, cluster, or local machine is STRICTLY AND EXCLUSIVELY 
+RESERVED FOR THE ORIGINAL CREATORS / AUTHORS OF THIS PROJECT, OR THIRD PARTIES 
+HOLDING DIRECT, EXPRESS PRIOR WRITTEN PERMISSION FROM THE CREATORS.
 
-2. RESTRICTIONS:
+NO INDIVIDUAL, STUDENT, ENTITY, EDUCATIONAL INSTITUTION, OR THIRD PARTY IS 
+AUTHORIZED TO DEPLOY, SELF-HOST, RUN, OR OPERATE AN INSTANCE OF THIS SOFTWARE 
+WITHOUT SUCH WRITTEN PERMISSION.
+
+2. PERMITTED END-USER ACCESS:
+Authorized students, faculty, and administration of AITU College are granted 
+a limited, non-exclusive, non-transferable, revocable license solely to interact 
+with and access the centrally operated, official deployment of this Software via 
+the designated official Telegram client and official Telegram Mini App.
+
+3. GENERAL RESTRICTIONS:
 Except as expressly authorized in writing by the copyright holders:
-- You may NOT copy, reproduce, modify, merge, publish, distribute, sublicense, 
-  sell, rent, or transfer this Software or any portion thereof.
+- You may NOT copy, clone, reproduce, modify, fork, merge, publish, distribute, 
+  sublicense, sell, rent, lease, or transfer this Software or any portion thereof.
 - You may NOT reverse engineer, decompile, or disassemble any binary, compiled, 
   or obfuscated components of this Software.
-- You may NOT deploy, host, or execute this Software for public, external, 
-  commercial, or unauthorized purposes outside the designated college infrastructure.
-- Any unauthorized use, reproduction, distribution, or public display of this 
-  Software is strictly prohibited and subject to civil, administrative, and 
-  criminal liability under applicable copyright and intellectual property laws.
+- You may NOT deploy, host, mirror, or execute this Software for public, external, 
+  commercial, educational, or private purposes outside the official creator-managed deployment.
+- Any unauthorized deployment, running, reproduction, distribution, or public display of this 
+  Software constitutes copyright infringement and is subject to civil, administrative, 
+  and criminal liability under applicable copyright and intellectual property laws.
 
-3. DISCLAIMER OF WARRANTY:
+4. DISCLAIMER OF WARRANTY:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
 PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
