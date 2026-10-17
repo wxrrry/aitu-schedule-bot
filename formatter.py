@@ -353,9 +353,14 @@ def format_weekday_by_index(
         
     lines = [header]
     existing_nums = [item["num"] for item in pair_items]
+    lunch_info = get_course_lunch_info(course)
     for item in pair_items:
-        if item["num"] == 3 and any(n <= 2 for n in existing_nums):
-            lines.append("🍽 <b>Обед: 12:20 — 12:55</b> <i>(35 минут)</i>\n")
+        # 1 курс: обед после 1 пары (перед 2 парой)
+        if course == 1 and item["num"] == 2 and any(n <= 1 for n in existing_nums):
+            lines.append(f"🍽 <b>Обед: {lunch_info['start']} — {lunch_info['end']}</b> <i>({lunch_info['duration']})</i>\n")
+        # 3 и 4 курс: обед после 2 пары (перед 3 парой)
+        elif course in (3, 4) and item["num"] == 3 and any(n <= 2 for n in existing_nums):
+            lines.append(f"🍽 <b>Обед: {lunch_info['start']} — {lunch_info['end']}</b> <i>({lunch_info['duration']})</i>\n")
         lines.append(item["text"])
         
     return "\n".join(lines).strip()
@@ -595,3 +600,88 @@ async def get_formatted_morning_alert(today_date: date, group_name: str | None =
         custom_pairs=db_pairs,
         custom_replacements=db_reps
     )
+
+
+async def get_formatted_replacements_summary(group_name: str | None = None) -> str:
+    """
+    Форматирует актуальные замены из SQLite БД для группы или всего колледжа.
+    Поддерживает числитель/знаменатель и время звонков по курсу.
+    """
+    from db.crud import get_group_replacements, get_all_active_replacements
+    from replacements import format_replacements_summary
+    from config import BOT_TZ
+    from datetime import datetime
+
+    grp = group_name or GROUP_NAME
+    course = get_course_from_group_name(grp)
+    bell_sched = get_bell_schedule(course)
+    today = datetime.now(BOT_TZ).date()
+
+    # Сначала ищем замены для конкретной группы
+    db_reps = await get_group_replacements(grp, since_date=today)
+
+    if not db_reps and grp != GROUP_NAME:
+        all_reps = await get_all_active_replacements(since_date=today)
+        if not all_reps:
+            return (
+                f"✨ <b>Актуальные замены и отмены пар ({grp}):</b>\n\n"
+                "🎉 <b>На ближайшие дни изменений нет!</b>\n"
+                "Все занятия проводятся по основному графику учебного плана."
+            )
+        affected_grps = sorted(list(set(r.group_name for r in all_reps if r.group_name)))
+        grps_preview = ", ".join(affected_grps[:8])
+        if len(affected_grps) > 8:
+            grps_preview += f" и ещё {len(affected_grps) - 8}"
+        return (
+            f"✨ <b>Актуальные замены и отмены пар ({grp}):</b>\n\n"
+            f"🎉 <b>У группы {grp} на ближайшие дни замен нет!</b>\n"
+            "Все занятия проводятся по стандартному расписанию.\n\n"
+            f"ℹ️ <i>Опубликованы изменения для других групп:</i>\n<code>{grps_preview}</code>"
+        )
+
+    if not db_reps and grp == GROUP_NAME:
+        return format_replacements_summary()
+
+    by_date: dict[date, list] = {}
+    for r in db_reps:
+        d = r.date if isinstance(r.date, date) else date.fromisoformat(str(r.date))
+        by_date.setdefault(d, []).append(r)
+
+    lines = [
+        f"⚠️ <b>Актуальные изменения в расписании ({grp}):</b>",
+        f"👥 Курс: <b>{course}</b> · Расписание звонков адаптировано",
+        "──────────────────────"
+    ]
+
+    for d in sorted(by_date.keys()):
+        _, parity_name = get_week_parity(d)
+        weekday_name = DAYS_RU[d.weekday()]
+        date_str = f"{d.day} {MONTHS_RU[d.month]} {d.year}"
+        lines.append(f"\n📅 <b>{weekday_name}, {date_str}</b> · {parity_name}:")
+
+        for r in sorted(by_date[d], key=lambda x: x.pair_num):
+            p_num = r.pair_num
+            t_info = bell_sched.get(p_num, {})
+            t_range = t_info.get("range", "") if isinstance(t_info, dict) else str(t_info)
+
+            subj = html.escape(r.subject)
+            room = html.escape(r.room or "—")
+            teacher = html.escape(r.teacher or "—")
+
+            if r.action_type == "cancel":
+                lines.append(
+                    f"<blockquote>"
+                    f"❌ <b>{p_num} пара ({t_range}): <s>ОТМЕНЕНА</s></b>\n"
+                    f"📚 <i>{subj}</i>"
+                    f"</blockquote>"
+                )
+            else:
+                lines.append(
+                    f"<blockquote>"
+                    f"🔄 <b>{p_num} пара ({t_range}): ЗАМЕНА</b>\n"
+                    f"📚 <b>{subj}</b>\n"
+                    f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>"
+                    f"</blockquote>"
+                )
+
+    return "\n".join(lines)

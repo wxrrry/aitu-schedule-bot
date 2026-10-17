@@ -35,6 +35,7 @@ from formatter import (
     get_formatted_week_schedule,
     get_formatted_weekday_by_index,
     get_formatted_morning_alert,
+    get_formatted_replacements_summary,
     MONTHS_RU
 )
 from db.crud import (
@@ -1192,14 +1193,17 @@ async def handle_calendar_export(message: types.Message):
 @dp.message(Command("zameni"))
 @dp.message(F.text == "⚠️ Замены пар")
 async def handle_zameny_list(message: types.Message):
-    text = format_replacements_summary()
+    target_group = await resolve_target_group(message.chat, message.from_user)
+    text = await get_formatted_replacements_summary(group_name=target_group)
     kb = get_replacements_keyboard()
     await message.answer(text, reply_markup=kb)
 
 
 @dp.callback_query(F.data == "refresh_replacements")
 async def handle_refresh_replacements(call: types.CallbackQuery):
-    text = format_replacements_summary()
+    chat = call.message.chat if call.message else None
+    target_group = await resolve_target_group(chat, call.from_user)
+    text = await get_formatted_replacements_summary(group_name=target_group)
     kb = get_replacements_keyboard()
     try:
         await call.message.edit_text(text, reply_markup=kb)
