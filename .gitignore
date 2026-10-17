@@ -15,3 +15,7 @@ venv/
 scratch/
 webapp/node_modules/
 webapp/dist/
+downloads/
+user_settings.json
+subscribers.json
+zameny.json
