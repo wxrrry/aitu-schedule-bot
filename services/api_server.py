@@ -62,7 +62,7 @@ async def handle_health(request: web.Request):
     return web.json_response({
         "status": "ok",
         "service": "AITU College Schedule & Tournament API",
-        "version": "v3.16",
+        "version": "v3.17",
         "timestamp": datetime.utcnow().isoformat()
     })
 

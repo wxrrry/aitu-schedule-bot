@@ -20,6 +20,7 @@ import {
   Flame,
   Award,
   ChevronRight,
+  Camera,
   X
 } from 'lucide-react';
 import { 
@@ -315,6 +316,24 @@ export default function AdminTab({ profile }) {
     updateTournament(currentTourn.id, { bracket: newBracket });
     refreshTournaments();
     notify('Счет матча обновлен!');
+  };
+
+  // Прикрепление скриншота итогов матча (табло счёта)
+  const handleUploadMatchScreenshot = (roundKey, matchIdx, file) => {
+    if (!file || !currentTourn?.bracket) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const newBracket = JSON.parse(JSON.stringify(currentTourn.bracket));
+      const roundMatches = roundKey === 'final' ? [newBracket.final] : newBracket[roundKey];
+      if (roundMatches && roundMatches[matchIdx]) {
+        roundMatches[matchIdx].screenshotUrl = dataUrl;
+        updateTournament(currentTourn.id, { bracket: newBracket });
+        refreshTournaments();
+        notify('Скриншот итогов матча успешно прикреплен!');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // 4. Объявления
@@ -1147,6 +1166,18 @@ export default function AdminTab({ profile }) {
                               className="w-10 bg-zinc-900 border border-white/20 text-center text-white text-xs font-mono"
                             />
                           </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-white/[0.05]">
+                            <label className="flex items-center gap-1 text-[9px] text-zinc-400 hover:text-cyan-400 cursor-pointer">
+                              <Camera className="w-3 h-3 text-cyan-400" />
+                              <span>{m.screenshotUrl ? 'Скриншот ✓' : '+ Скриншот'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleUploadMatchScreenshot('round2', idx, e.target.files[0])}
+                              />
+                            </label>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1184,6 +1215,18 @@ export default function AdminTab({ profile }) {
                               className="w-10 bg-zinc-900 border border-white/20 text-center text-white text-xs font-mono"
                             />
                           </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-white/[0.05]">
+                            <label className="flex items-center gap-1 text-[9px] text-zinc-400 hover:text-cyan-400 cursor-pointer">
+                              <Camera className="w-3 h-3 text-cyan-400" />
+                              <span>{m.screenshotUrl ? 'Скриншот ✓' : '+ Скриншот'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleUploadMatchScreenshot('semifinals', idx, e.target.files[0])}
+                              />
+                            </label>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1218,6 +1261,18 @@ export default function AdminTab({ profile }) {
                           onBlur={(e) => handleUpdateBracketMatchScore('final', 0, currentTourn.bracket.final.team1.score || 0, e.target.value)}
                           className="w-10 bg-zinc-900 border border-white/20 text-center text-white text-xs font-mono"
                         />
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t border-amber-500/20">
+                        <label className="flex items-center gap-1 text-[9px] text-amber-300 hover:text-amber-200 cursor-pointer">
+                          <Camera className="w-3 h-3 text-amber-400" />
+                          <span>{currentTourn.bracket.final.screenshotUrl ? 'Скриншот финала ✓' : '+ Скриншот финала'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleUploadMatchScreenshot('final', 0, e.target.files[0])}
+                          />
+                        </label>
                       </div>
                     </div>
                   </div>

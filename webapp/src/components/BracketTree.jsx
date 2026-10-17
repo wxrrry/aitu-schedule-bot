@@ -1,8 +1,10 @@
-import React from 'react';
-import { Trophy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Camera, X } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
 
 export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }) {
+  const [activeScreenshot, setActiveScreenshot] = useState(null);
+
   const handleTeamClick = (e, teamName) => {
     if (onSelectTeam && teamName && !teamName.startsWith('TBD') && !teamName.includes('Победитель') && !teamName.includes('Проигравший') && !teamName.includes('Финалист') && !teamName.includes('Бронза')) {
       e.stopPropagation();
@@ -82,6 +84,23 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                           {m.team2.score !== null ? m.team2.score : '-'}
                         </span>
                       </div>
+                      {m.screenshotUrl && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerHaptic('light');
+                            setActiveScreenshot({
+                              url: m.screenshotUrl,
+                              title: `${m.team1?.name} vs ${m.team2?.name}`
+                            });
+                          }}
+                          className="w-full mt-1 py-1 px-2 bg-[#162736]/60 hover:bg-[#1f374c] border border-[#2a455e] text-cyan-300 text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors rounded-xs font-mono font-bold"
+                        >
+                          <Camera className="w-3 h-3 text-cyan-400" />
+                          <span>Скриншот итогов</span>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -127,6 +146,23 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                         {m.team2.score !== null ? m.team2.score : '-'}
                       </span>
                     </div>
+                    {m.screenshotUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerHaptic('light');
+                          setActiveScreenshot({
+                            url: m.screenshotUrl,
+                            title: `${m.team1?.name} vs ${m.team2?.name}`
+                          });
+                        }}
+                        className="w-full mt-1 py-1 px-2 bg-[#162736]/60 hover:bg-[#1f374c] border border-[#2a455e] text-cyan-300 text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors rounded-xs font-mono font-bold"
+                      >
+                        <Camera className="w-3 h-3 text-cyan-400" />
+                        <span>Скриншот итогов</span>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -167,6 +203,23 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                         {bracketData.final.team2.score !== null ? bracketData.final.team2.score : '-'}
                       </span>
                     </div>
+                    {bracketData.final.screenshotUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerHaptic('light');
+                          setActiveScreenshot({
+                            url: bracketData.final.screenshotUrl,
+                            title: `ФИНАЛ: ${bracketData.final.team1?.name} vs ${bracketData.final.team2?.name}`
+                          });
+                        }}
+                        className="w-full mt-1.5 py-1.5 px-2 bg-amber-950/60 hover:bg-amber-900/70 border border-amber-500/50 text-amber-200 text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors rounded-xs font-mono font-black"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Скриншот итогов финала</span>
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -195,6 +248,42 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
             </div>
           </div>
         </div>
+
+        {/* Screenshot Preview Modal */}
+        {activeScreenshot && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-xs animate-fadeIn font-mono"
+            onClick={() => setActiveScreenshot(null)}
+          >
+            <div 
+              className="relative max-w-lg w-full bg-[#0e0e11] border border-neutral-700 p-4 space-y-3 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                  <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{activeScreenshot.title || 'ИТОГИ МАТЧА'}</span>
+                </div>
+                <button
+                  onClick={() => setActiveScreenshot(null)}
+                  className="text-xs text-neutral-400 hover:text-white px-2 py-0.5 border border-neutral-700"
+                >
+                  [X]
+                </button>
+              </div>
+              <div className="bg-black border border-neutral-800 rounded-xs overflow-hidden flex items-center justify-center p-1">
+                <img 
+                  src={activeScreenshot.url} 
+                  alt="Скриншот итогов матча" 
+                  className="w-full max-h-[65vh] object-contain block"
+                />
+              </div>
+              <div className="text-[10px] text-zinc-400 text-center font-sans">
+                Официальный скриншот итогового табло счёта (Scoreboard)
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
