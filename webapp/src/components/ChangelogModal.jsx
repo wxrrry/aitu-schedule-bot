@@ -1,7 +1,7 @@
 import React from 'react';
 import { CHANGELOG_STAGES, APP_CURRENT_VERSION } from '../data/changelogData';
-import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
-import { GitCommit, Sparkles, CheckCircle2, ChevronRight, X, Clock } from 'lucide-react';
+import { useTelegramBackButton } from '../utils/telegram';
+import { GitCommit, X, Clock } from 'lucide-react';
 
 export default function ChangelogModal({ isOpen, onClose }) {
   useTelegramBackButton(isOpen, onClose);
@@ -10,7 +10,7 @@ export default function ChangelogModal({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xs animate-fadeIn font-mono"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-mono"
       onClick={onClose}
     >
       <div 

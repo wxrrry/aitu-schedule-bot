@@ -7,19 +7,27 @@ export function useTelegramBackButton(isOpen, onClose) {
   useEffect(() => {
     if (!tg?.BackButton) return;
 
-    if (isOpen) {
-      tg.BackButton.show();
-      const handleClick = () => {
-        if (onClose) onClose();
-      };
-      tg.BackButton.onClick(handleClick);
+    try {
+      if (isOpen) {
+        tg.BackButton.show();
+        const handleClick = () => {
+          if (onClose) onClose();
+        };
+        tg.BackButton.onClick(handleClick);
 
-      return () => {
-        tg.BackButton.offClick(handleClick);
+        return () => {
+          try {
+            tg.BackButton.offClick(handleClick);
+            tg.BackButton.hide();
+          } catch (e) {
+            // ignore cleanup errors
+          }
+        };
+      } else {
         tg.BackButton.hide();
-      };
-    } else {
-      tg.BackButton.hide();
+      }
+    } catch (e) {
+      console.warn('Telegram BackButton operation error', e);
     }
   }, [isOpen, onClose]);
 }

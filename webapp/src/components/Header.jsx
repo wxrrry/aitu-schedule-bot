@@ -3,7 +3,7 @@ import { GitCommit, ChevronRight, ShieldCheck } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
 import { isSuperAdmin } from '../utils/userProfile';
 
-export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpenStarosta, onOpenAdmin }) {
+export default function Header({ activeTab, profile, onOpenProfile, onOpenChangelog, onOpenStarosta, onOpenAdmin }) {
   const currentProfile = profile || {
     fullName: 'Студент AITU',
     username: 'student',
@@ -17,7 +17,8 @@ export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpen
     ? currentProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : 'СТ';
 
-  const isStarostaOrAdmin = ['starosta', 'zam_starosty', 'admin', 'superadmin'].includes(currentProfile.role);
+  const isAdminUser = isSuperAdmin(currentProfile?.id) || currentProfile.role === 'admin' || currentProfile.role === 'superadmin';
+  const isStarostaUser = !isAdminUser && ['starosta', 'zam_starosty'].includes(currentProfile.role);
 
   return (
     <header className="sticky top-0 z-40 bg-[#09090b]/95 backdrop-blur-md border-b border-neutral-800 px-3.5 py-2">
@@ -34,40 +35,38 @@ export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpen
           </div>
         </div>
 
-        {/* Right: Role Badge (Mutually exclusive: Admin OR Starosta), Pinned Profile Button & Version */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Superadmin Root Access Quick Button (Only for Superadmins) */}
-          {isSuperAdmin(currentProfile?.id) ? (
-            onOpenAdmin && (
-              <button
-                onClick={() => {
-                  onOpenAdmin();
-                  triggerHaptic('medium');
-                }}
-                className={`flex items-center gap-1 px-2 py-1 font-mono text-[10px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer border ${
-                  activeTab === 'admin'
-                    ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
-                    : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/40 text-amber-300'
-                }`}
-                title="Панель администратора"
-              >
-                <span>👑 АДМИН</span>
-              </button>
-            )
-          ) : (
-            /* Starosta Hub quick button (Only for Starostas who are not Superadmins) */
-            isStarostaOrAdmin && onOpenStarosta && (
-              <button
-                onClick={() => {
-                  onOpenStarosta();
-                  triggerHaptic('medium');
-                }}
-                className="flex items-center gap-1 px-2 py-1 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer"
-                title="Панель старосты"
-              >
-                <span>🎖 СТАРОСТА</span>
-              </button>
-            )
+        {/* Right: Role Badge (Strictly Mutually Exclusive: Admin OR Starosta), Pinned Profile Button & Version */}
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          {/* Admin Badge Quick Access (Only for Admins) */}
+          {isAdminUser && onOpenAdmin && (
+            <button
+              onClick={() => {
+                onOpenAdmin();
+                triggerHaptic('medium');
+              }}
+              className={`flex items-center gap-1 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer border ${
+                activeTab === 'admin'
+                  ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
+                  : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/40 text-amber-300'
+              }`}
+              title="Панель администратора"
+            >
+              <span>👑 АДМИН</span>
+            </button>
+          )}
+
+          {/* Starosta Badge Quick Access (Only for actual Starostas, NEVER for Admins) */}
+          {isStarostaUser && onOpenStarosta && (
+            <button
+              onClick={() => {
+                onOpenStarosta();
+                triggerHaptic('medium');
+              }}
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 font-mono text-[9px] font-bold tracking-wider uppercase transition-all rounded-xs cursor-pointer"
+              title="Панель старосты"
+            >
+              <span>🎖 СТАРОСТА</span>
+            </button>
           )}
 
           {/* Always Pinned Profile Button */}
@@ -107,7 +106,7 @@ export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpen
                 )}
               </span>
               <span className="text-[8px] text-zinc-400 uppercase tracking-tight">
-                ПРОФИЛЬ
+                {isAdminUser ? 'АДМИН' : isStarostaUser ? 'СТАРОСТА' : 'ПРОФИЛЬ'}
               </span>
             </div>
 

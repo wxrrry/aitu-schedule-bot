@@ -385,48 +385,43 @@ export default function ProfileModal({
                   </span>
                 </div>
 
-                {/* Starosta Actions */}
-                {profile.role === 'student' ? (
-                  <button
-                    onClick={() => {
-                      openBotCommand('starosta');
-                      triggerHaptic('medium');
-                    }}
-                    className="w-full py-1.5 px-2 bg-black/60 hover:bg-neutral-800 border border-white/15 hover:border-white/40 text-zinc-300 hover:text-white font-mono text-[10px] uppercase font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>ЗАПРОСИТЬ ПРАВА СТАРОСТЫ В БОТЕ</span>
-                  </button>
-                ) : (
-                  <div className="space-y-1.5">
-                    {onOpenStarosta && (
-                      <button
-                        onClick={() => {
-                          onClose();
-                          onOpenStarosta();
-                          triggerHaptic('medium');
-                        }}
-                        className="w-full py-2 px-2 bg-amber-950/50 hover:bg-amber-900/70 border border-amber-500/50 text-amber-300 font-mono text-xs uppercase font-bold transition-all flex items-center justify-center gap-2"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-amber-400" />
-                        <span>ОТКРЫТЬ ПАНЕЛЬ СТАРОСТЫ // HUB</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Superadmin Root Panel Quick Link */}
-                {isSuperAdmin(profile?.id) && (
+                {/* Role Specific Actions: Admin OR Starosta OR Student Request */}
+                {isSuperAdmin(profile?.id) || profile.role === 'superadmin' || profile.role === 'admin' ? (
                   <button
                     onClick={() => {
                       onClose();
                       if (onNavigateTab) onNavigateTab('admin');
                       triggerHaptic('medium');
                     }}
-                    className="w-full py-2 px-2 bg-amber-400 hover:bg-amber-300 text-black font-mono text-xs uppercase font-black transition-all flex items-center justify-center gap-2 mt-2 shadow-md cursor-pointer"
+                    className="w-full py-2.5 px-3 bg-amber-400 hover:bg-amber-300 text-black font-mono text-xs uppercase font-black transition-all flex items-center justify-center gap-2 rounded-xs shadow-md cursor-pointer active:scale-95"
                   >
                     <ShieldCheck className="w-4 h-4 text-black" />
-                    <span>👑 ПАНЕЛЬ СУПЕРАДМИНИСТРАТОРА (@controlleraitubot)</span>
+                    <span>👑 ПАНЕЛЬ АДМИНИСТРАТОРА (@controlleraitubot)</span>
+                  </button>
+                ) : ['starosta', 'zam_starosty'].includes(profile.role) ? (
+                  onOpenStarosta && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenStarosta();
+                        triggerHaptic('medium');
+                      }}
+                      className="w-full py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 font-mono text-xs uppercase font-bold transition-all flex items-center justify-center gap-2 rounded-xs active:scale-95"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>🎖 ПАНЕЛЬ СТАРОСТЫ // HUB</span>
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => {
+                      openBotCommand('starosta');
+                      triggerHaptic('medium');
+                    }}
+                    className="w-full py-2 px-2.5 bg-black/60 hover:bg-neutral-800 border border-white/15 hover:border-white/40 text-zinc-300 hover:text-white font-mono text-[10px] uppercase font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95 rounded-xs"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>ЗАПРОСИТЬ ПРАВА СТАРОСТЫ В БОТЕ</span>
                   </button>
                 )}
               </div>
