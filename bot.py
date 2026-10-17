@@ -3313,7 +3313,7 @@ async def main():
                     "status": "starting",
                     "pid": os.getpid(),
                     "started_at": datetime.now(BOT_TZ).isoformat(),
-                    "version": "2.0.0"
+                    "version": "3.0.0"
                 }, sf, indent=2)
         except Exception as pe:
             logger.debug(f"PID/Status write warning: {pe}")
