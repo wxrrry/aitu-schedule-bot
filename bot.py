@@ -3714,9 +3714,14 @@ async def handle_test_broadcast(message: types.Message):
     await message.answer("✅ Тест отправки завершён (полночь, 08:00 и пятиминутка).")
 
 
-# Простой HTTP health-check сервер для Koyeb / Render
+# Простой HTTP health-check сервер для Koyeb / Render / Watchdog
 async def start_http_server() -> web.AppRunner | None:
-    preferred_port = int(os.getenv("PORT", "8000"))
+    if os.getenv("DISABLE_HTTP_SERVER", "").strip().lower() in ("1", "true", "yes"):
+        logger.info("HTTP healthcheck сервер отключен через DISABLE_HTTP_SERVER")
+        return None
+
+    preferred_port = int(os.getenv("PORT", "8089"))
+    http_host = os.getenv("HTTP_HOST", "0.0.0.0" if (os.getenv("RENDER") or os.getenv("KOYEB")) else "127.0.0.1")
     
     async def health_handler(request):
         return web.Response(text="AITU Schedule Bot is running! 200 OK")
@@ -3730,15 +3735,15 @@ async def start_http_server() -> web.AppRunner | None:
     
     # Формируем список портов без дубликатов
     candidate_ports = [preferred_port]
-    for p in (8000, 8080, 8081, 10000, 8888, 9090):
+    for p in (8089, 8080, 8000, 8081, 10000):
         if p not in candidate_ports:
             candidate_ports.append(p)
 
     for port in candidate_ports:
         try:
-            site = web.TCPSite(runner, "0.0.0.0", port)
+            site = web.TCPSite(runner, http_host, port)
             await site.start()
-            logger.info(f"Healthcheck HTTP server запущен на порту {port} (для Koyeb/Render)")
+            logger.info(f"Healthcheck HTTP server запущен на {http_host}:{port}")
             return runner
         except OSError:
             continue
