@@ -101,7 +101,7 @@ async def get_or_create_user(
     user_id: int | str,
     username: str | None = None,
     full_name: str = "",
-    default_group: str | None = "9ПО-43к"
+    default_group: str | None = None
 ) -> tuple[User, bool]:
     """Получает пользователя из БД или создаёт нового (возвращает (user, created))."""
     u_id = int(user_id)

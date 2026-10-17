@@ -1,3 +1,4 @@
+import json
 import asyncio
 import logging
 import os
@@ -9,6 +10,8 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiohttp import web, ClientSession
 
@@ -65,7 +68,9 @@ from db.crud import (
     assign_group_officer,
     demote_group_officer,
     get_group_replacements,
-    delete_replacement_by_id
+    delete_replacement_by_id,
+    normalize_group_name,
+    canonical_group_name
 )
 from permissions import (
     is_superadmin,
