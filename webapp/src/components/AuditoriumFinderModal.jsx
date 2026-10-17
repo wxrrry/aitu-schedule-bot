@@ -8,7 +8,9 @@ import {
   Layers, 
   Check, 
   Calendar,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { TEACHERS_LIST } from '../data/teachersData';
 import { DAYS_RU, getBellSchedule } from '../data/scheduleData';
@@ -26,9 +28,10 @@ export default function AuditoriumFinderModal({
   useTelegramBackButton(isOpen, onClose);
 
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedDay, setSelectedDay] = useState(currentDayIndex >= 0 && currentDayIndex <= 4 ? currentDayIndex : 0);
+  const [selectedDay, setSelectedDay] = useState(currentDayIndex >= 0 && currentDayIndex <= 5 ? currentDayIndex : 0);
   const [selectedPair, setSelectedPair] = useState(currentPairNum >= 1 && currentPairNum <= 4 ? currentPairNum : 1);
   const [teacherSearch, setTeacherSearch] = useState('');
+  const [showOccupiedList, setShowOccupiedList] = useState(false);
 
   if (!isOpen) return null;
 
@@ -48,7 +51,7 @@ export default function AuditoriumFinderModal({
   });
 
   const handleSelectNow = () => {
-    setSelectedDay(currentDayIndex >= 0 && currentDayIndex <= 4 ? currentDayIndex : 0);
+    setSelectedDay(currentDayIndex >= 0 && currentDayIndex <= 5 ? currentDayIndex : 0);
     setSelectedPair(currentPairNum >= 1 && currentPairNum <= 4 ? currentPairNum : 1);
     triggerHaptic('selection');
   };
@@ -135,9 +138,9 @@ export default function AuditoriumFinderModal({
                 </button>
               </div>
 
-              {/* Day pills */}
-              <div className="grid grid-cols-5 gap-1 font-mono text-[10px]">
-                {DAYS_RU.slice(0, 5).map(d => (
+              {/* Day pills (Mon to Sat) */}
+              <div className="grid grid-cols-6 gap-1 font-mono text-[10px]">
+                {DAYS_RU.slice(0, 6).map(d => (
                   <button
                     key={d.id}
                     onClick={() => {
@@ -187,7 +190,7 @@ export default function AuditoriumFinderModal({
                 🟢 СПИСОК СВОБОДНЫХ КАБИНЕТОВ (ПО ЭТАЖАМ):
               </div>
 
-              {[3, 4, 5, 6].map(floor => {
+              {[2, 3, 4, 5, 6, 7, 9].map(floor => {
                 const roomsOnFloor = occupancy.byFloor[floor] || [];
                 return (
                   <div key={floor} className="p-2.5 bg-black/40 border border-white/10 space-y-1.5">
@@ -199,7 +202,7 @@ export default function AuditoriumFinderModal({
                     </div>
 
                     {roomsOnFloor.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px]">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 font-mono text-[10px]">
                         {roomsOnFloor.map(rm => (
                           <div 
                             key={rm} 
@@ -219,9 +222,32 @@ export default function AuditoriumFinderModal({
               })}
             </div>
 
-            {/* Occupied Rooms Summary */}
-            <div className="p-2.5 bg-black/20 border border-white/5 space-y-1 font-mono text-[9px] text-zinc-500">
-              <div>* Занятые кабинеты на этот слот: {occupancy.occupiedRooms.map(o => o.room).join(', ')}</div>
+            {/* Occupied Rooms Summary & Accordion */}
+            <div className="p-2.5 bg-black/30 border border-white/10 space-y-2 font-mono text-[10px]">
+              <div 
+                onClick={() => {
+                  setShowOccupiedList(!showOccupiedList);
+                  triggerHaptic('light');
+                }}
+                className="flex items-center justify-between cursor-pointer text-zinc-400 hover:text-white"
+              >
+                <span>ЗАНИМАЕМЫЕ АУДИТОРИИ ({occupancy.occupiedCount})</span>
+                <span className="flex items-center gap-1 text-[9px] text-zinc-500">
+                  {showOccupiedList ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </span>
+              </div>
+
+              {showOccupiedList && (
+                <div className="grid grid-cols-1 gap-1 pt-1.5 max-h-48 overflow-y-auto">
+                  {occupancy.occupiedRooms.map(o => (
+                    <div key={o.room} className="p-1.5 bg-neutral-900/60 border border-white/5 flex items-center justify-between text-[9px]">
+                      <span className="font-bold text-zinc-300">{o.room}</span>
+                      <span className="text-zinc-400 truncate max-w-[140px]">{o.subject}</span>
+                      <span className="text-amber-400">{o.group}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
@@ -249,48 +275,42 @@ export default function AuditoriumFinderModal({
                   key={teacher.id}
                   className="p-3 bg-neutral-900/60 border border-white/10 space-y-2 font-sans"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-bold text-white text-xs">
+                      <div className="font-bold text-white text-xs">
                         {teacher.name}
-                      </h4>
-                      <div className="text-[11px] text-zinc-300 mt-0.5">
+                      </div>
+                      <div className="text-[11px] text-zinc-400 font-mono">
                         {teacher.subject}
                       </div>
                     </div>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-300 border border-white/10 whitespace-nowrap">
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 bg-white/10 text-zinc-300 font-bold uppercase">
                       {teacher.code}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 font-mono text-[10px]">
-                    <div>
-                      <span className="text-zinc-500 block text-[9px]">КАБИНЕТЫ:</span>
-                      <span className="text-emerald-400 font-bold">{teacher.rooms.join(', ')}</span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-500 block text-[9px]">ДНИ:</span>
-                      <span className="text-zinc-300">{teacher.days.join(', ')}</span>
-                    </div>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/5 font-mono text-[10px]">
+                    <span className="text-zinc-500">Аудитории:</span>
+                    {teacher.rooms.map(rm => (
+                      <span 
+                        key={rm}
+                        className="px-1.5 py-0.2 bg-black border border-white/10 text-emerald-400 text-[9px]"
+                      >
+                        {rm}
+                      </span>
+                    ))}
                   </div>
-
-                  {teacher.notes && (
-                    <div className="text-[10px] text-zinc-400 font-sans border-t border-white/5 pt-1">
-                      {teacher.notes}
-                    </div>
-                  )}
                 </div>
               ))}
-
-              {filteredTeachers.length === 0 && (
-                <div className="p-6 text-center font-mono text-xs text-zinc-500">
-                  Преподаватель или аудитория не найдены.
-                </div>
-              )}
             </div>
           </div>
         )}
 
+        {/* Footer */}
+        <div className="px-4 py-2.5 bg-[#0a0a0c] border-t border-white/10 flex items-center justify-between font-mono text-[10px] text-zinc-500">
+          <span>AITU COLLABORATIVE SCHEDULE</span>
+          <span>{DAYS_RU[selectedDay].name.toUpperCase()}</span>
+        </div>
       </div>
     </div>
   );

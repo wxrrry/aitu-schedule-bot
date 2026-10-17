@@ -1,43 +1,55 @@
 // Утилита анализа занятости и поиска свободных аудиторий колледжа AITU
-import { COURSE_SCHEDULES } from '../data/scheduleData';
+// Анализирует все 51 группу колледжа из официального расписания
+import allGroupsSchedule from '../data/allGroupsSchedule.json';
 
-// Все основные учебные аудитории колледжа
+// Полный реестр учебных аудиторий колледжа AITU (55 аудиторий по 7 этажам)
 export const ALL_COLLEGE_ROOMS = [
-  "каб. 302",
-  "каб. 304",
-  "каб. 305",
-  "каб. 308",
-  "каб. 402",
-  "каб. 405",
-  "каб. 408",
-  "каб. 410",
-  "каб. 412",
-  "каб. 505",
-  "каб. 512",
-  "каб. 514",
-  "каб. 515",
-  "каб. 520",
-  "каб. 612",
-  "каб. 616",
-  "каб. 622"
+  "каб. 205", "каб. 216", "каб. 217", 
+  "каб. 301", "каб. 304", "каб. 305", "каб. 308", "каб. 309",
+  "каб. 404", "каб. 409", "каб. 422", "каб. 424", "каб. 431", "каб. 434", 
+  "каб. 505", "каб. 506", "каб. 507", "каб. 510", "каб. 512", "каб. 513", 
+  "каб. 514", "каб. 515", "каб. 516", "каб. 517", "каб. 520", "каб. 521", 
+  "каб. 601", "каб. 605", "каб. 606", "каб. 607", "каб. 608", "каб. 609", 
+  "каб. 610", "каб. 611", "каб. 612", "каб. 613", "каб. 614", "каб. 615", 
+  "каб. 616", "каб. 618", "каб. 622", 
+  "каб. 701", "каб. 706", "каб. 710", "каб. 711", "каб. 712", "каб. 713", 
+  "каб. 714", "каб. 715", "каб. 716", "каб. 718", "каб. 722",
+  "каб. 906", "каб. 907", "каб. 908"
 ];
 
 /**
+ * Нормализует номер кабинета в вид "каб. XXX"
+ */
+function normalizeRoom(raw) {
+  if (!raw || raw === '—' || raw === 'С/з') return [];
+  const rooms = [];
+  String(raw).split(',').forEach(part => {
+    const cleanNum = part.trim().replace(/^каб\.?\s*/i, '');
+    if (cleanNum && !isNaN(cleanNum)) {
+      rooms.push(`каб. ${cleanNum}`);
+    }
+  });
+  return rooms;
+}
+
+/**
  * Возвращает занятые и свободные аудитории на выбранный день и пару
- * @param {number} dayIndex - 0 = Пн, 1 = Вт, 2 = Ср, 3 = Чт, 4 = Пт, 5 = Сб
+ * @param {number} dayIndex - 0 = Пн ... 5 = Сб
  * @param {number} pairNum - 1..4
  * @param {string} parity - 'chislitel' | 'znamenatel'
  */
 export function getRoomOccupancy(dayIndex = 0, pairNum = 1, parity = 'chislitel') {
-  const occupiedMap = new Map(); // room -> { course, subject, teacher }
+  const occupiedMap = new Map(); // room -> { group, course, subject, teacher }
 
-  // Проверяем все 4 курса
-  [1, 2, 3, 4].forEach(course => {
-    const courseSched = COURSE_SCHEDULES[course];
-    if (!courseSched) return;
-    const daySched = courseSched[dayIndex];
-    if (!daySched) return;
-    const pair = daySched[pairNum];
+  const dayKey = String(dayIndex);
+  const pairKey = String(pairNum);
+
+  // Сканируем расписание всех 51 групп
+  Object.entries(allGroupsSchedule).forEach(([groupName, groupData]) => {
+    const dayData = groupData?.days?.[dayKey];
+    if (!dayData) return;
+
+    const pair = dayData[pairKey];
     if (!pair) return;
 
     let activeLesson = null;
@@ -48,11 +60,16 @@ export function getRoomOccupancy(dayIndex = 0, pairNum = 1, parity = 'chislitel'
     }
 
     if (activeLesson && activeLesson.room && activeLesson.room !== '—' && activeLesson.room !== 'С/з') {
-      const cleanRoom = activeLesson.room.trim();
-      occupiedMap.set(cleanRoom, {
-        course,
-        subject: activeLesson.subject,
-        teacher: activeLesson.teacher || 'Кафедра'
+      const parsedRooms = normalizeRoom(activeLesson.room);
+      parsedRooms.forEach(rm => {
+        if (!occupiedMap.has(rm)) {
+          occupiedMap.set(rm, {
+            group: groupName,
+            course: groupData.course || 1,
+            subject: activeLesson.subject || 'Занятие',
+            teacher: activeLesson.teacher || 'Преподаватель'
+          });
+        }
       });
     }
   });
@@ -63,12 +80,15 @@ export function getRoomOccupancy(dayIndex = 0, pairNum = 1, parity = 'chislitel'
     ...occupiedMap.get(r)
   }));
 
-  // Группировка свободных аудиторий по этажам (3, 4, 5, 6)
+  // Группировка свободных аудиторий по этажам (2, 3, 4, 5, 6, 7, 9)
   const byFloor = {
-    3: freeRooms.filter(r => r.includes('каб. 3')),
-    4: freeRooms.filter(r => r.includes('каб. 4')),
-    5: freeRooms.filter(r => r.includes('каб. 5')),
-    6: freeRooms.filter(r => r.includes('каб. 6'))
+    2: freeRooms.filter(r => r.startsWith('каб. 2')),
+    3: freeRooms.filter(r => r.startsWith('каб. 3')),
+    4: freeRooms.filter(r => r.startsWith('каб. 4')),
+    5: freeRooms.filter(r => r.startsWith('каб. 5')),
+    6: freeRooms.filter(r => r.startsWith('каб. 6')),
+    7: freeRooms.filter(r => r.startsWith('каб. 7')),
+    9: freeRooms.filter(r => r.startsWith('каб. 9'))
   };
 
   return {

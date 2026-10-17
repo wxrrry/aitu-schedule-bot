@@ -47,7 +47,8 @@ import {
   AlertTriangle,
   Ban,
   WifiOff,
-  Users
+  Users,
+  Copy
 } from 'lucide-react';
 
 export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile }) {
@@ -362,6 +363,59 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   const formatShortDate = (d) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
   const weekRangeLabel = `${formatShortDate(displayedMonday)} — ${formatShortDate(displayedSunday)}`;
 
+  // Скопировать расписание дня в буфер обмена
+  const [copiedDayKey, setCopiedDayKey] = useState(null);
+
+  const handleCopyDaySchedule = (dayObj, dayPairs, dayDateKey, dateLabel) => {
+    const parityText = parity === 'chislitel' ? 'ЧИСЛИТЕЛЬ' : 'ЗНАМЕНАТЕЛЬ';
+    const lines = [
+      `📅 Расписание: ${selectedGroup}`,
+      `🗓 ${dayObj.name}${dateLabel ? ` (${dateLabel})` : ''} · [${parityText}]`,
+      ''
+    ];
+
+    const lessons = dayPairs.filter(p => p.hasLesson);
+    if (lessons.length === 0) {
+      lines.push('🎉 В этот день занятий нет (выходной)');
+    } else {
+      dayPairs.forEach(p => {
+        if (!p.hasLesson) return;
+        const rep = replacements[dayDateKey]?.[p.num];
+        if (rep?.type === 'cancel') {
+          lines.push(`${p.num}️⃣ [${p.time}] ❌ ${p.subject} (ОТМЕНА)`);
+        } else if (rep?.type === 'replace') {
+          lines.push(`${p.num}️⃣ [${p.time}] ⚠️ ${rep.text || p.subject}`);
+        } else {
+          lines.push(`${p.num}️⃣ [${p.time}] ${p.subject}`);
+          lines.push(`   📍 ${p.room} // ${p.teacher}`);
+        }
+      });
+    }
+
+    lines.push('');
+    lines.push('🤖 AITU Бот: @aituraspisaniebot');
+
+    const textToCopy = lines.join('\n');
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(textToCopy);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = textToCopy;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    } catch (e) {
+      console.warn('Clipboard write failed', e);
+    }
+
+    setCopiedDayKey(dayDateKey || String(dayObj.id));
+    triggerHaptic('success');
+    setTimeout(() => setCopiedDayKey(null), 2000);
+  };
+
   return (
     <div className="space-y-4 pb-20 animate-fadeIn font-sans">
       {/* Offline Status Alert if device lost connection */}
@@ -601,9 +655,31 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         <div className="space-y-2">
           {/* Day Header Banner */}
           <div className="p-2.5 bg-[#0a0a0c] border border-white/10 flex items-center justify-between font-mono text-xs">
-            <span className="font-bold text-white uppercase tracking-wider">
-              {activeDayObj.name} · {viewMode === 'today' ? 'СЕГОДНЯ' : 'ЗАВТРА'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white uppercase tracking-wider">
+                {activeDayObj.name} · {viewMode === 'today' ? 'СЕГОДНЯ' : 'ЗАВТРА'}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyDaySchedule(activeDayObj, activeDayPairs, activeDateKey, viewMode === 'today' ? 'Сегодня' : 'Завтра');
+                }}
+                className="flex items-center gap-1 px-1.5 py-0.5 bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10 text-[9px] font-mono transition-colors"
+                title="Скопировать расписание в буфер"
+              >
+                {copiedDayKey === activeDateKey ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400">СКОПИРОВАНО</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3 text-zinc-400" />
+                    <span className="text-zinc-400">КОПИРОВАТЬ</span>
+                  </>
+                )}
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               {Object.keys(replacements[activeDateKey] || {}).length > 0 && (
                 <span className="text-[9px] text-amber-300 border border-amber-500/40 bg-amber-950/40 px-1.5 py-0.2 uppercase font-bold">
@@ -611,20 +687,20 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
                 </span>
               )}
               <span className="text-[10px] text-zinc-400 uppercase">
-                {activeDayObj.isWeekend ? 'ВЫХОДНОЙ' : `${activeDayPairs.filter(p => p.hasLesson).length} ПАР`}
+                {activeDayPairs.filter(p => p.hasLesson).length === 0 ? 'ВЫХОДНОЙ' : `${activeDayPairs.filter(p => p.hasLesson).length} ПАР`}
               </span>
             </div>
           </div>
 
           {/* Weekend State */}
-          {activeDayObj.isWeekend ? (
+          {activeDayPairs.filter(p => p.hasLesson).length === 0 ? (
             <div className="p-8 border border-neutral-800 bg-[#0a0a0c] text-center space-y-2 font-mono">
               <Sun className="w-8 h-8 mx-auto text-zinc-500 stroke-[1.5]" />
               <div className="text-xs text-white uppercase tracking-wider font-bold">
                 ВЫХОДНОЙ ДЕНЬ · ПАР НЕТ
               </div>
               <p className="text-[11px] text-zinc-500 font-sans max-w-xs mx-auto">
-                В субботу и воскресенье по расписанию занятий нет. Готовьтесь к парам следующей недели.
+                По расписанию занятий на этот день нет. Готовьтесь к следующим парам.
               </p>
             </div>
           ) : (
@@ -749,6 +825,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
             const dayDateKey = getDateKeyForDay(day.id);
             const dayDate = getDateForDay(day.id);
             const dayRepsCount = Object.keys(replacements[dayDateKey] || {}).length;
+            const isDayOff = lessonCount === 0;
 
             return (
               <div 
@@ -756,9 +833,9 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
                 className="border border-white/10 bg-[#0a0a0c] overflow-hidden transition-all"
               >
                 {/* Clickable Day Header */}
-                <button
+                <div
                   onClick={() => toggleDayAccordion(day.id)}
-                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xs font-bold text-white px-2 py-0.5 bg-zinc-900 border border-white/15">
@@ -775,13 +852,28 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
                         )}
                       </div>
                       <div className="text-[10px] font-mono text-zinc-500">
-                        {day.isWeekend ? 'ВЫХОДНОЙ ДЕНЬ' : `${lessonCount} ${lessonCount === 1 ? 'ПАРА' : 'ПАРЫ'}`}
+                        {isDayOff ? 'ВЫХОДНОЙ ДЕНЬ' : `${lessonCount} ${lessonCount === 1 ? 'ПАРА' : 'ПАРЫ'}`}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {day.isWeekend ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyDaySchedule(day, dayPairs, dayDateKey, formatShortDate(dayDate));
+                      }}
+                      className="p-1 hover:bg-white/15 text-zinc-400 hover:text-white border border-white/10 transition-colors"
+                      title="Скопировать расписание дня"
+                    >
+                      {copiedDayKey === dayDateKey ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                      )}
+                    </button>
+
+                    {isDayOff ? (
                       <span className="font-mono text-[9px] text-zinc-500 border border-white/10 px-1.5 py-0.5 uppercase">
                         ПАР НЕТ
                       </span>
@@ -796,12 +888,12 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
                       <ChevronDown className="w-4 h-4 text-zinc-400" />
                     )}
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded Pairs List */}
                 {isExpanded && (
                   <div className="border-t border-white/[0.06] bg-[#070709] p-2 space-y-1.5 animate-fadeIn">
-                    {day.isWeekend ? (
+                    {isDayOff ? (
                       <div className="py-4 text-center font-mono text-xs text-zinc-500">
                         // ВЫХОДНОЙ ДЕНЬ · ЗАНЯТИЙ НЕТ
                       </div>
