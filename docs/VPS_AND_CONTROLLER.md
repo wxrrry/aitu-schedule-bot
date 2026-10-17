@@ -60,7 +60,7 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 nano .env
-# Заполняем BOT_TOKEN, ADMIN_IDS=1019252177,792569339 и остальные параметры
+# Заполняем BOT_TOKEN, ADMIN_IDS=123456789,987654321 и остальные параметры
 ```
 
 ### Шаг 4. Регистрация Systemd службы

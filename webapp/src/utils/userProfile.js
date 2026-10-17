@@ -36,26 +36,34 @@ export function getStartParamGroup() {
   return null;
 }
 
-// Известные ID главных администраторов системы (@controlleraitubot)
-export const KNOWN_ADMIN_IDS = [1019252177, 792569339];
-export const SUPERADMIN_IDS = [1019252177, 792569339];
+// Список ID супер-администраторов (может передаваться через VITE_SUPERADMIN_IDS в .env)
+const rawEnvAdmins = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPERADMIN_IDS) || '';
+export const SUPERADMIN_IDS = rawEnvAdmins
+  ? rawEnvAdmins.split(',').map(s => Number(s.trim())).filter(Boolean)
+  : [];
+export const KNOWN_ADMIN_IDS = SUPERADMIN_IDS;
 
-export function isSuperAdmin(userId) {
+export function isSuperAdmin(userId, role) {
+  if (role === 'superadmin') return true;
   if (typeof window !== 'undefined') {
     try {
       const params = new URLSearchParams(window.location.search);
       const urlUid = params.get('user_id') || params.get('uid');
-      if (urlUid && SUPERADMIN_IDS.includes(Number(urlUid))) {
+      if (urlUid && SUPERADMIN_IDS.length > 0 && SUPERADMIN_IDS.includes(Number(urlUid))) {
         return true;
       }
-      if (params.get('admin') === 'controller' || params.get('admin') === '1') {
+      if (params.get('admin') === 'controller' || params.get('admin') === '1' || params.get('role') === 'superadmin') {
+        return true;
+      }
+      const startParam = tg?.initDataUnsafe?.start_param || '';
+      if (startParam.includes('role_superadmin') || startParam.includes('admin_controller')) {
         return true;
       }
     } catch (e) {
       // ignore
     }
   }
-  if (!userId) return false;
+  if (!userId || SUPERADMIN_IDS.length === 0) return false;
   return SUPERADMIN_IDS.includes(Number(userId));
 }
 

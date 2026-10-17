@@ -24,9 +24,9 @@ except Exception:
 # chislitel или znamenatel
 ANCHOR_PARITY = os.getenv("ANCHOR_PARITY", "chislitel").strip().lower()
 
-# Администраторы бота: список ID через запятую (например: ADMIN_IDS=12345678,87654321)
-DEFAULT_SUPERADMIN_IDS = {1019252177, 792569339}
-ADMIN_IDS: set[int] = set(DEFAULT_SUPERADMIN_IDS)
+# Администраторы бота: список ID через запятую (задаются в .env: ADMIN_IDS=12345678,87654321)
+DEFAULT_SUPERADMIN_IDS: set[int] = set()
+ADMIN_IDS: set[int] = set()
 
 raw_admin_ids = os.getenv("ADMIN_IDS", "").strip()
 if raw_admin_ids:
@@ -35,12 +35,15 @@ if raw_admin_ids:
         if p.isdigit():
             ADMIN_IDS.add(int(p))
 
-# Поддержка обратной совместимости с ADMIN_ID
+# Поддержка обратной совместимости с одиночным ADMIN_ID
 ADMIN_ID_STR = os.getenv("ADMIN_ID", "").strip()
 if ADMIN_ID_STR.isdigit():
     ADMIN_IDS.add(int(ADMIN_ID_STR))
-
-ADMIN_ID = 1019252177
+    ADMIN_ID = int(ADMIN_ID_STR)
+elif ADMIN_IDS:
+    ADMIN_ID = next(iter(ADMIN_IDS))
+else:
+    ADMIN_ID = 0
 
 # URL для Telegram WebApp (Mini App)
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://72-4-67-12.sslip.io").strip()
+WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip()

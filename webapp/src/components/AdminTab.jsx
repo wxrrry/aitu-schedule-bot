@@ -385,7 +385,7 @@ export default function AdminTab({ profile }) {
             ДОСТУП ОГРАНИЧЕН // СУПЕРАДМИНИСТРАТОР
           </h3>
           <p className="text-[11px] text-zinc-400 font-sans leading-relaxed max-w-sm mx-auto">
-            Данный раздел доступен исключительно авторизованным администраторам системы управления <strong>@controlleraitubot</strong> (ID: 1019252177, 792569339).
+            Данный раздел доступен исключительно авторизованным администраторам системы управления <strong>@controlleraitubot</strong>.
           </p>
           <div className="pt-2 text-[10px] text-zinc-500">
             Ваш текущий ID: <span className="text-zinc-300 font-bold">{profile?.id || 'не определен'}</span>
@@ -1489,18 +1489,14 @@ export default function AdminTab({ profile }) {
             </button>
           </div>
 
-          {/* Authorized Superadmins list */}
+          {/* Authorized Superadmins status */}
           <div className="p-4 bg-zinc-950 border border-white/10 space-y-2">
             <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">
-              АВТОРИЗОВАННЫЕ СУПЕРАДМИНИСТРАТОРЫ СИСТЕМЫ:
+              СТАТУС СЕССИИ УПРАВЛЕНИЯ:
             </span>
-            <div className="space-y-1">
-              {SUPERADMIN_IDS.map(uid => (
-                <div key={uid} className="flex items-center justify-between p-2 bg-black border border-white/5">
-                  <span className="font-mono text-zinc-300 font-bold">UID: {uid}</span>
-                  <span className="text-amber-400 text-[10px] font-bold uppercase">ROOT ADMIN ACCESS</span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between p-2 bg-black border border-white/5">
+              <span className="font-mono text-zinc-300 font-bold">СЕССИЯ: АВТОРИЗОВАНА</span>
+              <span className="text-amber-400 text-[10px] font-bold uppercase">ROOT ADMIN ACCESS</span>
             </div>
           </div>
         </div>
