@@ -29,6 +29,30 @@ jobs:
               exit 1
             fi
 
+            # Проверка и автоматическая настройка Swap 2G
+            echo "💾 Проверка файла подкачки (Swap)..."
+            if [ $(swapon --show | wc -l) -le 1 ]; then
+              echo "⚡️ Создание и активация Swap (2 ГБ)..."
+              SUDO=""
+              if [ "$EUID" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+                SUDO="sudo"
+              fi
+              $SUDO fallocate -l 2G /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=2048
+              $SUDO chmod 600 /swapfile
+              $SUDO mkswap /swapfile
+              $SUDO swapon /swapfile
+              if ! grep -q "/swapfile" /etc/fstab; then
+                echo '/swapfile none swap sw 0 0' | $SUDO tee -a /etc/fstab
+              fi
+              $SUDO sysctl -w vm.swappiness=20 || true
+              $SUDO sysctl -w vm.vfs_cache_pressure=50 || true
+              echo "vm.swappiness=20" | $SUDO tee /etc/sysctl.d/99-swap.conf || true
+              echo "✅ Swap 2G успешно создан и активирован!"
+            else
+              echo "✅ Swap уже подключен:"
+              swapon --show
+            fi
+
             cd "$TARGET_DIR"
             echo "📥 Получение свежих коммитов..."
             git fetch origin main
