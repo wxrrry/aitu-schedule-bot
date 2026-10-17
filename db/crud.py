@@ -417,20 +417,14 @@ async def get_replacements_for_date_and_group(target_date: date, group_name: str
         d_obj = target_date.date()
     elif isinstance(target_date, str):
         try:
-            d_obj = date.fromisoformat(target_date)
+            d_obj = date.fromisoformat(target_date.strip())
         except Exception:
             d_obj = date.today()
     else:
         d_obj = target_date
-    d_str = d_obj.strftime("%Y-%m-%d")
 
     async with async_session() as session:
-        date_cond = or_(
-            Replacement.date == d_obj,
-            Replacement.date == d_str,
-            func.date(Replacement.date) == d_str
-        )
-        conditions = [date_cond]
+        conditions = [Replacement.date == d_obj]
         variants = get_group_variants(group_name) if group_name else []
         if variants:
             conditions.append(or_(
@@ -464,17 +458,16 @@ async def get_all_active_replacements(since_date: date | None = None) -> list[Re
         since_date = date.today()
     if isinstance(since_date, datetime):
         s_obj = since_date.date()
+    elif isinstance(since_date, str):
+        try:
+            s_obj = date.fromisoformat(since_date.strip())
+        except Exception:
+            s_obj = date.today()
     else:
         s_obj = since_date
-    s_str = s_obj.strftime("%Y-%m-%d")
 
     async with async_session() as session:
-        date_cond = or_(
-            Replacement.date >= s_obj,
-            Replacement.date >= s_str,
-            func.date(Replacement.date) >= s_str
-        )
-        stmt = select(Replacement).where(date_cond).order_by(Replacement.date, Replacement.pair_num)
+        stmt = select(Replacement).where(Replacement.date >= s_obj).order_by(Replacement.date, Replacement.pair_num)
         res = await session.execute(stmt)
         return list(res.scalars().all())
 
@@ -498,21 +491,15 @@ async def add_replacement_record(
         d_obj = target_date.date()
     elif isinstance(target_date, str):
         try:
-            d_obj = date.fromisoformat(target_date)
+            d_obj = date.fromisoformat(target_date.strip())
         except Exception:
             d_obj = date.today()
     else:
         d_obj = target_date
-    d_str = d_obj.strftime("%Y-%m-%d")
 
     async with async_session() as session:
-        date_cond = or_(
-            Replacement.date == d_obj,
-            Replacement.date == d_str,
-            func.date(Replacement.date) == d_str
-        )
         grp_cond = Replacement.group_name.in_(variants) if variants else Replacement.group_name.is_(None)
-        stmt = select(Replacement).where(and_(date_cond, Replacement.pair_num == pair_num, grp_cond))
+        stmt = select(Replacement).where(and_(Replacement.date == d_obj, Replacement.pair_num == pair_num, grp_cond))
         res = await session.execute(stmt)
         rep = res.scalar_one_or_none()
         if rep:
@@ -547,20 +534,14 @@ async def delete_replacement_record(target_date: date, pair_num: int, group_name
         d_obj = target_date.date()
     elif isinstance(target_date, str):
         try:
-            d_obj = date.fromisoformat(target_date)
+            d_obj = date.fromisoformat(target_date.strip())
         except Exception:
             d_obj = date.today()
     else:
         d_obj = target_date
-    d_str = d_obj.strftime("%Y-%m-%d")
 
     async with async_session() as session:
-        date_cond = or_(
-            Replacement.date == d_obj,
-            Replacement.date == d_str,
-            func.date(Replacement.date) == d_str
-        )
-        conditions = [date_cond, Replacement.pair_num == pair_num]
+        conditions = [Replacement.date == d_obj, Replacement.pair_num == pair_num]
         if group_name is not None:
             variants = get_group_variants(group_name)
             conditions.append(Replacement.group_name.in_(variants))
@@ -718,25 +699,19 @@ async def get_group_replacements(group_name: str, since_date: date | None = None
         s_obj = since_date.date()
     elif isinstance(since_date, str):
         try:
-            s_obj = date.fromisoformat(since_date)
+            s_obj = date.fromisoformat(since_date.strip())
         except Exception:
             s_obj = date.today()
     else:
         s_obj = since_date
-    s_str = s_obj.strftime("%Y-%m-%d")
 
     variants = get_group_variants(group_name)
     async with async_session() as session:
-        date_cond = or_(
-            Replacement.date >= s_obj,
-            Replacement.date >= s_str,
-            func.date(Replacement.date) >= s_str
-        )
         group_cond = or_(
             Replacement.group_name.is_(None),
             Replacement.group_name.in_(variants)
         )
-        stmt = select(Replacement).where(and_(date_cond, group_cond)).order_by(Replacement.date, Replacement.pair_num)
+        stmt = select(Replacement).where(and_(Replacement.date >= s_obj, group_cond)).order_by(Replacement.date, Replacement.pair_num)
         res = await session.execute(stmt)
         reps = list(res.scalars().all())
 

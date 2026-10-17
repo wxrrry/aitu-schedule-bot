@@ -1195,27 +1195,46 @@ async def handle_calendar_export(message: types.Message):
 @dp.message(Command("zameny"))
 @dp.message(Command("zameni"))
 @dp.message(F.text == "⚠️ Замены пар")
+@dp.message(F.text.casefold().in_(["замены", "замены пар", "⚠️ замены пар", "⚠️ замены"]))
 async def handle_zameny_list(message: types.Message):
-    target_group = await resolve_target_group(message.chat, message.from_user)
-    text = await get_formatted_replacements_summary(group_name=target_group)
-    kb = get_replacements_keyboard()
-    await message.answer(text, reply_markup=kb)
+    try:
+        target_group = await resolve_target_group(message.chat, message.from_user)
+        text = await get_formatted_replacements_summary(group_name=target_group)
+        kb = get_replacements_keyboard()
+        try:
+            await message.answer(text, reply_markup=kb)
+        except TelegramBadRequest as tb_err:
+            logger.warning(f"Ошибка отправки HTML в zameny: {tb_err}, пробуем без HTML...")
+            import re
+            plain_text = re.sub(r"<[^>]+>", "", text)
+            await message.answer(plain_text, reply_markup=kb, parse_mode=None)
+    except Exception as e:
+        logger.error(f"Критическая ошибка при получении списка замен: {e}", exc_info=True)
+        await message.answer(
+            f"⚠️ <b>Временная ошибка при загрузке замен:</b>\n<code>{html.escape(str(e))}</code>\n\n"
+            f"Попробуйте нажать /zameny ещё раз через несколько секунд или проверьте расписание через /today.",
+            reply_markup=main_keyboard
+        )
 
 
 @dp.callback_query(F.data == "refresh_replacements")
 async def handle_refresh_replacements(call: types.CallbackQuery):
-    chat = call.message.chat if call.message else None
-    target_group = await resolve_target_group(chat, call.from_user)
-    text = await get_formatted_replacements_summary(group_name=target_group)
-    kb = get_replacements_keyboard()
     try:
-        await call.message.edit_text(text, reply_markup=kb)
-    except TelegramBadRequest as e:
-        if "message is not modified" not in str(e).lower():
-            logger.debug(f"Refresh replacements error: {e}")
-    except Exception:
-        pass
-    await call.answer("Список замен обновлён!")
+        chat = call.message.chat if call.message else None
+        target_group = await resolve_target_group(chat, call.from_user)
+        text = await get_formatted_replacements_summary(group_name=target_group)
+        kb = get_replacements_keyboard()
+        try:
+            await call.message.edit_text(text, reply_markup=kb)
+        except TelegramBadRequest as e:
+            if "message is not modified" not in str(e).lower():
+                import re
+                plain_text = re.sub(r"<[^>]+>", "", text)
+                await call.message.edit_text(plain_text, reply_markup=kb, parse_mode=None)
+        await call.answer("Список замен обновлён! 🔄")
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении замен через callback: {e}", exc_info=True)
+        await call.answer(f"Ошибка обновления: {e}", show_alert=True)
 
 
 @dp.callback_query(F.data == "nav_today")
