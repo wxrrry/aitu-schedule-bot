@@ -3,12 +3,13 @@ import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import ScheduleTab from './components/ScheduleTab';
 import ErrorBoundary from './components/ErrorBoundary';
-import { getInitialUserProfile, saveUserProfile, syncProfileFromCloud } from './utils/userProfile';
+import { getInitialUserProfile, saveUserProfile, syncProfileFromCloud, isSuperAdmin } from './utils/userProfile';
 
 // Динамический импорт (Code Splitting) для ускорения первичной загрузки в Telegram WebView
 const LecturesTab = lazy(() => import('./components/LecturesTab'));
 const ServicesTab = lazy(() => import('./components/ServicesTab'));
 const EsportsTab = lazy(() => import('./components/EsportsTab'));
+const AdminTab = lazy(() => import('./components/AdminTab'));
 const ChangelogModal = lazy(() => import('./components/ChangelogModal'));
 const ProfileModal = lazy(() => import('./components/ProfileModal'));
 const StarostaModal = lazy(() => import('./components/StarostaModal'));
@@ -76,6 +77,7 @@ export default function App() {
           onOpenProfile={() => setIsProfileOpen(true)}
           onOpenChangelog={() => setIsChangelogOpen(true)} 
           onOpenStarosta={() => setIsStarostaOpen(true)}
+          onOpenAdmin={() => setActiveTab('admin')}
         />
 
         {/* Основная рабочая область */}
@@ -105,6 +107,9 @@ export default function App() {
             {activeTab === 'esports' && (
               <EsportsTab />
             )}
+            {activeTab === 'admin' && isSuperAdmin(profile?.id) && (
+              <AdminTab profile={profile} />
+            )}
           </Suspense>
         </main>
 
@@ -121,6 +126,14 @@ export default function App() {
                 setActiveTab(tab);
               }}
               onOpenStarosta={() => setIsStarostaOpen(true)}
+              onOpenTeam={(teamName) => {
+                setIsProfileOpen(false);
+                setActiveTab('hltv');
+              }}
+              onOpenPlayer={(playerNick) => {
+                setIsProfileOpen(false);
+                setActiveTab('hltv');
+              }}
             />
           )}
 
@@ -141,7 +154,11 @@ export default function App() {
         </Suspense>
 
         {/* Нижняя навигационная панель */}
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          isAdmin={isSuperAdmin(profile?.id)} 
+        />
       </div>
     </ErrorBoundary>
   );

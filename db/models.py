@@ -128,3 +128,69 @@ class ChatBinding(Base):
 
     def __repr__(self) -> str:
         return f"<ChatBinding chat={self.chat_id} ({self.chat_title}) -> group={self.group_name}>"
+
+
+class Tournament(Base):
+    __tablename__ = "tournaments"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    sub_title: Mapped[str] = mapped_column(String(256), default="")
+    game: Mapped[str] = mapped_column(String(64), default="Counter-Strike 2")
+    prize_pool: Mapped[str] = mapped_column(String(128), default="")
+    status: Mapped[str] = mapped_column(String(32), default="registration")
+    dates: Mapped[str] = mapped_column(String(128), default="")
+    format: Mapped[str] = mapped_column(String(128), default="Single Elimination")
+    max_teams: Mapped[int] = mapped_column(Integer, default=8)
+    rules_json: Mapped[str] = mapped_column(Text, default="[]")
+    bracket_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    teams: Mapped[list["Team"]] = relationship("Team", back_populates="tournament", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        return f"<Tournament {self.id} '{self.title}' status={self.status}>"
+
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tournament_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("tournaments.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    tag: Mapped[str] = mapped_column(String(32), default="")
+    captain_nick: Mapped[str] = mapped_column(String(64), default="")
+    captain_tg: Mapped[str] = mapped_column(String(64), default="")
+    group_name: Mapped[str] = mapped_column(String(64), default="")
+    avatar: Mapped[str] = mapped_column(Text, default="")
+    players_json: Mapped[str] = mapped_column(Text, default="[]")
+    status: Mapped[str] = mapped_column(String(32), default="registered")
+    seed: Mapped[int] = mapped_column(Integer, default=0)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    tournament: Mapped[Tournament] = relationship("Tournament", back_populates="teams")
+
+    def __repr__(self) -> str:
+        return f"<Team {self.id} '{self.name}' [{self.tag}] in {self.tournament_id}>"
+
+
+class UserTask(Base):
+    __tablename__ = "user_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False)
+    task_key: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    text: Mapped[str] = mapped_column(String(512), nullable=False)
+    is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<UserTask {self.id} user={self.user_id} key={self.task_key} done={self.is_done}>"
+

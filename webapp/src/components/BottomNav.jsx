@@ -1,11 +1,12 @@
 import React from 'react';
 
-export default function BottomNav({ activeTab, onTabChange }) {
+export default function BottomNav({ activeTab, onTabChange, isAdmin }) {
   const tabs = [
     { id: 'schedule', num: '01', label: 'ПАРЫ' },
     { id: 'lectures', num: '02', label: 'ЛЕКЦИИ' },
     { id: 'services', num: '03', label: 'СЕРВИСЫ' },
     { id: 'esports', num: '04', label: 'КИБЕРСПОРТ' },
+    ...(isAdmin ? [{ id: 'admin', num: '05', label: 'АДМИН', isSpecial: true }] : []),
   ];
 
   const handleTabClick = (id) => {
@@ -17,7 +18,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-md border-t border-neutral-800 safe-bottom">
-      <div className="max-w-xl mx-auto grid grid-cols-4">
+      <div className={`max-w-xl mx-auto grid ${tabs.length === 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
 

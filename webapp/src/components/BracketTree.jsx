@@ -2,14 +2,202 @@ import React from 'react';
 import { Trophy } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
 
-export default function BracketTree({ onSelectMatch, onSelectTeam }) {
+export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }) {
   const handleTeamClick = (e, teamName) => {
-    if (onSelectTeam) {
+    if (onSelectTeam && teamName && !teamName.startsWith('TBD') && !teamName.includes('Победитель') && !teamName.includes('Проигравший') && !teamName.includes('Финалист') && !teamName.includes('Бронза')) {
       e.stopPropagation();
       triggerHaptic('light');
       onSelectTeam(teamName);
     }
   };
+
+  if (bracketData && (bracketData.semifinals || bracketData.round2)) {
+    const hasQf = bracketData.round2 && bracketData.round2.length > 0;
+    const cols = hasQf ? 'grid-cols-3' : 'grid-cols-2';
+    const minWidth = hasQf ? 'min-w-[720px]' : 'min-w-[500px]';
+
+    return (
+      <div className="space-y-3 font-mono">
+        <div className="flex items-center justify-between text-[10px] text-zinc-500 px-1">
+          <span className="uppercase tracking-wider">{bracketData.title || "СЕТКА ПЛЕЙ-ОФФ"}</span>
+          <span className="text-zinc-400">← свайп сетки →</span>
+        </div>
+
+        <div className="w-full overflow-x-auto pb-4 pt-2 no-scrollbar bg-[#090f14] border border-[#1b2a38] rounded-xs shadow-inner">
+          <div className={`${minWidth} p-5 space-y-6`}>
+            <div className="text-center space-y-0.5 pb-2 border-b border-[#1b2a38]/60">
+              <h2 className="text-xl font-black text-white tracking-widest font-sans">
+                {bracketData.title || "ТУРНИРНАЯ СЕТКА CS2"}
+              </h2>
+              <div className="text-[11px] text-zinc-400 font-sans tracking-wide">
+                Single Elimination · Плей-офф
+              </div>
+            </div>
+
+            <div className={`grid ${cols} gap-6 text-[11px] text-zinc-400 font-mono tracking-widest uppercase border-b border-[#1b2a38] pb-2 text-center font-bold`}>
+              {hasQf && <div>1/4 ФИНАЛА &gt;</div>}
+              <div>ПОЛУФИНАЛ &gt;</div>
+              <div>ГРАНД-ФИНАЛ &gt;</div>
+            </div>
+
+            <div className={`grid ${cols} gap-6 relative items-start`}>
+              {hasQf && (
+                <div className="space-y-6">
+                  {bracketData.round2.map((m, idx) => (
+                    <div 
+                      key={m.matchId || idx}
+                      onClick={() => onSelectMatch?.(m.matchId)}
+                      className="space-y-1 p-1 bg-black/40 border border-white/5 rounded-xs hover:border-white/20 transition-all cursor-pointer"
+                    >
+                      <div 
+                        onClick={(e) => handleTeamClick(e, m.team1.name)}
+                        className={`px-3 py-2 border text-[11px] font-sans flex items-center justify-between rounded-xs transition-colors ${
+                          m.team1.isWinner 
+                            ? 'bg-[#162736] border-[#2a455e] text-white font-bold' 
+                            : 'bg-[#101b26] border-[#1d3142] text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          {m.team1.seed && <span className="text-zinc-500 font-mono text-[10px]">{m.team1.seed}</span>}
+                          <span className="truncate">{m.team1.name}</span>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-zinc-300">
+                          {m.team1.score !== null ? m.team1.score : '-'}
+                        </span>
+                      </div>
+
+                      <div 
+                        onClick={(e) => handleTeamClick(e, m.team2.name)}
+                        className={`px-3 py-2 border text-[11px] font-sans flex items-center justify-between rounded-xs transition-colors ${
+                          m.team2.isWinner 
+                            ? 'bg-[#162736] border-[#2a455e] text-white font-bold' 
+                            : 'bg-[#101b26] border-[#1d3142] text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          {m.team2.seed && <span className="text-zinc-500 font-mono text-[10px]">{m.team2.seed}</span>}
+                          <span className="truncate">{m.team2.name}</span>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-zinc-300">
+                          {m.team2.score !== null ? m.team2.score : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className={`space-y-8 ${hasQf ? 'pt-8' : ''}`}>
+                {bracketData.semifinals?.map((m, idx) => (
+                  <div 
+                    key={m.matchId || idx}
+                    onClick={() => onSelectMatch?.(m.matchId)}
+                    className="space-y-1 p-1 bg-black/40 border border-white/5 rounded-xs hover:border-white/20 transition-all cursor-pointer"
+                  >
+                    <div 
+                      onClick={(e) => handleTeamClick(e, m.team1.name)}
+                      className={`px-3 py-2 border text-[11px] font-sans flex items-center justify-between rounded-xs transition-colors ${
+                        m.team1.isWinner 
+                          ? 'bg-[#162736] border-[#2a455e] text-white font-bold' 
+                          : 'bg-[#101b26] border-[#1d3142] text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        {m.team1.seed && <span className="text-zinc-500 font-mono text-[10px]">{m.team1.seed}</span>}
+                        <span className="truncate">{m.team1.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-zinc-300">
+                        {m.team1.score !== null ? m.team1.score : '-'}
+                      </span>
+                    </div>
+
+                    <div 
+                      onClick={(e) => handleTeamClick(e, m.team2.name)}
+                      className={`px-3 py-2 border text-[11px] font-sans flex items-center justify-between rounded-xs transition-colors ${
+                        m.team2.isWinner 
+                          ? 'bg-[#162736] border-[#2a455e] text-white font-bold' 
+                          : 'bg-[#101b26] border-[#1d3142] text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        {m.team2.seed && <span className="text-zinc-500 font-mono text-[10px]">{m.team2.seed}</span>}
+                        <span className="truncate">{m.team2.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-zinc-300">
+                        {m.team2.score !== null ? m.team2.score : '-'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className={`space-y-12 ${hasQf ? 'pt-16' : 'pt-4'}`}>
+                {bracketData.final && (
+                  <div 
+                    onClick={() => onSelectMatch?.(bracketData.final.matchId)}
+                    className="space-y-1 p-1.5 bg-black/60 border border-amber-500/40 rounded-xs shadow-md cursor-pointer hover:border-amber-400 transition-all"
+                  >
+                    <div className="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider px-1 pb-0.5">
+                      ★ ГРАНД ФИНАЛ ★
+                    </div>
+                    <div 
+                      onClick={(e) => handleTeamClick(e, bracketData.final.team1.name)}
+                      className={`px-3.5 py-2.5 border text-xs font-sans flex items-center justify-between rounded-xs ${
+                        bracketData.final.team1.isWinner
+                          ? 'bg-[#1a3247] border-amber-400/60 text-white font-black'
+                          : 'bg-[#162736] border-[#2a455e] text-zinc-300 hover:text-white'
+                      }`}
+                    >
+                      <span className="font-bold truncate">{bracketData.final.team1.name}</span>
+                      <span className="font-mono text-xs font-bold text-amber-400">
+                        {bracketData.final.team1.score !== null ? bracketData.final.team1.score : '-'}
+                      </span>
+                    </div>
+
+                    <div 
+                      onClick={(e) => handleTeamClick(e, bracketData.final.team2.name)}
+                      className={`px-3.5 py-2.5 border text-xs font-sans flex items-center justify-between rounded-xs ${
+                        bracketData.final.team2.isWinner
+                          ? 'bg-[#1a3247] border-amber-400/60 text-white font-black'
+                          : 'bg-[#162736] border-[#2a455e] text-zinc-300 hover:text-white'
+                      }`}
+                    >
+                      <span className="font-bold truncate">{bracketData.final.team2.name}</span>
+                      <span className="font-mono text-xs font-bold text-amber-400">
+                        {bracketData.final.team2.score !== null ? bracketData.final.team2.score : '-'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {bracketData.thirdPlace && (
+                  <div className="space-y-1 p-1 bg-black/40 border border-white/5 rounded-xs">
+                    <div className="text-[9px] text-zinc-400 font-mono font-bold uppercase tracking-wider px-1 pb-0.5">
+                      Матч за 3-е место:
+                    </div>
+                    <div 
+                      onClick={(e) => handleTeamClick(e, bracketData.thirdPlace.team1.name)}
+                      className="px-3 py-2 bg-[#101b26] border border-[#1d3142] text-zinc-300 text-[11px] font-sans flex items-center justify-between rounded-xs cursor-pointer hover:border-white/30"
+                    >
+                      <span className="truncate">{bracketData.thirdPlace.team1.name}</span>
+                      <span className="font-mono text-[10px] text-zinc-400">🥉</span>
+                    </div>
+                    <div 
+                      onClick={(e) => handleTeamClick(e, bracketData.thirdPlace.team2.name)}
+                      className="px-3 py-2 bg-[#101b26] border border-[#1d3142] text-zinc-300 text-[11px] font-sans flex items-center justify-between rounded-xs cursor-pointer hover:border-white/30"
+                    >
+                      <span className="truncate">{bracketData.thirdPlace.team2.name}</span>
+                      <span className="font-mono text-[10px] text-zinc-500">4 место</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 font-mono">

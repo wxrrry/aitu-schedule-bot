@@ -197,19 +197,77 @@ COURSE_LUNCH = {
 }
 
 
+import os
+import json
+
+_JSON_SCHEDULES_PATH = os.path.join(os.path.dirname(__file__), "data", "all_groups_schedule.json")
+
+def _load_all_groups_schedule() -> dict[str, dict]:
+    """Загружает полное расписание всех 51 группы колледжа AITU из JSON."""
+    if os.path.exists(_JSON_SCHEDULES_PATH):
+        try:
+            with open(_JSON_SCHEDULES_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                result = {}
+                for grp, grp_info in data.items():
+                    course = grp_info.get("course", 4)
+                    days_formatted = {d: {} for d in range(7)}
+                    for d_str, pairs in grp_info.get("days", {}).items():
+                        try:
+                            d_idx = int(d_str)
+                            pairs_map = {}
+                            for p_str, p_val in pairs.items():
+                                pairs_map[int(p_str)] = p_val
+                            days_formatted[d_idx] = pairs_map
+                        except Exception:
+                            continue
+                    result[grp] = {
+                        "course": course,
+                        "days": days_formatted
+                    }
+                return result
+        except Exception as e:
+            pass
+    return {}
+
+ALL_GROUPS_SCHEDULE = _load_all_groups_schedule()
+
+ALL_COLLEGE_GROUPS = list(ALL_GROUPS_SCHEDULE.keys()) if ALL_GROUPS_SCHEDULE else [GROUP_NAME]
+
+GROUPS_BY_COURSE: dict[int, list[str]] = {1: [], 2: [], 3: [], 4: []}
+for grp, grp_data in ALL_GROUPS_SCHEDULE.items():
+    c = grp_data.get("course", 4)
+    if c in GROUPS_BY_COURSE:
+        GROUPS_BY_COURSE[c].append(grp)
+    else:
+        GROUPS_BY_COURSE.setdefault(c, []).append(grp)
+
+for c in GROUPS_BY_COURSE:
+    GROUPS_BY_COURSE[c].sort()
+
+
+def get_schedule_for_group(group_name: str | None) -> dict[int, dict]:
+    """Возвращает расписание по дням недели для указанной группы."""
+    if not group_name:
+        group_name = GROUP_NAME
+    if group_name in ALL_GROUPS_SCHEDULE:
+        return ALL_GROUPS_SCHEDULE[group_name]["days"]
+    return SCHEDULE
+
+
 def get_course_from_group_name(group_name: str | None) -> int:
     """
     Определяет номер курса (1, 2, 3, 4) по названию группы.
     Примеры:
     - 9ПО-43к -> 4
-    - 9ПО-11  -> 1
+    - 9РПО-11 -> 1
     - 9ПО-21  -> 2
     - 9ПО-31  -> 3
-    - 11ИС-21 -> 2
-    - 9ВТ-41  -> 4
     """
     if not group_name:
         return 4
+    if group_name in ALL_GROUPS_SCHEDULE:
+        return ALL_GROUPS_SCHEDULE[group_name]["course"]
     # Основной паттерн: цифра курса сразу после дефиса, например -43к, -11, -21, -31
     m = re.search(r"-([1-4])", group_name)
     if m:
@@ -225,6 +283,7 @@ def get_course_from_group_name(group_name: str | None) -> int:
         except (ValueError, TypeError):
             pass
     return 4
+
 
 
 def get_bell_schedule(course: int = 4) -> dict:

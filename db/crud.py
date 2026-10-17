@@ -5,7 +5,7 @@ from sqlalchemy import select, update, delete, or_, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import async_session
-from .models import User, Group, Lesson, Replacement, ChatBinding, UserRole
+from .models import User, Group, Lesson, Replacement, ChatBinding, UserRole, Tournament, Team, UserTask
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +28,15 @@ def normalize_group_name(group_name: str | None) -> str:
 # USERS CRUD
 # =============================================================
 async def get_or_create_user(
-    user_id: int,
+    user_id: int | str,
     username: str | None = None,
     full_name: str = "",
     default_group: str | None = "9ПО-43к"
 ) -> tuple[User, bool]:
     """Получает пользователя из БД или создаёт нового (возвращает (user, created))."""
+    u_id = int(user_id)
     async with async_session() as session:
-        stmt = select(User).where(User.user_id == user_id)
+        stmt = select(User).where(User.user_id == u_id)
         res = await session.execute(stmt)
         user = res.scalar_one_or_none()
         if user:
@@ -54,7 +55,7 @@ async def get_or_create_user(
 
         # Создаём нового пользователя
         user = User(
-            user_id=user_id,
+            user_id=u_id,
             username=username,
             full_name=full_name,
             group_name=default_group,
@@ -66,10 +67,14 @@ async def get_or_create_user(
         return user, True
 
 
-async def get_user(user_id: int) -> User | None:
+async def get_user(user_id: int | str) -> User | None:
     """Возвращает пользователя по ID."""
+    try:
+        u_id = int(user_id)
+    except (ValueError, TypeError):
+        return None
     async with async_session() as session:
-        stmt = select(User).where(User.user_id == user_id)
+        stmt = select(User).where(User.user_id == u_id)
         res = await session.execute(stmt)
         return res.scalar_one_or_none()
 
@@ -83,30 +88,57 @@ async def get_user_by_username(username: str) -> User | None:
         return res.scalar_one_or_none()
 
 
-async def update_user_group(user_id: int, group_name: str) -> bool:
+async def update_user_group(user_id: int | str, group_name: str) -> bool:
     """Обновляет академическую группу пользователя."""
+    u_id = int(user_id)
     async with async_session() as session:
-        stmt = update(User).where(User.user_id == user_id).values(group_name=group_name)
+        stmt = update(User).where(User.user_id == u_id).values(group_name=group_name)
         res = await session.execute(stmt)
         await session.commit()
         return res.rowcount > 0
 
 
-async def update_user_role(user_id: int, role: str) -> bool:
+async def update_user_role(user_id: int | str, role: str) -> bool:
     """Обновляет роль пользователя (student, zam_starosty, starosta, admin)."""
+    u_id = int(user_id)
     async with async_session() as session:
-        stmt = update(User).where(User.user_id == user_id).values(role=role)
+        stmt = update(User).where(User.user_id == u_id).values(role=role)
         res = await session.execute(stmt)
         await session.commit()
         return res.rowcount > 0
 
 
-async def update_user_setting(user_id: int, key: str, value: bool) -> bool:
+async def update_user_setting(user_id: int | str, key: str, value: bool) -> bool:
     """Обновляет персональную настройку уведомлений."""
     if key not in ("remind_10min", "morning_alert", "five_min_breaks"):
         return False
+    u_id = int(user_id)
     async with async_session() as session:
-        stmt = update(User).where(User.user_id == user_id).values(**{key: value})
+        stmt = update(User).where(User.user_id == u_id).values(**{key: value})
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
+async def update_user_notifications(
+    user_id: int | str,
+    remind_10min: bool | None = None,
+    morning_alert: bool | None = None,
+    five_min_breaks: bool | None = None
+) -> bool:
+    """Обновляет сразу несколько настроек уведомлений пользователя."""
+    u_id = int(user_id)
+    values = {}
+    if remind_10min is not None:
+        values["remind_10min"] = bool(remind_10min)
+    if morning_alert is not None:
+        values["morning_alert"] = bool(morning_alert)
+    if five_min_breaks is not None:
+        values["five_min_breaks"] = bool(five_min_breaks)
+    if not values:
+        return True
+    async with async_session() as session:
+        stmt = update(User).where(User.user_id == u_id).values(**values)
         res = await session.execute(stmt)
         await session.commit()
         return res.rowcount > 0
@@ -415,25 +447,31 @@ async def delete_replacement_record(target_date: date, pair_num: int, group_name
         return res.rowcount > 0
 
 
+# Alias for backward compatibility
+add_replacement = add_replacement_record
+
+
 # =============================================================
 # CHAT BINDINGS (Группы Telegram) CRUD
 # =============================================================
-async def bind_chat_to_group(chat_id: int, chat_title: str, group_name: str, user_id: int = 0) -> ChatBinding:
+async def bind_chat_to_group(chat_id: int | str, chat_title: str, group_name: str, user_id: int | str = 0) -> ChatBinding:
     """Привязывает беседу Telegram к академической группе."""
+    c_id = int(chat_id)
+    u_id = int(user_id)
     async with async_session() as session:
-        stmt = select(ChatBinding).where(ChatBinding.chat_id == chat_id)
+        stmt = select(ChatBinding).where(ChatBinding.chat_id == c_id)
         res = await session.execute(stmt)
         binding = res.scalar_one_or_none()
         if binding:
             binding.chat_title = chat_title
             binding.group_name = group_name.strip()
-            binding.bound_by_user_id = user_id
+            binding.bound_by_user_id = u_id
         else:
             binding = ChatBinding(
-                chat_id=chat_id,
+                chat_id=c_id,
                 chat_title=chat_title,
                 group_name=group_name.strip(),
-                bound_by_user_id=user_id
+                bound_by_user_id=u_id
             )
             session.add(binding)
         await session.commit()
@@ -441,10 +479,14 @@ async def bind_chat_to_group(chat_id: int, chat_title: str, group_name: str, use
         return binding
 
 
-async def get_chat_group(chat_id: int) -> str | None:
+async def get_chat_group(chat_id: int | str) -> str | None:
     """Возвращает название группы, привязанной к чату."""
+    try:
+        c_id = int(chat_id)
+    except (ValueError, TypeError):
+        return None
     async with async_session() as session:
-        stmt = select(ChatBinding.group_name).where(ChatBinding.chat_id == chat_id)
+        stmt = select(ChatBinding.group_name).where(ChatBinding.chat_id == c_id)
         res = await session.execute(stmt)
         return res.scalar_one_or_none()
 
@@ -558,11 +600,216 @@ async def get_group_replacements(group_name: str, since_date: date | None = None
         return list(res.scalars().all())
 
 
-async def delete_replacement_by_id(rep_id: int) -> bool:
+async def delete_replacement_by_id(rep_id: int | str) -> bool:
     """Удаляет замену по её первичному ключу ID."""
+    r_id = int(rep_id)
     async with async_session() as session:
-        stmt = delete(Replacement).where(Replacement.id == rep_id)
+        stmt = delete(Replacement).where(Replacement.id == r_id)
         res = await session.execute(stmt)
         await session.commit()
         return res.rowcount > 0
+
+
+# =============================================================
+# TOURNAMENTS & TEAMS CRUD
+# =============================================================
+async def get_all_tournaments() -> list[dict]:
+    """Возвращает список всех турниров с их командами."""
+    async with async_session() as session:
+        stmt = select(Tournament).order_by(Tournament.created_at.desc())
+        res = await session.execute(stmt)
+        tournaments = res.scalars().all()
+        result = []
+        for t in tournaments:
+            teams_stmt = select(Team).where(Team.tournament_id == t.id).order_by(Team.seed, Team.created_at)
+            teams_res = await session.execute(teams_stmt)
+            teams = teams_res.scalars().all()
+            result.append({
+                "id": t.id,
+                "title": t.title,
+                "subTitle": t.sub_title,
+                "game": t.game,
+                "discipline": t.game,
+                "prizePool": t.prize_pool,
+                "status": t.status,
+                "date": t.dates,
+                "format": t.format,
+                "maxTeams": t.max_teams,
+                "rules": t.rules_json,
+                "bracketData": t.bracket_json,
+                "teams": [
+                    {
+                        "id": tm.id,
+                        "teamName": tm.name,
+                        "tag": tm.tag,
+                        "captainNick": tm.captain_nick,
+                        "captainTg": tm.captain_tg,
+                        "group": tm.group_name,
+                        "avatar": tm.avatar,
+                        "players": tm.players_json,
+                        "status": tm.status,
+                        "seed": tm.seed,
+                        "score": tm.score
+                    }
+                    for tm in teams
+                ]
+            })
+        return result
+
+
+async def get_tournament_by_id(t_id: str) -> dict | None:
+    """Возвращает детальную информацию о турнире."""
+    async with async_session() as session:
+        stmt = select(Tournament).where(Tournament.id == t_id)
+        res = await session.execute(stmt)
+        t = res.scalar_one_or_none()
+        if not t:
+            return None
+        teams_stmt = select(Team).where(Team.tournament_id == t.id)
+        teams_res = await session.execute(teams_stmt)
+        teams = teams_res.scalars().all()
+        return {
+            "id": t.id,
+            "title": t.title,
+            "subTitle": t.sub_title,
+            "game": t.game,
+            "prizePool": t.prize_pool,
+            "status": t.status,
+            "date": t.dates,
+            "format": t.format,
+            "maxTeams": t.max_teams,
+            "rules": t.rules_json,
+            "bracketData": t.bracket_json,
+            "teams": [
+                {
+                    "id": tm.id,
+                    "teamName": tm.name,
+                    "tag": tm.tag,
+                    "captainNick": tm.captain_nick,
+                    "captainTg": tm.captain_tg,
+                    "group": tm.group_name,
+                    "avatar": tm.avatar,
+                    "players": tm.players_json,
+                    "status": tm.status,
+                    "seed": tm.seed,
+                    "score": tm.score
+                }
+                for tm in teams
+            ]
+        }
+
+
+async def upsert_tournament(t_data: dict) -> bool:
+    """Создает или обновляет турнир в базе данных."""
+    t_id = str(t_data.get("id") or "").strip()
+    if not t_id:
+        return False
+    async with async_session() as session:
+        stmt = select(Tournament).where(Tournament.id == t_id)
+        res = await session.execute(stmt)
+        t = res.scalar_one_or_none()
+        rules_val = t_data.get("rules", "[]")
+        if not isinstance(rules_val, str):
+            import json
+            rules_val = json.dumps(rules_val, ensure_ascii=False)
+        bracket_val = t_data.get("bracketData") or t_data.get("bracket_json") or "{}"
+        if not isinstance(bracket_val, str):
+            import json
+            bracket_val = json.dumps(bracket_val, ensure_ascii=False)
+
+        if not t:
+            t = Tournament(
+                id=t_id,
+                title=t_data.get("title", "Новый турнир"),
+                sub_title=t_data.get("subTitle", ""),
+                game=t_data.get("game") or t_data.get("discipline") or "Counter-Strike 2",
+                prize_pool=t_data.get("prizePool", ""),
+                status=t_data.get("status", "registration"),
+                dates=t_data.get("date", ""),
+                format=t_data.get("format", "Single Elimination"),
+                max_teams=int(t_data.get("maxTeams", 8)),
+                rules_json=rules_val,
+                bracket_json=bracket_val
+            )
+            session.add(t)
+        else:
+            if "title" in t_data: t.title = t_data["title"]
+            if "subTitle" in t_data: t.sub_title = t_data["subTitle"]
+            if "game" in t_data: t.game = t_data["game"]
+            if "prizePool" in t_data: t.prize_pool = t_data["prizePool"]
+            if "status" in t_data: t.status = t_data["status"]
+            if "date" in t_data: t.dates = t_data["date"]
+            if "format" in t_data: t.format = t_data["format"]
+            if "maxTeams" in t_data: t.max_teams = int(t_data["maxTeams"])
+            if "rules" in t_data: t.rules_json = rules_val
+            if "bracketData" in t_data or "bracket_json" in t_data: t.bracket_json = bracket_val
+        await session.commit()
+        return True
+
+
+async def add_or_update_team(tournament_id: str, team_data: dict) -> bool:
+    """Добавляет или обновляет команду в турнире."""
+    team_id = str(team_data.get("id") or "").strip()
+    if not team_id:
+        return False
+    async with async_session() as session:
+        stmt = select(Team).where(Team.id == team_id)
+        res = await session.execute(stmt)
+        tm = res.scalar_one_or_none()
+        players_val = team_data.get("players", "[]")
+        if not isinstance(players_val, str):
+            import json
+            players_val = json.dumps(players_val, ensure_ascii=False)
+
+        if not tm:
+            tm = Team(
+                id=team_id,
+                tournament_id=tournament_id,
+                name=team_data.get("teamName") or team_data.get("name") or "Команда",
+                tag=team_data.get("tag", ""),
+                captain_nick=team_data.get("captainNick", ""),
+                captain_tg=team_data.get("captainTg", ""),
+                group_name=team_data.get("group") or team_data.get("group_name") or "",
+                avatar=team_data.get("avatar", ""),
+                players_json=players_val,
+                status=team_data.get("status", "registered"),
+                seed=int(team_data.get("seed", 0)),
+                score=int(team_data.get("score", 0))
+            )
+            session.add(tm)
+        else:
+            if "teamName" in team_data: tm.name = team_data["teamName"]
+            elif "name" in team_data: tm.name = team_data["name"]
+            if "tag" in team_data: tm.tag = team_data["tag"]
+            if "captainNick" in team_data: tm.captain_nick = team_data["captainNick"]
+            if "captainTg" in team_data: tm.captain_tg = team_data["captainTg"]
+            if "group" in team_data or "group_name" in team_data:
+                tm.group_name = team_data.get("group") or team_data.get("group_name") or ""
+            if "avatar" in team_data: tm.avatar = team_data["avatar"]
+            if "players" in team_data: tm.players_json = players_val
+            if "status" in team_data: tm.status = team_data["status"]
+            if "seed" in team_data: tm.seed = int(team_data["seed"])
+            if "score" in team_data: tm.score = int(team_data["score"])
+        await session.commit()
+        return True
+
+
+async def get_system_stats() -> dict:
+    """Возвращает общую статистику базы данных колледжа."""
+    async with async_session() as session:
+        u_count = await session.scalar(select(func.count(User.user_id)))
+        g_count = await session.scalar(select(func.count(Group.id)))
+        l_count = await session.scalar(select(func.count(Lesson.id)))
+        r_count = await session.scalar(select(func.count(Replacement.id)))
+        t_count = await session.scalar(select(func.count(Tournament.id)))
+        tm_count = await session.scalar(select(func.count(Team.id)))
+        return {
+            "users": u_count or 0,
+            "groups": g_count or 0,
+            "lessons": l_count or 0,
+            "replacements": r_count or 0,
+            "tournaments": t_count or 0,
+            "teams": tm_count or 0
+        }
+
 

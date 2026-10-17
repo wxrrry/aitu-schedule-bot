@@ -12,6 +12,7 @@ from schedule_data import (
     get_bell_schedule,
     get_bell_times,
     get_course_lunch_info,
+    get_schedule_for_group,
 )
 from replacements import get_replacements_for_date
 
@@ -64,7 +65,7 @@ def format_day_schedule(
     if custom_pairs is not None:
         day_pairs = custom_pairs
     else:
-        day_pairs = SCHEDULE.get(weekday, {})
+        day_pairs = get_schedule_for_group(target_group).get(weekday, {})
 
     all_pair_nums = sorted(list(set(day_pairs.keys()) | set(replacements.keys())))
     if not all_pair_nums:
@@ -222,7 +223,7 @@ def format_week_schedule(
         if custom_week_pairs is not None:
             day_pairs = custom_week_pairs.get(day_idx, {})
         else:
-            day_pairs = SCHEDULE.get(day_idx, {})
+            day_pairs = get_schedule_for_group(target_group).get(day_idx, {})
 
         day_name = DAYS_RU[day_idx]
         
@@ -302,7 +303,7 @@ def format_weekday_by_index(
     if custom_pairs is not None:
         day_pairs = custom_pairs
     else:
-        day_pairs = SCHEDULE.get(day_idx, {})
+        day_pairs = get_schedule_for_group(target_group).get(day_idx, {})
 
     if not day_pairs:
         return f"{header}\n🎉 <b>Пар нет!</b> Выходной день 🏖️"
@@ -505,7 +506,7 @@ async def get_formatted_day_schedule(
     db_pairs = await get_lessons_for_day(grp, weekday, parity_code)
     db_reps = await get_replacements_for_date_and_group(target_date, grp)
 
-    if not db_pairs and grp == GROUP_NAME:
+    if not db_pairs:
         return format_day_schedule(
             target_date,
             title_prefix=title_prefix,
@@ -544,7 +545,7 @@ async def get_formatted_week_schedule(target_monday: date, group_name: str | Non
         week_pairs[day_idx] = pairs
         week_reps[day_idx] = reps
 
-    if not has_any_db_lessons and grp == GROUP_NAME:
+    if not has_any_db_lessons:
         return format_week_schedule(target_monday, group_name=grp, custom_week_replacements=week_reps)
 
     return format_week_schedule(

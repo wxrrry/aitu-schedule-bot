@@ -8,12 +8,16 @@ from .models import Base
 logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schedule_bot.db")
-DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH}"
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
+
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
 
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False}
+    connect_args=connect_args
 )
 
 async_session = async_sessionmaker(
@@ -38,7 +42,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Инициализация базы данных и таблиц + запуск автомиграции данных."""
-    logger.info(f"Инициализация базы данных SQLite: {DB_PATH}")
+    db_target = DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DB_PATH
+    logger.info(f"Инициализация базы данных: {db_target}")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Таблицы базы данных успешно созданы/проверены.")

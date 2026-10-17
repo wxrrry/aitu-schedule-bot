@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   DEFAULT_GROUP,
   POPULAR_GROUPS,
+  ALL_COLLEGE_GROUPS,
+  GROUPS_BY_COURSE,
   DAYS_RU, 
   COURSE_BELL_SCHEDULE, 
   COURSE_LUNCH,
@@ -63,6 +65,8 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [customGroupInput, setCustomGroupInput] = useState('');
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
+  const [groupCourseFilter, setGroupCourseFilter] = useState('all'); // 'all', 1, 2, 3, 4
 
   // Курс выбранной группы
   const currentCourse = getCourseFromGroupName(selectedGroup);
@@ -112,7 +116,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   const [selectedPairDetail, setSelectedPairDetail] = useState(null);
   const [isAuditoriumModalOpen, setIsAuditoriumModalOpen] = useState(false);
   const [auditoriumInitialTab, setAuditoriumInitialTab] = useState('rooms');
-  const [currentStatus, setCurrentStatus] = useState(() => getCurrentPairStatus(new Date(), parity, currentCourse));
+  const [currentStatus, setCurrentStatus] = useState(() => getCurrentPairStatus(new Date(), parity, selectedGroup));
 
   // Замены и отмены пар (zameny.json)
   const [replacements, setReplacements] = useState(() => getStoredReplacements());
@@ -155,15 +159,15 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   const activeDayIndex = viewMode === 'today' ? todayIndex : tomorrowIndex;
   const activeDayObj = DAYS_RU.find(d => d.id === activeDayIndex);
   const activeDateKey = getTodayDateKey(viewMode === 'today' ? now : new Date(now.getTime() + 86400000));
-  const activeDayPairs = getPairsForDay(activeDayIndex, getWeekParity(now), currentCourse);
+  const activeDayPairs = getPairsForDay(activeDayIndex, getWeekParity(now), selectedGroup);
 
   // Обновление текущего статуса
   useEffect(() => {
-    const update = () => setCurrentStatus(getCurrentPairStatus(new Date(), getWeekParity(now), currentCourse));
+    const update = () => setCurrentStatus(getCurrentPairStatus(new Date(), getWeekParity(now), selectedGroup));
     update();
     const timer = setInterval(update, 20000);
     return () => clearInterval(timer);
-  }, [currentCourse]);
+  }, [selectedGroup]);
 
   const toggleDayAccordion = (dayId) => {
     setExpandedDays(prev => ({
@@ -649,7 +653,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
           {DAYS_RU.map((day) => {
             const isExpanded = !!expandedDays[day.id];
-            const dayPairs = getPairsForDay(day.id, parity, currentCourse);
+            const dayPairs = getPairsForDay(day.id, parity, selectedGroup);
             const lessonCount = dayPairs.filter(p => p.hasLesson).length;
             const dayDateKey = getDateKeyForDay(day.id);
             const dayDate = getDateForDay(day.id);
@@ -881,28 +885,89 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
               Выберите свою группу или введите название. Расписание звонков и обеденных перерывов автоматически адаптируется под соответствующий курс.
             </p>
 
-            {/* Quick Preset Buttons */}
-            <div className="space-y-1.5">
-              <div className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                ПОПУЛЯРНЫЕ ГРУППЫ
+            {/* Course Filter Tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setGroupCourseFilter('all')}
+                className={`px-2 py-1 text-[10px] font-mono whitespace-nowrap border transition-colors ${
+                  groupCourseFilter === 'all'
+                    ? 'bg-white text-black font-bold border-white'
+                    : 'bg-black border-neutral-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                ВСЕ ({ALL_COLLEGE_GROUPS.length})
+              </button>
+              {[1, 2, 3, 4].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setGroupCourseFilter(c)}
+                  className={`px-2 py-1 text-[10px] font-mono whitespace-nowrap border transition-colors ${
+                    groupCourseFilter === c
+                      ? 'bg-white text-black font-bold border-white'
+                      : 'bg-black border-neutral-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {c} КУРС ({GROUPS_BY_COURSE[c]?.length || 0})
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                value={groupSearchQuery}
+                onChange={(e) => setGroupSearchQuery(e.target.value)}
+                placeholder="Поиск группы (например: 9РПО, 9ПО, 9ИС)..."
+                className="w-full pl-8 pr-8 py-2 bg-black border border-neutral-800 text-white font-mono text-xs focus:outline-none focus:border-white placeholder:text-zinc-600"
+              />
+              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              {groupSearchQuery && (
+                <button
+                  onClick={() => setGroupSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Groups Grid */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-wider">
+                <span>СПИСОК ГРУПП</span>
+                <span>
+                  {ALL_COLLEGE_GROUPS.filter(g => {
+                    if (groupCourseFilter !== 'all' && getCourseFromGroupName(g) !== groupCourseFilter) return false;
+                    if (groupSearchQuery.trim()) return g.toLowerCase().includes(groupSearchQuery.trim().toLowerCase());
+                    return true;
+                  }).length} ИЗ {ALL_COLLEGE_GROUPS.length}
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {POPULAR_GROUPS.map((grp) => {
+              <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
+                {ALL_COLLEGE_GROUPS.filter(g => {
+                  if (groupCourseFilter !== 'all' && getCourseFromGroupName(g) !== groupCourseFilter) return false;
+                  if (groupSearchQuery.trim()) return g.toLowerCase().includes(groupSearchQuery.trim().toLowerCase());
+                  return true;
+                }).map((grp) => {
                   const grpCourse = getCourseFromGroupName(grp);
                   const isCur = selectedGroup === grp;
                   return (
                     <button
                       key={grp}
-                      onClick={() => handleSelectGroup(grp)}
+                      onClick={() => {
+                        handleSelectGroup(grp);
+                        setShowGroupModal(false);
+                      }}
                       className={`p-2 border text-left flex items-center justify-between text-xs transition-colors ${
                         isCur 
-                          ? 'bg-white text-black font-bold border-white' 
+                          ? 'bg-white text-black font-bold border-white shadow-xs' 
                           : 'bg-black border-neutral-800 text-zinc-300 hover:border-neutral-500'
                       }`}
                     >
-                      <span>{grp}</span>
+                      <span className="font-mono">{grp}</span>
                       <span className={`text-[10px] ${isCur ? 'text-black font-bold' : 'text-zinc-500'}`}>
-                        {grpCourse} курс
+                        {isCur ? '✓' : `${grpCourse}к`}
                       </span>
                     </button>
                   );
@@ -911,9 +976,9 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
             </div>
 
             {/* Custom Input */}
-            <div className="space-y-2 pt-2 border-t border-neutral-800">
+            <div className="space-y-1.5 pt-2 border-t border-neutral-800">
               <div className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                ДРУГАЯ ГРУППА
+                ВВЕСТИ НАЗВАНИЕ ВРУЧНУЮ
               </div>
               <div className="flex gap-2">
                 <input
@@ -928,6 +993,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
                     if (customGroupInput.trim()) {
                       handleSelectGroup(customGroupInput);
                       setCustomGroupInput('');
+                      setShowGroupModal(false);
                     }
                   }}
                   className="px-3 py-2 bg-white text-black font-bold text-xs uppercase"

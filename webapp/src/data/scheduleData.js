@@ -1,22 +1,40 @@
 // Расписание занятий колледжа AITU
-// Соответствует обновленной архитектуре бота (мультигруппы, звонки по курсам)
+// Соответствует реальным официальным расписаниям всех 4 курсов и 51 группы
+import allGroupsSchedule from './allGroupsSchedule.json';
 
 export const DEFAULT_GROUP = "9ПО-43к";
 export const GROUP_NAME = DEFAULT_GROUP;
 
-export const POPULAR_GROUPS = [
-  "9ПО-43к",
-  "9ПО-41к",
-  "9ПО-31к",
-  "9ПО-21к",
-  "9ПО-11к",
-  "9ИС-41к",
-  "9ВТ-42к",
-  "9СА-31к"
-];
+export const ALL_GROUPS_SCHEDULE = allGroupsSchedule;
+export const ALL_COLLEGE_GROUPS = Object.keys(ALL_GROUPS_SCHEDULE);
+
+export const GROUPS_BY_COURSE = {
+  1: [],
+  2: [],
+  3: [],
+  4: []
+};
+
+Object.entries(ALL_GROUPS_SCHEDULE).forEach(([grp, data]) => {
+  const c = data.course || 4;
+  if (GROUPS_BY_COURSE[c]) {
+    GROUPS_BY_COURSE[c].push(grp);
+  } else {
+    GROUPS_BY_COURSE[c] = [grp];
+  }
+});
+
+Object.keys(GROUPS_BY_COURSE).forEach(c => {
+  GROUPS_BY_COURSE[c].sort();
+});
+
+export const POPULAR_GROUPS = ALL_COLLEGE_GROUPS;
 
 export function getCourseFromGroupName(groupName) {
   if (!groupName) return 4;
+  if (ALL_GROUPS_SCHEDULE[groupName]?.course) {
+    return ALL_GROUPS_SCHEDULE[groupName].course;
+  }
   const m = groupName.match(/-([1-4])/);
   if (m) {
     const c = parseInt(m[1], 10);
@@ -555,16 +573,35 @@ export function getWeekParity(targetDate = new Date()) {
   return normalized % 2 === 0 ? "chislitel" : "znamenatel";
 }
 
-// Получить пары для дня с учетом курса и расписания звонков
-export function getPairsForDay(dayIndex, parity = 'chislitel', course = 4) {
-  const scheduleSource = COURSE_SCHEDULES[course] || COURSE_SCHEDULES[4];
-  const daySchedule = scheduleSource[dayIndex] || {};
+// Получить пары для дня с учетом конкретной группы и расписания звонков курса
+export function getPairsForDay(dayIndex, parity = 'chislitel', groupOrCourse = DEFAULT_GROUP) {
+  let groupName = DEFAULT_GROUP;
+  let course = 4;
+
+  if (typeof groupOrCourse === 'string') {
+    groupName = groupOrCourse;
+    course = getCourseFromGroupName(groupName);
+  } else if (typeof groupOrCourse === 'number') {
+    course = groupOrCourse;
+    const repGroups = { 1: "9РПО-11", 2: "9ПО-21", 3: "9ПО-31", 4: "9ПО-43к" };
+    groupName = repGroups[course] || DEFAULT_GROUP;
+  }
+
+  const grpData = ALL_GROUPS_SCHEDULE[groupName] || ALL_GROUPS_SCHEDULE[DEFAULT_GROUP];
+  const daySchedule = grpData?.days?.[String(dayIndex)] || grpData?.days?.[dayIndex] || {};
   const bells = getBellSchedule(course);
   const result = [];
 
+  const formatRoom = (rm) => {
+    if (!rm || rm === '—') return '—';
+    const s = String(rm).trim();
+    if (s.startsWith('каб.') || s.includes('С/з') || s.includes(',')) return s;
+    return `каб. ${s}`;
+  };
+
   for (let num = 1; num <= 4; num++) {
-    const rawPair = daySchedule[num];
-    const bell = bells[num] || BELL_SCHEDULE[num];
+    const rawPair = daySchedule[String(num)] || daySchedule[num];
+    const bell = bells[num] || COURSE_BELL_SCHEDULE[4][num];
 
     if (!rawPair) {
       result.push({
@@ -585,6 +622,24 @@ export function getPairsForDay(dayIndex, parity = 'chislitel', course = 4) {
 
     if (rawPair.split) {
       const lesson = parity === 'chislitel' ? rawPair.chislitel : rawPair.znamenatel;
+      if (!lesson) {
+        result.push({
+          num,
+          pair: num,
+          time: bell.range,
+          start: bell.start,
+          end: bell.end,
+          breakdown: bell.breakdown,
+          subject: "Нет пары",
+          room: "—",
+          teacher: "—",
+          hasLesson: false,
+          split: true,
+          splitNote: parity === 'chislitel' ? "Числитель" : "Знаменатель"
+        });
+        continue;
+      }
+
       result.push({
         num,
         pair: num,
@@ -593,8 +648,8 @@ export function getPairsForDay(dayIndex, parity = 'chislitel', course = 4) {
         end: bell.end,
         breakdown: bell.breakdown,
         subject: lesson.subject,
-        room: lesson.room,
-        teacher: lesson.teacher,
+        room: formatRoom(lesson.room),
+        teacher: lesson.teacher || "—",
         hasLesson: true,
         split: true,
         splitNote: parity === 'chislitel' ? "Числитель" : "Знаменатель"
@@ -608,8 +663,8 @@ export function getPairsForDay(dayIndex, parity = 'chislitel', course = 4) {
         end: bell.end,
         breakdown: bell.breakdown,
         subject: rawPair.subject,
-        room: rawPair.room,
-        teacher: rawPair.teacher,
+        room: formatRoom(rawPair.room),
+        teacher: rawPair.teacher || "—",
         hasLesson: true,
         split: false
       });
@@ -619,8 +674,20 @@ export function getPairsForDay(dayIndex, parity = 'chislitel', course = 4) {
   return result;
 }
 
-// Расчет статуса текущей пары с учетом курса студента
-export function getCurrentPairStatus(now = new Date(), parity = 'chislitel', course = 4) {
+// Расчет статуса текущей пары с учетом курса и расписания группы студента
+export function getCurrentPairStatus(now = new Date(), parity = 'chislitel', groupOrCourse = DEFAULT_GROUP) {
+  let groupName = DEFAULT_GROUP;
+  let course = 4;
+
+  if (typeof groupOrCourse === 'string') {
+    groupName = groupOrCourse;
+    course = getCourseFromGroupName(groupName);
+  } else if (typeof groupOrCourse === 'number') {
+    course = groupOrCourse;
+    const repGroups = { 1: "9РПО-11", 2: "9ПО-21", 3: "9ПО-31", 4: "9ПО-43к" };
+    groupName = repGroups[course] || DEFAULT_GROUP;
+  }
+
   const jsDay = now.getDay();
   const dayIndex = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon..6=Sun
   const bells = getBellSchedule(course);
@@ -638,7 +705,7 @@ export function getCurrentPairStatus(now = new Date(), parity = 'chislitel', cou
   const minutes = now.getMinutes();
   const currentMinutes = hours * 60 + minutes;
 
-  const pairs = getPairsForDay(dayIndex, parity, course);
+  const pairs = getPairsForDay(dayIndex, parity, groupName);
 
   const parseMins = (str) => {
     const [h, m] = str.split(':').map(Number);

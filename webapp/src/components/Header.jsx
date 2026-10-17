@@ -1,9 +1,9 @@
-import React from 'react';
 import { APP_CURRENT_VERSION } from '../data/changelogData';
-import { GitCommit, ChevronRight } from 'lucide-react';
+import { GitCommit, ChevronRight, ShieldCheck } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
+import { isSuperAdmin } from '../utils/userProfile';
 
-export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpenStarosta }) {
+export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpenStarosta, onOpenAdmin }) {
   const currentProfile = profile || {
     fullName: 'Студент AITU',
     username: 'student',
@@ -36,6 +36,20 @@ export default function Header({ profile, onOpenProfile, onOpenChangelog, onOpen
 
         {/* Right: Starosta Badge, Pinned Profile Button & Version */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Superadmin Root Access Quick Button */}
+          {isSuperAdmin(currentProfile?.id) && onOpenAdmin && (
+            <button
+              onClick={() => {
+                onOpenAdmin();
+                triggerHaptic('medium');
+              }}
+              className="flex items-center gap-1 px-2 py-1 bg-amber-400 hover:bg-amber-300 text-black font-mono text-[10px] font-black tracking-wider uppercase transition-all rounded-xs shadow-md cursor-pointer animate-pulse"
+              title="Открыть Root панель администратора"
+            >
+              <span>👑 АДМИН</span>
+            </button>
+          )}
+
           {/* Starosta Hub quick button */}
           {isStarostaOrAdmin && onOpenStarosta && (
             <button

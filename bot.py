@@ -2577,7 +2577,7 @@ LECTURES_INTRO_TEXT = (
     "──────────────────────\n"
     "Здесь собраны подробные конспекты всех лекций с датами занятий, "
     "краткими выжимками (TL;DR), ключевыми вопросами и полными текстами.\n\n"
-    "📖 Можно читать прямо в Telegram по страницам или скачать <code>.md</code> файл для Obsidian и заметок.\n\n"
+    "📖 Можно читать прямо в Telegram по страницам или скачать <code>.md</code> файл для заметок.\n\n"
     "👇 <b>Выберите предмет для просмотра:</b>"
 )
 
@@ -2794,7 +2794,7 @@ async def handle_lec_download(call: types.CallbackQuery):
     caption = (
         f"📄 <b>{html.escape(lec['title'])}</b>\n"
         f"📚 <code>{html.escape(lec['subject_full'])}</code> · 📅 {lec['date']} · {html.escape(lec.get('pair', ''))}\n\n"
-        f"💡 <i>Файл в формате Markdown (.md). Открывается в Obsidian, Notion, VS Code или любом блокноте.</i>"
+        f"💡 <i>Файл в формате Markdown (.md). Открывается в Notion, VS Code или любом редакторе заметок.</i>"
     )
     await call.message.answer_document(doc, caption=caption, parse_mode=ParseMode.HTML)
 
@@ -3189,6 +3189,12 @@ async def start_http_server() -> web.AppRunner | None:
     app = web.Application()
     app.router.add_get("/", health_handler)
     app.router.add_get("/health", health_handler)
+
+    try:
+        from services.api_server import setup_api_routes
+        setup_api_routes(app)
+    except Exception as e:
+        logger.warning(f"Не удалось подключить API routes: {e}")
     
     runner = web.AppRunner(app)
     await runner.setup()

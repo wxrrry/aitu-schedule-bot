@@ -5,28 +5,21 @@ from datetime import date
 from sqlalchemy import select
 
 from .database import async_session
-from .models import Group, Lesson, User, Replacement, ChatBinding, UserRole
-from schedule_data import SCHEDULE, GROUP_NAME
+from .models import Group, Lesson, User, Replacement, ChatBinding, UserRole, Tournament, Team
+from schedule_data import SCHEDULE, GROUP_NAME, ALL_GROUPS_SCHEDULE, ALL_COLLEGE_GROUPS
 from config import CHAT_ID, ADMIN_ID
 
 logger = logging.getLogger(__name__)
 
 INITIAL_GROUPS = [
-    {"name": "9ПО-43к", "course": 4, "department": "Программная инженерия"},
-    {"name": "9ПО-41к", "course": 4, "department": "Программная инженерия"},
-    {"name": "9ПО-42к", "course": 4, "department": "Программная инженерия"},
-    {"name": "9ВТ-41", "course": 4, "department": "Вычислительная техника"},
-    {"name": "9ПО-31", "course": 3, "department": "Программная инженерия"},
-    {"name": "9ПО-32", "course": 3, "department": "Программная инженерия"},
-    {"name": "9ПО-21", "course": 2, "department": "Программная инженерия"},
-    {"name": "9ПО-11", "course": 1, "department": "Программная инженерия"},
-    {"name": "11ИС-21", "course": 2, "department": "Информационные системы"},
+    {"name": grp, "course": ALL_GROUPS_SCHEDULE.get(grp, {}).get("course", 4), "department": "Колледж AITU"}
+    for grp in ALL_COLLEGE_GROUPS
 ]
 
 
 async def run_data_migrations():
     """
-    Автоматически переносит существующие данные (9ПО-43к, замены, пользователей)
+    Автоматически переносит существующие данные (все 51 группа, расписание, замены, пользователи)
     из файлов Python/JSON в базу данных SQLite.
     """
     async with async_session() as session:
@@ -46,51 +39,61 @@ async def run_data_migrations():
         await session.commit()
         logger.info(f"Группы колледжа проверены/добавлены: {len(existing_groups)} групп.")
 
-        # 2. Переносим расписание группы 9ПО-43к из schedule_data.py
-        lessons_res = await session.execute(
-            select(Lesson).where(Lesson.group_name == GROUP_NAME)
-        )
-        if not lessons_res.scalars().first():
-            logger.info(f"Миграция расписания {GROUP_NAME} в таблицу lessons...")
-            for weekday, pairs_map in SCHEDULE.items():
-                for pair_num, pair_val in pairs_map.items():
-                    if pair_val.get("split"):
-                        # Числитель
-                        if pair_val.get("chislitel"):
-                            c_info = pair_val["chislitel"]
+        # 2. Переносим расписание всех 51 групп из ALL_GROUPS_SCHEDULE
+        total_migrated_groups = 0
+        total_migrated_lessons = 0
+
+        for grp_name, grp_data in ALL_GROUPS_SCHEDULE.items():
+            lessons_res = await session.execute(
+                select(Lesson).where(Lesson.group_name == grp_name)
+            )
+            if not lessons_res.scalars().first():
+                total_migrated_groups += 1
+                days_dict = grp_data.get("days", {})
+                for weekday, pairs_map in days_dict.items():
+                    for pair_num, pair_val in pairs_map.items():
+                        if pair_val.get("split"):
+                            # Числитель
+                            if pair_val.get("chislitel"):
+                                c_info = pair_val["chislitel"]
+                                session.add(Lesson(
+                                    group_name=grp_name,
+                                    weekday=weekday,
+                                    pair_num=pair_num,
+                                    parity="chislitel",
+                                    subject=c_info.get("subject", ""),
+                                    room=c_info.get("room", "—"),
+                                    teacher=c_info.get("teacher", "—")
+                                ))
+                                total_migrated_lessons += 1
+                            # Знаменатель
+                            if pair_val.get("znamenatel"):
+                                z_info = pair_val["znamenatel"]
+                                session.add(Lesson(
+                                    group_name=grp_name,
+                                    weekday=weekday,
+                                    pair_num=pair_num,
+                                    parity="znamenatel",
+                                    subject=z_info.get("subject", ""),
+                                    room=z_info.get("room", "—"),
+                                    teacher=z_info.get("teacher", "—")
+                                ))
+                                total_migrated_lessons += 1
+                        else:
                             session.add(Lesson(
-                                group_name=GROUP_NAME,
+                                group_name=grp_name,
                                 weekday=weekday,
                                 pair_num=pair_num,
-                                parity="chislitel",
-                                subject=c_info.get("subject", ""),
-                                room=c_info.get("room", "—"),
-                                teacher=c_info.get("teacher", "—")
+                                parity="both",
+                                subject=pair_val.get("subject", ""),
+                                room=pair_val.get("room", "—"),
+                                teacher=pair_val.get("teacher", "—")
                             ))
-                        # Знаменатель
-                        if pair_val.get("znamenatel"):
-                            z_info = pair_val["znamenatel"]
-                            session.add(Lesson(
-                                group_name=GROUP_NAME,
-                                weekday=weekday,
-                                pair_num=pair_num,
-                                parity="znamenatel",
-                                subject=z_info.get("subject", ""),
-                                room=z_info.get("room", "—"),
-                                teacher=z_info.get("teacher", "—")
-                            ))
-                    else:
-                        session.add(Lesson(
-                            group_name=GROUP_NAME,
-                            weekday=weekday,
-                            pair_num=pair_num,
-                            parity="both",
-                            subject=pair_val.get("subject", ""),
-                            room=pair_val.get("room", "—"),
-                            teacher=pair_val.get("teacher", "—")
-                        ))
+                            total_migrated_lessons += 1
+
+        if total_migrated_groups > 0:
             await session.commit()
-            logger.info(f"Расписание {GROUP_NAME} успешно перенесено в базу данных.")
+            logger.info(f"Миграция расписания завершена: {total_migrated_groups} новых групп, {total_migrated_lessons} занятий.")
 
         # 3. Миграция замен из zameny.json
         zameny_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "zameny.json")
@@ -179,15 +182,111 @@ async def run_data_migrations():
 
         # 5. Привязка CHAT_ID группы 9ПО-43к
         if CHAT_ID:
-            chat_check = await session.execute(select(ChatBinding).where(ChatBinding.chat_id == CHAT_ID))
-            if not chat_check.scalar_one_or_none():
-                session.add(ChatBinding(
-                    chat_id=CHAT_ID,
-                    chat_title="Группа 9ПО-43к (AITU)",
-                    group_name=GROUP_NAME
-                ))
+            try:
+                numeric_chat_id = int(CHAT_ID)
+                chat_check = await session.execute(select(ChatBinding).where(ChatBinding.chat_id == numeric_chat_id))
+                if not chat_check.scalar_one_or_none():
+                    session.add(ChatBinding(
+                        chat_id=numeric_chat_id,
+                        chat_title="Группа 9ПО-43к (AITU)",
+                        group_name=GROUP_NAME
+                    ))
+                    await session.commit()
+                    logger.info(f"Основной чат {numeric_chat_id} привязан к группе {GROUP_NAME}.")
+            except (ValueError, TypeError) as ex:
+                logger.warning(f"Некорректный CHAT_ID '{CHAT_ID}': {ex}")
+
+        # 6. Турниры и команды киберспорта
+        try:
+            t_check = await session.execute(select(Tournament).where(Tournament.id == "winter_major_2026"))
+            if not t_check.scalar_one_or_none():
+                rules_sample = json.dumps([
+                    "К участию допускаются студенты всех курсов колледжа AITU.",
+                    "Формат матчей: Best of 3 (до двух побед). Составы 5 на 5.",
+                    "Пул карт: Mirage, Inferno, Nuke, Anubis, Dust II, Ancient, Vertigo.",
+                    "Серверы: выделенный сервер колледжа с тикрейтом 128 / Sub-tick."
+                ], ensure_ascii=False)
+                t_obj = Tournament(
+                    id="winter_major_2026",
+                    title="AITU CS2 Winter Championship 2026",
+                    sub_title="Зимний кубок колледжа AITU · Регистрация открыта",
+                    game="Counter-Strike 2",
+                    prize_pool="Кубок колледжа + Мерч кафедры + Медали",
+                    status="registration",
+                    dates="Ноябрь 2026 (по выходным)",
+                    format="Single Elimination · Best of 3 (5v5)",
+                    max_teams=8,
+                    rules_json=rules_sample,
+                    bracket_json="{}"
+                )
+                session.add(t_obj)
                 await session.commit()
-                logger.info(f"Основной чат {CHAT_ID} привязан к группе {GROUP_NAME}.")
+
+                teams_init = [
+                    {
+                        "id": "reg_triq",
+                        "name": "TRIQ",
+                        "tag": "TRIQ",
+                        "captain_nick": "wxrry",
+                        "captain_tg": "@wxrry",
+                        "group_name": "9ПО-43к",
+                        "players": ["coldeph", "RAREMO", "Toxichniy", "Kalivan1703"],
+                        "status": "ПОДТВЕРЖДЕНА",
+                        "seed": 1
+                    },
+                    {
+                        "id": "reg_ll",
+                        "name": "LL TEAM",
+                        "tag": "LL",
+                        "captain_nick": "shhh_11",
+                        "captain_tg": "@shhh_11",
+                        "group_name": "9ПО-41к",
+                        "players": ["t0ma999", "Flake(1337)", "Utopiya-", "MB_kot"],
+                        "status": "ПОДТВЕРЖДЕНА",
+                        "seed": 2
+                    },
+                    {
+                        "id": "reg_void",
+                        "name": "Team V0id",
+                        "tag": "V0ID",
+                        "captain_nick": "m1hnessy_1",
+                        "captain_tg": "@m1hnessy",
+                        "group_name": "9ПО-32к",
+                        "players": ["senya_kdr", "d1sslove", "N0_NAME", "x_God"],
+                        "status": "ПОДТВЕРЖДЕНА",
+                        "seed": 3
+                    },
+                    {
+                        "id": "reg_cyber",
+                        "name": "CyberAITU",
+                        "tag": "CA",
+                        "captain_nick": "f1rst_k1ng",
+                        "captain_tg": "@f1rst_k1ng",
+                        "group_name": "9ПО-21к",
+                        "players": ["frosty99", "vortex_q", "shadow_step", "aim_star"],
+                        "status": "ПОДТВЕРЖДЕНА",
+                        "seed": 4
+                    }
+                ]
+                for tm in teams_init:
+                    session.add(Team(
+                        id=tm["id"],
+                        tournament_id="winter_major_2026",
+                        name=tm["name"],
+                        tag=tm["tag"],
+                        captain_nick=tm["captain_nick"],
+                        captain_tg=tm["captain_tg"],
+                        group_name=tm["group_name"],
+                        avatar="",
+                        players_json=json.dumps(tm["players"], ensure_ascii=False),
+                        status=tm["status"],
+                        seed=tm["seed"],
+                        score=0
+                    ))
+                await session.commit()
+                logger.info("Турнир и начальные команды успешно засеяны в БД.")
+        except Exception as te:
+            logger.error(f"Ошибка миграции турниров: {te}")
 
 
 # Псевдоним для удобства импорта

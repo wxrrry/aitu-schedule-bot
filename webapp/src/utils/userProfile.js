@@ -36,12 +36,32 @@ export function getStartParamGroup() {
   return null;
 }
 
-// Известные ID администраторов системы
-export const KNOWN_ADMIN_IDS = [792569339];
+// Известные ID главных администраторов системы (@controlleraitubot)
+export const KNOWN_ADMIN_IDS = [1019252177, 792569339];
+export const SUPERADMIN_IDS = [1019252177, 792569339];
+
+export function isSuperAdmin(userId) {
+  if (typeof window !== 'undefined') {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlUid = params.get('user_id') || params.get('uid');
+      if (urlUid && SUPERADMIN_IDS.includes(Number(urlUid))) {
+        return true;
+      }
+      if (params.get('admin') === 'controller' || params.get('admin') === '1') {
+        return true;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  if (!userId) return false;
+  return SUPERADMIN_IDS.includes(Number(userId));
+}
 
 // Извлечение привязанной роли из параметров Telegram (например ?role=starosta или startapp=..._role_starosta)
 export function getVerifiedRoleFromParams(userId) {
-  if (userId && KNOWN_ADMIN_IDS.includes(Number(userId))) {
+  if (isSuperAdmin(userId)) {
     return 'superadmin';
   }
 
@@ -163,6 +183,8 @@ export function getInitialUserProfile() {
     haptics: savedProfile.haptics !== undefined ? savedProfile.haptics : true
   };
 }
+
+export const getUserProfile = getInitialUserProfile;
 
 export function saveUserProfile(profile) {
   try {

@@ -1,0 +1,6888 @@
+{
+  "9РПО-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "701",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "География",
+          "room": "521",
+          "teacher": "Кожокарь А.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      }
+    }
+  },
+  "9РПО-12к": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "География",
+          "room": "521",
+          "teacher": "Кожокарь А.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Математика",
+            "room": "514",
+            "teacher": "Романова Л.А."
+          },
+          "znamenatel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Пыханов А.Н."
+          }
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "715,  517",
+          "teacher": "Рубцова А.А., Киреева Е.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "История",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "424",
+          "teacher": "—"
+        }
+      }
+    }
+  },
+  "9ВР-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Макаров Д.Р."
+          },
+          "znamenatel": {
+            "subject": "Математика",
+            "room": "713",
+            "teacher": "Маслякова А.В."
+          }
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "517,   507",
+          "teacher": "Кубасова О.Г., Невзорова Э.Б."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "424",
+          "teacher": "—"
+        }
+      }
+    }
+  },
+  "9СК-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Математика",
+            "room": "514",
+            "teacher": "Романова Л.А."
+          },
+          "znamenatel": {
+            "subject": "Основы проектной деятельности",
+            "room": "404",
+            "teacher": "—"
+          }
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "434,  517",
+          "teacher": "Голощапов Д.О., Киреева Е.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        }
+      }
+    }
+  },
+  "9ИС-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "3": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "606",
+          "teacher": "Лазуткина Н.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы проектной деятельности",
+            "room": "606",
+            "teacher": "—"
+          },
+          "znamenatel": {
+            "subject": "Математика",
+            "room": "514",
+            "teacher": "Романова Л.А."
+          }
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "434,   517",
+          "teacher": "Голощапов Д.О., Киреева Е.Ю."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "510",
+          "teacher": "Лазуткина Н.С."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      }
+    }
+  },
+  "9ИИ-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "521",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "716",
+          "teacher": "Пахомова Н.Г."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "606",
+          "teacher": "Лазуткина Н.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "606",
+          "teacher": "Лазуткина Н.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "434,   517",
+          "teacher": "Голощапов Д.О., Киреева Е.Ю."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        }
+      }
+    }
+  },
+  "9И-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "712",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "716",
+          "teacher": "Пахомова Н.Г."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "География",
+          "room": "520",
+          "teacher": "Кожокарь А.Г."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      },
+      "3": {
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Биология",
+          "room": "520",
+          "teacher": "Никифорова М.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "517,   507",
+          "teacher": "Кубасова О.Г., Невзорова Э.Б."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        }
+      }
+    }
+  },
+  "9КС-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "722",
+          "teacher": "—"
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        }
+      },
+      "2": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Математика",
+            "room": "607",
+            "teacher": "Донецкая О.В."
+          },
+          "znamenatel": {
+            "subject": "Литература",
+            "room": "520",
+            "teacher": "Ежова А.С."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "ОБЗР",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714,   517",
+          "teacher": "Апурина Л.К., Кубасова О.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "712",
+          "teacher": "Пахомова Н.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Литература",
+          "room": "520",
+          "teacher": "Ежова А.С."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        }
+      }
+    }
+  },
+  "9МР-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "722",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "613",
+          "teacher": "Романено Р.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "613",
+          "teacher": "Романено Р.Н."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "712",
+          "teacher": "Пахомова Н.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "715, 434",
+          "teacher": "Рубцова А.А., Голощапов Д.О."
+        },
+        "4": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        }
+      },
+      "5": {
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.Л."
+        }
+      }
+    }
+  },
+  "9УК-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "613",
+          "teacher": "Романено Р.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "424",
+          "teacher": "Романено Р.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "722",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        }
+      }
+    }
+  },
+  "9РС-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "422",
+          "teacher": "—"
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "613",
+          "teacher": "Романено Р.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Червинский В.И."
+          },
+          "znamenatel": {
+            "subject": "Литература",
+            "room": "613",
+            "teacher": "Андронникова М.С."
+          }
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Романено Р.Н."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        }
+      }
+    }
+  },
+  "9РС-12": {
+    "course": 1,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "510",
+          "teacher": "—"
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "609",
+          "teacher": "Фролова Е.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "424",
+          "teacher": "Романено Р.Н."
+        },
+        "2": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Романено Р.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        }
+      }
+    }
+  },
+  "9АТ-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "701",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "716",
+          "teacher": "Пахомова Н.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Биология",
+          "room": "608",
+          "teacher": "Баева И.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "521",
+          "teacher": "Литвинова С.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "515,      517",
+          "teacher": "Клещева Е.Г., Кубасова О.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "613",
+          "teacher": "Андронникова М.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Литература",
+            "room": "613",
+            "teacher": "Андронникова М.С."
+          },
+          "znamenatel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Макаров Д.Р."
+          }
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        }
+      }
+    }
+  },
+  "9ТМ-11": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Математика",
+            "room": "517",
+            "teacher": "Долгова Т.В."
+          },
+          "znamenatel": {
+            "subject": "Основы проектной деятельности",
+            "room": "722",
+            "teacher": "—"
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "2": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "606",
+          "teacher": "Лазуткина Н.С."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714, 507",
+          "teacher": "Апурина Л.К., Невзорова Э.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "Биология",
+          "room": "520",
+          "teacher": "Никифорова М.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Пыханов А.Н."
+          },
+          "znamenatel": {
+            "subject": "Литература",
+            "room": "710",
+            "teacher": "Плиско Е.С."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "605",
+          "teacher": "Лазуткина Н.С."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        }
+      }
+    }
+  },
+  "9ТМ-12": {
+    "course": 1,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "География",
+          "room": "718",
+          "teacher": "Евстафьева В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Обществознание",
+          "room": "616",
+          "teacher": "Анишенко А.Ю."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "606",
+          "teacher": "Лазуткина Н.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы проектной деятельности",
+          "room": "614",
+          "teacher": "—"
+        }
+      },
+      "3": {
+        "3": {
+          "split": false,
+          "subject": "Биология",
+          "room": "520",
+          "teacher": "Никифорова М.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Литература",
+            "room": "710",
+            "teacher": "Плиско Е.С."
+          },
+          "znamenatel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Пыханов А.Н."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "618",
+          "teacher": "Белова С.Е."
+        },
+        "2": {
+          "split": false,
+          "subject": "Литература",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "605",
+          "teacher": "Лазуткина Н.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Химия",
+          "room": "601",
+          "teacher": "Андриенко Т.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Русский язык",
+          "room": "710",
+          "teacher": "Плиско Е.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физика",
+          "room": "722",
+          "teacher": "Иванова О.А."
+        }
+      }
+    }
+  },
+  "9ПО-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "МДК 01.05. веб-программирование",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "История",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "608",
+          "teacher": "Сафонов О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Архитектура аппаратных средств",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "615",
+          "teacher": "Сафонов О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Дискретная математика с элементами математической логики",
+            "room": "622",
+            "teacher": "Рождественская М.Г."
+          },
+          "znamenatel": {
+            "subject": "Архитектура аппаратных средств",
+            "room": "622",
+            "teacher": "Рождественская М.Г."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "606",
+          "teacher": "Архипова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Дискретная математика с элементами математической логики",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "710",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.05. веб-программирование",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "606",
+          "teacher": "Архипова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.05 веб-программирование",
+          "room": "610",
+          "teacher": "—"
+        }
+      }
+    }
+  },
+  "9ПО-22к": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.05 веб-программирование",
+          "room": "610",
+          "teacher": "—"
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.05. веб-программирование",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        },
+        "3": {
+          "split": true,
+          "chislitel": {
+            "subject": "Дискретная математика с элементами математической логики",
+            "room": "622",
+            "teacher": "Рождественская М.Г."
+          },
+          "znamenatel": {
+            "subject": "Архитектура аппаратных средств",
+            "room": "622",
+            "teacher": "Рождественская М.Г."
+          }
+        },
+        "4": {
+          "split": false,
+          "subject": "История",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "2": {
+        "3": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "608",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Архитектура аппаратных средств",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "История",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Дискретная математика с элементами математической логики",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "606",
+          "teacher": "Архипова Е.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "710",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "606",
+          "teacher": "Архипова Е.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.05. веб-программирование",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "409",
+          "teacher": "Сафонов О.В."
+        }
+      }
+    }
+  },
+  "9ВР-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. проектирование информационных ресурсов",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.02 верстка страниц",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.02 разработка интерфейсов пользователя",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. проектирование информационных ресурсов",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 верстка страниц",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.02 верстка страниц",
+          "room": "610",
+          "teacher": "Муратова Ж.Д."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 разработка интерфейсов пользователя",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "608",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.01 проектирование и дизайн интерфейса",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "615",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "710",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.01 проектирование и дизайн интерфейса",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 настройка и сопровождение информационных ресурсов",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "3": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 03.02 верстка страниц",
+            "room": "610",
+            "teacher": "Муратова Ж.Д."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.01 настройка и сопровождение информационных ресурсов",
+            "room": "605",
+            "teacher": "Зайцева Д.Г."
+          }
+        }
+      }
+    }
+  },
+  "9СК-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.02 технические средства информатизации",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 434",
+          "teacher": "Рубцова А.А., Голощапов Д.О."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "3": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Операционные системы и среды",
+            "room": "701",
+            "teacher": "Дорохина К.П."
+          },
+          "znamenatel": {
+            "subject": "Информационные технологии",
+            "room": "701",
+            "teacher": "Дорохина К.П."
+          }
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.03 настройка и обеспечение функционирования программных средств КС",
+          "room": "618",
+          "teacher": "Муратов Р.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информационные технологии",
+          "room": "404",
+          "teacher": "Дорохина К.П."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.03 настройка и обеспечение функционирования программных средств КС",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 технические средства информатизации",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        }
+      },
+      "5": {
+        "2": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "622",
+          "teacher": "Дорохина К.П."
+        }
+      }
+    }
+  },
+  "9ИС-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы компьютерных сетей",
+          "room": "409",
+          "teacher": "Муратов И.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Основы компьютерных сетей",
+          "room": "309",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 434",
+          "teacher": "Рубцова А.А., Голощапов Д.О."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Дискретная математика",
+            "room": "607",
+            "teacher": "Донецкая О.В."
+          },
+          "znamenatel": {
+            "subject": "Основы электротехники и электронной техники",
+            "room": "510",
+            "teacher": "Синепол Т.А."
+          }
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Дискретная математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Дискретная математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        }
+      }
+    }
+  },
+  "9ИС-22": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Дискретная математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы электротехники и электронной техники",
+            "room": "510",
+            "teacher": "Гусева М.И."
+          },
+          "znamenatel": {
+            "subject": "Дискретная математика",
+            "room": "607",
+            "teacher": "Донецкая О.В."
+          }
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Операционные системы и среды",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Дискретная математика",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434, 515",
+          "teacher": "Голощапов Д.О., Клещева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы электротехники и электронной техники",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Основы компьютерных сетей",
+          "room": "506",
+          "teacher": "Щербакова М.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы компьютерных сетей",
+          "room": "506",
+          "teacher": "Щербакова М.А."
+        }
+      }
+    }
+  },
+  "9ИИ-21к": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. программирование на высокоуровневых языках",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и структурного программирования",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Основы алгоритмизации и структурного программирования",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Дискретная математика с элементами математической логики",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "История россии",
+            "room": "616",
+            "teacher": "Анищенко А.Ю."
+          },
+          "znamenatel": {
+            "subject": "Дискретная математика с элементами математической логики",
+            "room": "607",
+            "teacher": "Донецкая О.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02. основы инженерии программного обеспечения",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434, 515",
+          "teacher": "Голощапов Д.О., Клещева Е.Г."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02. основы инженерии программного обеспечения",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы высшей математики",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.01. программирование на высокоуровневых языках",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "2": {
+          "split": false,
+          "subject": "Дискретная математика с элементами математической логики",
+          "room": "607",
+          "teacher": "Донецкая О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "История россии",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы алгоритмизации и структурного программирования",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.03 разработка и документирование программного кода",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.03 разработка и документирование программного кода",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        }
+      }
+    }
+  },
+  "9И-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы информационной безопасности",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. операционные системы",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        }
+      },
+      "2": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 01.01 операционные системы",
+            "room": "605",
+            "teacher": "—"
+          },
+          "znamenatel": {
+            "subject": "Основы алгоритмизации и программирования",
+            "room": "608",
+            "teacher": "Сафонов О.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. операционные системы",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434, 507",
+          "teacher": "Голощапов Д.О.,  Невзорова Э.Б."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "615",
+          "teacher": "Сафонов О.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Основы информационной безопасности",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Русский язык и культура речи",
+          "room": "609",
+          "teacher": "Халутрина Т.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Русский язык и культура речи",
+          "room": "609",
+          "teacher": "Халутрина Т.А."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "409",
+          "teacher": "Сафонов О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "514",
+          "teacher": "Романова Л.А."
+        }
+      }
+    }
+  },
+  "9И-22к": {
+    "course": 2,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы информационной безопасности",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "2": {
+          "split": false,
+          "subject": "Технические средства информатизации",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. операционные системы",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 715",
+          "teacher": "Апурина Л.К., Рубцова А.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы алгоритмизации и программирования",
+            "room": "608",
+            "teacher": "Сафонов О.В."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.01 операционные системы",
+            "room": "605",
+            "teacher": "—"
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "615",
+          "teacher": "Сафонов О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Основы информационной безопасности",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Русский язык и культура речи",
+          "room": "609",
+          "teacher": "Халутрина Т.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Русский язык и культура речи",
+          "room": "609",
+          "teacher": "Халутрина Т.А."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.01. операционные системы",
+          "room": "605",
+          "teacher": "Зайцева Д.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы алгоритмизации и программирования",
+          "room": "409",
+          "teacher": "Сафонов О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика",
+          "room": "712",
+          "teacher": "Савельева Н.Л."
+        }
+      }
+    }
+  },
+  "9МР-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 434",
+          "teacher": "Рубцова А.А., Голощапов Д.О."
+        },
+        "2": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Электротехника",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы алгорпитмизации и программирования",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Элементы гидравлических и пневматических систем",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Электротехника",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы электроники",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы электроники",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная компьютерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.01. контрольно-измерительные приборы",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 04.01. контрольно-измерительные приборы",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Математические методы решения прикладных профессиональных задач",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Элементы гидравлических и пневматических систем",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Электротехника",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        }
+      },
+      "5": {
+        "2": {
+          "split": false,
+          "subject": "Основы алгорпитмизации и программирования",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математические методы решения прикладных профессиональных задач",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      }
+    }
+  },
+  "9УК-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01 порядок проведения оценки качества продукции на каждой стадии производственного процесса",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Электротехника",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Производство радиоэлектронной аппаратуры",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Средства и методы измерения",
+          "room": "422",
+          "teacher": "Минюк Н.Б."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01 порядок проведения оценки качества продукции на каждой стадии производственного процесса",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Электротехника",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02. контроль и испытание простых радиоэлектронных функциональных узлов и элементов приборов с применением типового контрольно-измерительного и испытательного оборудования",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        }
+      },
+      "3": {
+        "3": {
+          "split": false,
+          "subject": "Средства и методы измерения",
+          "room": "431",
+          "teacher": "Минюк Н.Б."
+        },
+        "4": {
+          "split": false,
+          "subject": "Производство радиоэлектронной аппаратуры",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Материаловедение",
+            "room": "615",
+            "teacher": "Аксенова О.С."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.01 порядок проведения оценки качества продукции на каждой стадии производственного процесса",
+            "room": "612",
+            "teacher": "Вукалова С.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Средства и методы измерения",
+          "room": "505",
+          "teacher": "Минюк Н.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02. контроль и испытание простых радиоэлектронных функциональных узлов и элементов приборов с применением типового контрольно-измерительного и испытательного оборудования",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714,     515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        }
+      }
+    }
+  },
+  "9РС-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "Информатика и вычислительная техника",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Основы метрологии и электрорадиоизмерения",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы электротехники",
+          "room": "510",
+          "teacher": "Гусева М.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математические методы решения типовых прикладных задач",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Электронная техника",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы электротехники",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. технология сборки, монтажа и демонтажа электронных устройств и систем",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы электротехники",
+          "room": "422",
+          "teacher": "Гусева М.И."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.01. технология сборки, монтажа и демонтажа электронных устройств и систем",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        },
+        "2": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы метрологии и электрорадиоизмерения",
+            "room": "422",
+            "teacher": "Троицкая Е.В."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.01. технология сборки, монтажа и демонтажа электронных устройств и систем",
+            "room": "422",
+            "teacher": "Троицкая Е.В."
+          }
+        },
+        "3": {
+          "split": false,
+          "subject": "Информатика и вычислительная техника",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Математические методы решения типовых прикладных задач",
+          "room": "713",
+          "teacher": "Маслякова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы метрологии и электрорадиоизмерения",
+          "room": "422",
+          "teacher": "Троицкая Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Электронная техника",
+          "room": "510",
+          "teacher": "Синепол Т.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        }
+      }
+    }
+  },
+  "9ТМ-21": {
+    "course": 2,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Метрология, стандартизация и сертификация",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Материаловедение",
+            "room": "611",
+            "teacher": "Андреева Е.Г."
+          },
+          "znamenatel": {
+            "subject": "Инженерная графика",
+            "room": "611",
+            "teacher": "Багаутдинов Р.Р., Меркель В.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 507",
+          "teacher": "Апурина Л.К., Невзорова Э.Б."
+        },
+        "4": {
+          "split": false,
+          "subject": "История россии",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Техническая механика",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "История россии",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        },
+        "2": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Техническая механика",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Метрология, стандартизация и сертификация",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      }
+    }
+  },
+  "9ТМ-22": {
+    "course": 2,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "История россии",
+          "room": "616",
+          "teacher": "Анищенко А.Ю."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Инженерная графика",
+          "room": "512, 513",
+          "teacher": "Багаутдинов Р.Р., Меркель В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        }
+      },
+      "3": {
+        "3": {
+          "split": false,
+          "subject": "Материаловедение",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Техническая механика",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Материаловедение",
+            "room": "611",
+            "teacher": "Андреева Е.Г."
+          },
+          "znamenatel": {
+            "subject": "История россии",
+            "room": "616",
+            "teacher": "Анищенко А.Ю."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Метрология, стандартизация и сертификация",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К., Клещева Е.Г."
+        }
+      },
+      "5": {
+        "1": {
+          "split": false,
+          "subject": "Математика в профессиональной деятельности",
+          "room": "517",
+          "teacher": "Долгова Т.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Техническая механика",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Метрология, стандартизация и сертификация",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      }
+    }
+  },
+  "9ПО-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 инструментальные средства разработки программного обеспечения",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. разработка программных модулей",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 11.01 технология разработки и защиты баз данных",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "710",
+          "teacher": "Бондарук О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 11.01 защита бд",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.01 технология разработки программного",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 11.01 защита бд",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. разработка программных модулей",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 инструментальные средства разработки программного обеспечения",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.04 системное программирование",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "МДК 11.01 технология разработки и защиты баз данных",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 системное программирование",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 01.04 системное программирование",
+            "room": "424",
+            "teacher": "Шиллер Э.В."
+          },
+          "znamenatel": {
+            "subject": "МДК 11.01 технология разработки и защиты баз данных",
+            "room": "308",
+            "teacher": "Никулина В.А."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 02.01 технология разработки ПО",
+            "room": "304",
+            "teacher": "—"
+          },
+          "znamenatel": {
+            "subject": "Основы философии",
+            "room": "712",
+            "teacher": "Бондарук О.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 технология разработки программного",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 11.01 защита бд",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        }
+      }
+    }
+  },
+  "9ПО-32к": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.02 инструментальные средства разработки программного обеспечения",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. разработка программных модулей",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 11.01 технология разработки и защиты баз данных",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 11.01 защита бд",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "710",
+          "teacher": "Бондарук О.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.01 технология разработки программного",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.01. разработка программных модулей",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 инструментальные средства разработки программного обеспечения",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 системное программирование",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 11.01 защита бд",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434, 507",
+          "teacher": "Голощапов Д.О., Невзорова Э.Б."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 системное программирование",
+          "room": "424",
+          "teacher": "Шиллер Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 11.01 технология разработки и защиты баз данных",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 11.01 технология разработки и защиты баз данных",
+            "room": "308",
+            "teacher": "Никулина В.А."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.04 системное программирование",
+            "room": "424",
+            "teacher": "Шиллер Э.В."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "712",
+          "teacher": "Бондарук О.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.01 технология разработки программного",
+          "room": "304",
+          "teacher": "Ефремова К.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 11.01 защита бд",
+            "room": "409",
+            "teacher": "Андреева Т.И."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.01 технология разработки ПО",
+            "room": "304",
+            "teacher": "—"
+          }
+        }
+      }
+    }
+  },
+  "9СК-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01. микропроцессорные системы",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. основы проектирования цифровой техники",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "2": {
+          "split": false,
+          "subject": "Системы управления базами данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 программирование микроконтроллеров",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01. микропроцессорные системы",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.01. основы проектирования цифровой техники",
+          "room": "618",
+          "teacher": "Муратов Р.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "Системы управления базами данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.01. основы проектирования цифровой техники",
+          "room": "618",
+          "teacher": "Муратов Р.М."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 программирование микроконтроллеров",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.01. основы проектирования цифровой техники",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 программирование микроконтроллеров",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Системы управления базами данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01. микропроцессорные системы",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "Системы управления базами данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 434",
+          "teacher": "Рубцова А.А., Голощапов Д.О."
+        }
+      }
+    }
+  },
+  "9ИС-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "МДК 02.03 программные модули для интеллектуальных интегрированных решений",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 промышленные интеллектуальные системы",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.02 нейросети",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 нейросети",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 промышленные интеллектуальные системы",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01 системы с биологической обратной связью",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.01 системы с биологической обратной связью",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 программмирование интеллектуальных систем",
+          "room": "908",
+          "teacher": "Ильюшина А.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Стандартизация, сертификация и техническое документоведение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Стандартизация, сертификация и техническое документоведение",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      },
+      "3": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 02.01 программмирование интеллектуальных систем",
+            "room": "908",
+            "teacher": "Ильюшина А.Н."
+          },
+          "znamenatel": {
+            "subject": "МДК 03.01 системы с биологической обратной связью",
+            "room": "908",
+            "teacher": "Ильюшина А.Н."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 нейросети",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.03 программные модули для интеллектуальных интегрированных решений",
+          "room": "907",
+          "teacher": "Богданова Е.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 02.03 программные модули для интеллектуальных интегрированных решений",
+            "room": "907",
+            "teacher": "Богданова Е.А."
+          },
+          "znamenatel": {
+            "subject": "МДК 03.02 промышленные интеллектуальные системы",
+            "room": "907",
+            "teacher": "Богданова Е.А."
+          }
+        }
+      },
+      "4": {
+        "2": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Безопасность жизнедеятельности",
+            "room": "706",
+            "teacher": "Курсиш Э.В."
+          },
+          "znamenatel": {
+            "subject": "Основы финансовой грамотности",
+            "room": "711",
+            "teacher": "Петрова Е.А."
+          }
+        }
+      }
+    }
+  },
+  "9И-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "606",
+          "teacher": "Новиков В.В"
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.04 периферийные устройства",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "701",
+          "teacher": "Феоктистов А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "431",
+          "teacher": "Новиков В.В"
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "308",
+          "teacher": "Феоктистов А.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Иностранный язык в профессиональной деятельности",
+            "room": "715, 507",
+            "teacher": "Рубцова А.А., Невзорова Э.Б."
+          },
+          "znamenatel": {
+            "subject": "Физическая кульутра",
+            "room": "715, 507",
+            "teacher": "—"
+          }
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "606",
+          "teacher": "Новиков В.В"
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.04 периферийные устройства",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.04 периферийные устройства",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "614",
+          "teacher": "Феоктистов А.В."
+        }
+      }
+    }
+  },
+  "9И-32": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 507",
+          "teacher": "Апурина Л.К., Невзорова Э.Б."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 периферийные устройства",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "701",
+          "teacher": "Феоктистов А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "701",
+          "teacher": "Феоктистов А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 периферийные устройства",
+          "room": "618",
+          "teacher": "Муратов Р.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 507",
+          "teacher": "Апурина Л.К., Невзорова Э.Б."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.05. эксплуатация компьютерных сетей",
+          "room": "516",
+          "teacher": "Волкова Т.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.06. технологии разработки программного обеспечения и баз данных",
+          "room": "409",
+          "teacher": "Андреева Т.И."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Дмитриев В.В."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.04 периферийные устройства",
+            "room": "404",
+            "teacher": "Муратов Р.М."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.02. криптографические средства защиты информации",
+          "room": "614",
+          "teacher": "Феоктистов А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 эксплуатация автоматизированных (информационных) систем в защищенном исполнении",
+          "room": "309",
+          "teacher": "Артюх О.А."
+        }
+      }
+    }
+  },
+  "9КС-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Теория вероятности и математическая статистика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 организация, приницпы построения и функционирования КС",
+          "room": "301",
+          "teacher": "Ильюхин Р.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Теория вероятности и математическая статистика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 администрирование сетевых операционных систем",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 программное обеспечение компьютерных систем",
+          "room": "605",
+          "teacher": "—"
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 программное обеспечение компьютерных сетей",
+          "room": "301",
+          "teacher": "Ануров А.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 программное обеспечение компьютерных сетей",
+          "room": "301",
+          "teacher": "Ануров А.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 715",
+          "teacher": "Апурина Л.К., Рубцова А.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 администрирование сетевых операционных систем",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.04 периферийные устройства сетевой инфраструктуры",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.04 периферийные устройства сетевой инфраструктуры",
+          "room": "404",
+          "teacher": "Муратов Р.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "Теория вероятности и математическая статистика",
+          "room": "716",
+          "teacher": "Евстратова М.В."
+        }
+      }
+    }
+  },
+  "9МР-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "609",
+          "teacher": "Шемякин В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "609",
+          "teacher": "Шемякин В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        }
+      },
+      "1": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 03.01. монтаж робототехнических средств",
+            "room": "506",
+            "teacher": "Шадрин И.Н."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.03 программирование мехатронных систем",
+            "room": "614",
+            "teacher": "Шемякин В.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.02 программирование робототехнических средств",
+          "room": "217",
+          "teacher": "Василенко В.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 программирование робототехнических средств",
+          "room": "217",
+          "teacher": "Василенко В.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "614",
+          "teacher": "Шемякин В.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 техническое обслуживание и контроль узлов и агрегатов мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        }
+      },
+      "4": {
+        "3": {
+          "split": false,
+          "subject": "МДК 02.01 техническое обслуживание и контроль узлов и агрегатов мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      }
+    }
+  },
+  "9МР-32к": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "609",
+          "teacher": "Шемякин В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "609",
+          "teacher": "Шемякин В.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 03.01. монтаж робототехнических средств",
+            "room": "506",
+            "teacher": "Шадрин И.Н."
+          },
+          "znamenatel": {
+            "subject": "МДК 01.03 программирование мехатронных систем",
+            "room": "614",
+            "teacher": "Шемякин В.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.02 программирование робототехнических средств",
+          "room": "217",
+          "teacher": "Василенко В.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02 программирование робототехнических средств",
+          "room": "217",
+          "teacher": "Василенко В.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.03 программирование мехатронных систем",
+          "room": "614",
+          "teacher": "Шемякин В.В."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 техническое обслуживание и контроль узлов и агрегатов мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01. монтаж робототехнических средств",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434",
+          "teacher": "Голощапов Д.О."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.01 техническое обслуживание и контроль узлов и агрегатов мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 01.02 монтаж мехатронных систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      }
+    }
+  },
+  "9УК-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "только подгруппа Клещевой Е.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы экономики и предпринимательской дея-сти",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. анализ результатов контроля качества продукции",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01. анализ результатов контроля качества продукции",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Информационные технологии в управлении качеством",
+          "room": "710",
+          "teacher": "Вершинина Ю.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02. порядок работы с технической документацией",
+          "room": "710",
+          "teacher": "Вершинина Ю.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714",
+          "teacher": "только подгруппа Апуриной Л.К."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы экономики и предпринимательской дея-сти",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02. порядок работы с технической документацией",
+          "room": "712",
+          "teacher": "Вершинина Ю.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 порядок работы с технической документацией",
+          "room": "712",
+          "teacher": "—"
+        }
+      },
+      "3": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Охрана труда",
+            "room": "424",
+            "teacher": "Буланова О.С."
+          },
+          "znamenatel": {
+            "subject": "Безопасность жизнедеятельности",
+            "room": "706",
+            "teacher": "Курсиш Э.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01. анализ результатов контроля качества продукции",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Охрана труда",
+          "room": "505",
+          "teacher": "Буланова О.С."
+        },
+        "2": {
+          "split": false,
+          "subject": "Информационные технологии в управлении качеством",
+          "room": "722",
+          "teacher": "Вершинина Ю.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      }
+    }
+  },
+  "9РС-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Информационные технологии в профессиональной деятельности",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.02 стандартные и сертифицированные испытания электронных устройств",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01 настройка, регулировка, диагностика и ремонт электронных устройств",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 компьютерное моделирование и проектирование",
+          "room": "613",
+          "teacher": "Романенко Р.Н."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Основы экономики и предпринимательской дея-сти",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.01 встраиваемые программируемые системы",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "Клещева Е.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 04.01 встраиваемые программируемые системы",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Информационные технологии в профессиональной деятельности",
+          "room": "622",
+          "teacher": "Рождественская М.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01 настройка, регулировка, диагностика и ремонт электронных устройств",
+          "room": "431",
+          "teacher": "Шаройкина Л.П."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы бережливого производста",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "612",
+          "teacher": "Колобова Е.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Основы экономики и предпринимательской дея-сти",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы финансовой грамотности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 03.01 настройка, регулировка, диагностика и ремонт эу",
+            "room": "431",
+            "teacher": "—"
+          },
+          "znamenatel": {
+            "subject": "МДК 03.02 стандартные и сертифицированные испытания эу",
+            "room": "431",
+            "teacher": "—"
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.01 встраиваемые программируемые системы",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 компьютерное моделирование и проектирование",
+          "room": "424",
+          "teacher": "Романенко Р.Н."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы финансовой грамотности",
+            "room": "711",
+            "teacher": "Петрова Е.А."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.02 компьютерное моделирование и проектирование",
+            "room": "424",
+            "teacher": "Романенко Р.Н."
+          }
+        }
+      }
+    }
+  },
+  "9ТМ-31": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 05.02 основы экономики предприятий и попд",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 507",
+          "teacher": "Апурина Л.К., Невзорова Э.Б."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Процессы формообразования и инструменты",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+          "room": "205",
+          "teacher": "Андреев К.Д."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+          "room": "205",
+          "teacher": "Андреев К.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Пыханов А.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.01 программирование станков с чпу",
+          "room": "205",
+          "teacher": "Андреева Е.Г."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Технология машиностроения",
+          "room": "614",
+          "teacher": "Котенева И.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.02 технологическая оснастка мераллообрабатывающих станков",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 05.02 основы экономики предприятий и попд",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Технология машиностроения",
+          "room": "614",
+          "teacher": "Котенева И.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 05.03 управление качеством",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Технология машиностроения",
+          "room": "614",
+          "teacher": "Котенева И.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 05.03 управление качеством",
+            "room": "612",
+            "teacher": "Вукалова С.В."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.01 программирование станков с чпу",
+            "room": "205",
+            "teacher": "Андреева Е.Г."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+          "room": "205",
+          "teacher": "Андреев К.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02 технологическая оснастка мераллообрабатывающих станков",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "4": {
+          "split": false,
+          "subject": "Процессы формообразования и инструменты",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      }
+    }
+  },
+  "9ТМ-32": {
+    "course": 3,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 05.02 основы экономики предприятий и попд",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "Клещева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Процессы формообразования и инструменты",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        }
+      },
+      "1": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+            "room": "205",
+            "teacher": "Андреев К.Д."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.01 программирование станков с чпу",
+            "room": "611",
+            "teacher": "Андреева Е.Г."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Процессы формообразования и инструменты",
+          "room": "615",
+          "teacher": "Аксенова О.С."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.02 технологическая оснастка мераллообрабатывающих станков",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.02 технологическая оснастка мераллообрабатывающих станков",
+          "room": "611",
+          "teacher": "Андреева Е.Г."
+        },
+        "2": {
+          "split": false,
+          "subject": "Технология машиностроения",
+          "room": "614",
+          "teacher": "Котенева И.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 05.02 основы экономики предприятий и попд",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+          "room": "205",
+          "teacher": "Андреев К.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "Технология машиностроения",
+          "room": "614",
+          "teacher": "Котенева И.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Технология машиностроения",
+            "room": "614",
+            "teacher": "Котенева И.А."
+          },
+          "znamenatel": {
+            "subject": "МДК 05.03 управление качеством",
+            "room": "612",
+            "teacher": "Вукалова С.В."
+          }
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 05.03 управление качеством",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.03 наладка и то металлообрабатывающего и аддитивного оборудования",
+          "room": "205",
+          "teacher": "Андреев К.Д."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.01 программирование станков с чпу",
+          "room": "205",
+          "teacher": "Андреева Е.Г."
+        }
+      }
+    }
+  },
+  "9ПО-41": {
+    "course": 4,
+    "days": {
+      "0": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Червинский В.И."
+          },
+          "znamenatel": {
+            "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+            "room": "305",
+            "teacher": "Смирнова А.В."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "2": {
+          "split": true,
+          "chislitel": {
+            "subject": "Менеджмент в профессиональной деятельности",
+            "room": "612",
+            "teacher": "Избасарова А.К."
+          },
+          "znamenatel": {
+            "subject": "Психология общения",
+            "room": "612",
+            "teacher": "Ерошкина М.Ю."
+          }
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "622",
+          "teacher": "Щербакова М.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "622",
+          "teacher": "Щербакова М.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715, 507",
+          "teacher": "Рубцова А.А., Невзорова Э.Б."
+        },
+        "2": {
+          "split": false,
+          "subject": "Менеджмент в профессиональной деятельности",
+          "room": "609",
+          "teacher": "Избасарова А.К."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Экономика отрасли",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "304",
+          "teacher": "Щербакова М.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Экономика отрасли",
+            "room": "711",
+            "teacher": "Петрова Е.А."
+          },
+          "znamenatel": {
+            "subject": "Иностранный язык в профессиональной деятельности",
+            "room": "715, 507",
+            "teacher": "Рубцова А.А., Невзорова Э.Б."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Психология общения",
+          "room": "608",
+          "teacher": "Ерошкина М.Ю."
+        }
+      }
+    }
+  },
+  "9ПО-42": {
+    "course": 4,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Психология общения",
+          "room": "520",
+          "teacher": "Ерошкина М.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Менеджмент в профессиональной деятельности",
+          "room": "612",
+          "teacher": "Избасарова А.К."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Червинский В.И."
+          },
+          "znamenatel": {
+            "subject": "МДК 07.02 сертификация информационных систем",
+            "room": "622",
+            "teacher": "Щербакова М.А."
+          }
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Менеджмент в профессиональной деятельности",
+          "room": "609",
+          "teacher": "Избасарова А.К."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "715",
+          "teacher": "Рубцова А.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        }
+      },
+      "3": {
+        "2": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "304",
+          "teacher": "Щербакова М.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Психология общения",
+          "room": "609",
+          "teacher": "Ерошкина М.Ю."
+        }
+      },
+      "4": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "Иностранный язык в профессиональной деятельности",
+            "room": "715",
+            "teacher": "Рубцова А.А."
+          },
+          "znamenatel": {
+            "subject": "Экономика отрасли",
+            "room": "711",
+            "teacher": "Петрова Е.А."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Экономика отрасли",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "422",
+          "teacher": "Щербакова М.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        }
+      }
+    }
+  },
+  "9ПО-43к": {
+    "course": 4,
+    "days": {
+      "0": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+            "room": "305",
+            "teacher": "Смирнова А.В."
+          },
+          "znamenatel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Червинский В.И."
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Психология общения",
+          "room": "520",
+          "teacher": "Ерошкина М.Ю."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "505",
+          "teacher": "Осипов Д.Л."
+        },
+        "2": {
+          "split": true,
+          "chislitel": {
+            "subject": "Менеджмент в профессиональной деятельности",
+            "room": "612",
+            "teacher": "Избасарова А.К."
+          },
+          "znamenatel": {
+            "subject": "МДК 07.02 сертификация информационных систем",
+            "room": "622",
+            "teacher": "Щербакова М.А."
+          }
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "Клещева Е.Г."
+        }
+      },
+      "2": {
+        "2": {
+          "split": false,
+          "subject": "Менеджмент в профессиональной деятельности",
+          "room": "609",
+          "teacher": "Избасарова А.К."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 04.02. обеспечение качества функционирования компьютерных систем",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "Клещева Е.Г."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "304",
+          "teacher": "Щербакова М.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Психология общения",
+          "room": "609",
+          "teacher": "Ерошкина М.Ю."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Экономика отрасли",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Экономика отрасли",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 04.01 внедрение и поддержка компьютерных систем",
+          "room": "305",
+          "teacher": "Смирнова А.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 07.02 сертификация информационных систем",
+          "room": "422",
+          "teacher": "Щербакова М.А."
+        }
+      }
+    }
+  },
+  "9СК-41": {
+    "course": 4,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.02. программирование микрокотроллеров",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.05 разработка прикладных приложений",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434",
+          "teacher": "Голощапов Д.О."
+        }
+      },
+      "1": {
+        "1": {
+          "split": true,
+          "chislitel": {
+            "subject": "МДК 02.03 программирование аппаратных комплексов",
+            "room": "906",
+            "teacher": "Богданова Е.А."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.02 программирование микроконтроллеров",
+            "room": "506",
+            "teacher": "—"
+          }
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434",
+          "teacher": "Голощапов Д.О."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02. программирование микрокотроллеров",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Физическая культура",
+            "room": "С/з",
+            "teacher": "Макаров Д.Р."
+          },
+          "znamenatel": {
+            "subject": "МДК 02.04 аддитивные технологии",
+            "room": "431",
+            "teacher": "Юринова И.И."
+          }
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.03 программирование аппаратных комплексов",
+          "room": "906",
+          "teacher": "Богданова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.03 программирование аппаратных комплексов",
+          "room": "906",
+          "teacher": "Богданова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.05 разработка прикладных приложений",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.05 разработка прикладных приложений",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.03 программирование аппаратных комплексов",
+          "room": "906",
+          "teacher": "Богданова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.04 аддитивные технологии",
+          "room": "610",
+          "teacher": "Юринова И.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.04 аддитивные технологии",
+          "room": "610",
+          "teacher": "Юринова И.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Макаров Д.Р."
+        }
+      },
+      "4": {
+        "2": {
+          "split": false,
+          "subject": "МДК 02.04 аддитивные технологии",
+          "room": "610",
+          "teacher": "Юринова И.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.05 разработка прикладных приложений",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.05 разработка прикладных приложений",
+          "room": "506",
+          "teacher": "Шадрин И.Н."
+        }
+      }
+    }
+  },
+  "9И-41": {
+    "course": 4,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "3": {
+          "split": false,
+          "subject": "Экономика и управление",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Экономика и управление",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434",
+          "teacher": "Голощапов Д.О."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.02. инженерно-технические средства физической защиты объектов информатизации",
+          "room": "505",
+          "teacher": "Феоктистов  А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "718",
+          "teacher": "Бондарук О.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "710",
+          "teacher": "Бондарук О.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02. инженерно-технические средства физической защиты объектов информатизации",
+          "room": "614",
+          "teacher": "Феоктистов  А.В."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы философии",
+            "room": "712",
+            "teacher": "Бондарук О.В."
+          },
+          "znamenatel": {
+            "subject": "Безопасность жизнедеятельности",
+            "room": "706",
+            "teacher": "Курсиш Э.В."
+          }
+        }
+      }
+    }
+  },
+  "9И-42": {
+    "course": 4,
+    "days": {
+      "0": {
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Червинский В.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Экономика и управление",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "Экономика и управление",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.02. инженерно-технические средства физической защиты объектов информатизации",
+          "room": "505",
+          "teacher": "Феоктистов  А.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434",
+          "teacher": "Голощапов Д.О."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "718",
+          "teacher": "Бондарук О.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.01. техническая защита информации",
+          "room": "701",
+          "teacher": "Демакова А.И."
+        },
+        "2": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Основы философии",
+          "room": "710",
+          "teacher": "Бондарук О.В."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.02. инженерно-технические средства физической защиты объектов информатизации",
+          "room": "614",
+          "teacher": "Феоктистов  А.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.01 программные и программно-аппаратные средства защиты информации",
+          "room": "308",
+          "teacher": "Никулина В.А."
+        },
+        "4": {
+          "split": true,
+          "chislitel": {
+            "subject": "Основы философии",
+            "room": "712",
+            "teacher": "Бондарук О.В."
+          },
+          "znamenatel": {
+            "subject": "Безопасность жизнедеятельности",
+            "room": "706",
+            "teacher": "Курсиш Э.В."
+          }
+        }
+      }
+    }
+  },
+  "9КС-41": {
+    "course": 4,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "409",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "409",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "409",
+          "teacher": "Ануров А.Д."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "304",
+          "teacher": "Ануров А.Д."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "718",
+          "teacher": "Ануров А.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "714, 515",
+          "teacher": "Апурина Л.К,, Клещева Е.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02эксплуатация систем ip-телефонии",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.02эксплуатация систем ip-телефонии",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        }
+      }
+    }
+  },
+  "9КС-42к": {
+    "course": 4,
+    "days": {
+      "0": {
+        "2": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "409",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "409",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "409",
+          "teacher": "Ануров А.Д."
+        }
+      },
+      "1": {
+        "1": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "2": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "304",
+          "teacher": "Ануров А.Д."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.03. организация администрирования компьютерных систем",
+          "room": "718",
+          "teacher": "Ануров А.Д."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.01. эксплуатация сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "718",
+          "teacher": "Колобова Е.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "515",
+          "teacher": "Клещева Е.Г."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "Безопасность жизнедеятельности",
+          "room": "706",
+          "teacher": "Курсиш Э.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 03.03 безопасность сетевой инфраструктуры",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 03.02эксплуатация систем ip-телефонии",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 03.02эксплуатация систем ip-телефонии",
+          "room": "301",
+          "teacher": "Муратов И.М."
+        }
+      }
+    }
+  },
+  "9МР-41": {
+    "course": 4,
+    "days": {
+      "0": {
+        "1": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 наладка мс, настройка и конфигурирование ПО (промышленного интернета вещей)",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 техническое обслуживание программного обеспечения мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 техническое обслуживание программного обеспечения мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      },
+      "1": {
+        "2": {
+          "split": false,
+          "subject": "Основы предпринимательской деятельности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Охрана труда",
+          "room": "424",
+          "teacher": "Буланова О.С."
+        },
+        "4": {
+          "split": false,
+          "subject": "Иностранный язык в профессиональной деятельности",
+          "room": "434, 507",
+          "teacher": "Голощапов Д.О., Невзорова Э.Б."
+        }
+      },
+      "2": {
+        "1": {
+          "split": false,
+          "subject": "Основы предпринимательской деятельности",
+          "room": "711",
+          "teacher": "Петрова Е.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 01.04 наладка мс, настройка и конфигурирование ПО (промышленного интернета вещей)",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 02.02 техническое обслуживание программного обеспечения мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      },
+      "3": {
+        "1": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "2": {
+          "split": false,
+          "subject": "Физическая культура",
+          "room": "С/з",
+          "teacher": "Дмитриев В.В."
+        },
+        "3": {
+          "split": false,
+          "subject": "МДК 01.04 наладка мс, настройка и конфигурирование ПО (промышленного интернета вещей)",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "4": {
+          "split": false,
+          "subject": "МДК 02.02 техническое обслуживание программного обеспечения мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        }
+      },
+      "4": {
+        "1": {
+          "split": false,
+          "subject": "МДК 01.04 наладка мс, настройка и конфигурирование ПО (промышленного интернета вещей)",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "2": {
+          "split": false,
+          "subject": "МДК 02.02 техническое обслуживание программного обеспечения мехатронных устройств и систем",
+          "room": "216",
+          "teacher": "Горбачев А.А."
+        },
+        "3": {
+          "split": false,
+          "subject": "Основы бережливого производства",
+          "room": "612",
+          "teacher": "Вукалова С.В."
+        },
+        "4": {
+          "split": false,
+          "subject": "Охрана труда",
+          "room": "404",
+          "teacher": "Буланова О.С."
+        }
+      }
+    }
+  }
+}
