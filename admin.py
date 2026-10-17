@@ -127,19 +127,18 @@ def get_admin_main_keyboard() -> InlineKeyboardMarkup:
     """Главная клавиатура админ-панели."""
     buttons = [
         [
-            InlineKeyboardButton(text="🔄 Git Pull (Обновить код)", callback_data="admin_git_pull"),
-            InlineKeyboardButton(text="⚡️ Рестарт бота", callback_data="admin_restart")
+            InlineKeyboardButton(text="⚡️ Перезапустить бота", callback_data="admin_restart"),
+            InlineKeyboardButton(text="⚠️ Управление заменами", callback_data="admin_manage_zameny")
         ],
         [
-            InlineKeyboardButton(text="⚠️ Управление заменами", callback_data="admin_manage_zameny"),
-            InlineKeyboardButton(text="📢 Рассылка сообщения", callback_data="admin_broadcast_menu")
+            InlineKeyboardButton(text="📢 Рассылка сообщения", callback_data="admin_broadcast_menu"),
+            InlineKeyboardButton(text="👥 Роли и старосты", callback_data="admin_roles_menu")
         ],
         [
-            InlineKeyboardButton(text="👥 Роли и старосты", callback_data="admin_roles_menu"),
-            InlineKeyboardButton(text="🧪 Тестирование рассылок", callback_data="admin_tests_menu")
+            InlineKeyboardButton(text="🧪 Тестирование рассылок", callback_data="admin_tests_menu"),
+            InlineKeyboardButton(text="📲 Обновить команды меню", callback_data="admin_refresh_all_commands")
         ],
         [
-            InlineKeyboardButton(text="📲 Обновить меню всем", callback_data="admin_refresh_all_commands"),
             InlineKeyboardButton(text="◀️ Закрыть панель", callback_data="admin_close")
         ]
     ]

@@ -185,6 +185,15 @@ class StarostaUIState(StatesGroup):
     waiting_zam_details = State()
 
 
+class AdminBroadcastState(StatesGroup):
+    waiting_broadcast_text = State()
+    waiting_broadcast_target = State()
+
+
+class AdminRoleAssignState(StatesGroup):
+    waiting_user_input = State()
+
+
 async def resolve_target_group(chat: types.Chat | None = None, user: types.User | None = None) -> str:
     """
     Определяет целевую учебную группу:
@@ -1652,28 +1661,145 @@ async def handle_admin_delete_zamena(call: types.CallbackQuery):
 
 
 @dp.callback_query(F.data == "admin_broadcast_menu")
-async def handle_admin_broadcast_menu(call: types.CallbackQuery):
+async def handle_admin_broadcast_menu(call: types.CallbackQuery, state: FSMContext):
     if not await check_admin_privileges(call.from_user.id, call.message.chat):
         await call.answer("⛔️ Отказано в доступе", show_alert=True)
         return
 
+    await state.set_state(AdminBroadcastState.waiting_broadcast_text)
     text = (
-        "📢 <b>Рассылка объявлений от имени бота</b>\n"
+        "📢 <b>Рассылка объявлений от имени администрации</b>\n"
         "──────────────────────\n"
-        "Чтобы разослать важное сообщение во все каналы, введите:\n\n"
-        "<code>/broadcast &lt;текст вашего сообщения&gt;</code>\n\n"
-        "▫️ Сообщение придёт в привязанный чат группы 9ПО-43к.\n"
-        "▫️ А также в личные сообщения всем пользователям, взаимодействовавшим с ботом.\n\n"
-        "<i>Поддерживается HTML-разметка (&lt;b&gt;, &lt;i&gt;, &lt;code&gt;).</i>"
+        "✏️ <b>Отправьте в ответ текст сообщения</b>, которое хотите разослать.\n\n"
+        "<i>Поддерживается форматирование Telegram (жирный текст, курсив, ссылки).</i>\n\n"
+        "После отправки текста вы сможете выбрать целевую аудиторию и подтвердить рассылку."
     )
     back_kb = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад в админку", callback_data="admin_back_to_main")]]
+        inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_broadcast_cancel")]]
     )
     try:
         await call.message.edit_text(text, reply_markup=back_kb)
     except Exception:
         await call.message.answer(text, reply_markup=back_kb)
     await call.answer()
+
+
+@dp.callback_query(F.data == "admin_broadcast_cancel")
+async def handle_admin_broadcast_cancel(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await handle_admin_panel(call)
+
+
+@dp.message(AdminBroadcastState.waiting_broadcast_text)
+async def handle_admin_broadcast_text_received(message: types.Message, state: FSMContext):
+    if not await is_admin(message.from_user.id):
+        await state.clear()
+        return
+
+    text_to_send = message.html_text or message.text or ""
+    if not text_to_send.strip():
+        await message.answer("⚠️ Сообщение не должно быть пустым. Отправьте текст объявления:")
+        return
+
+    await state.update_data(broadcast_body=text_to_send)
+    await state.set_state(AdminBroadcastState.waiting_broadcast_target)
+
+    preview_text = (
+        f"📢 <b>ПРЕДПРОСМОТР РАССЫЛКИ:</b>\n"
+        f"──────────────────────\n"
+        f"{text_to_send}\n"
+        f"──────────────────────\n"
+        f"👤 <i>Отправитель: {html.escape(message.from_user.full_name or 'Администрация')}</i>\n\n"
+        f"🎯 <b>Выберите, кому отправить сообщение:</b>"
+    )
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👥 Всем студентам колледжа", callback_data="bcast_target_all")],
+            [InlineKeyboardButton(text="🎓 Только группе 9ПО-43к", callback_data="bcast_target_grp_9ПО-43к")],
+            [InlineKeyboardButton(text="💬 Во все беседы (групповые чаты)", callback_data="bcast_target_chats")],
+            [InlineKeyboardButton(text="❌ Отменить рассылку", callback_data="admin_broadcast_cancel")]
+        ]
+    )
+    await message.answer(preview_text, reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("bcast_target_"))
+async def handle_admin_broadcast_execute(call: types.CallbackQuery, state: FSMContext):
+    user_id = call.from_user.id
+    if not await is_admin(user_id):
+        await call.answer("⛔️ Отказано в доступе", show_alert=True)
+        await state.clear()
+        return
+
+    data = await state.get_data()
+    body = data.get("broadcast_body")
+    if not body:
+        await call.answer("⚠️ Текст сообщения утерян. Попробуйте снова.", show_alert=True)
+        await state.clear()
+        await handle_admin_panel(call)
+        return
+
+    target = call.data.replace("bcast_target_", "")
+    await state.clear()
+
+    if target == "all":
+        title_grp = "ДЛЯ ВСЕХ СТУДЕНТОВ"
+    elif target == "chats":
+        title_grp = "ДЛЯ ГРУППОВЫХ БЕСЕД"
+    else:
+        grp_name = target.replace("grp_", "")
+        title_grp = f"ДЛЯ ГРУППЫ {grp_name}"
+
+    final_text = (
+        f"📢 <b>ОБЪЯВЛЕНИЕ {title_grp}</b>\n"
+        f"──────────────────────\n"
+        f"{body}\n\n"
+        f"👤 <i>От: {html.escape(call.from_user.full_name or 'Администрация')}</i>"
+    )
+
+    status_msg = await call.message.answer(f"⏳ <i>Выполняю рассылку ({title_grp})...</i>")
+    await call.answer()
+
+    from services.broadcaster import safe_send_message
+    target_ids = []
+
+    if target == "chats":
+        chats = await get_all_chat_bindings()
+        target_ids = [c.chat_id for c in chats]
+    elif target.startswith("grp_"):
+        grp_name = target.replace("grp_", "")
+        bound = await get_chats_for_group(grp_name)
+        target_ids.extend([b.chat_id for b in bound])
+        users = await get_users_by_group(grp_name)
+        target_ids.extend([u.user_id for u in users if u.user_id != user_id])
+    else:
+        # All
+        chats = await get_all_chat_bindings()
+        target_ids.extend([c.chat_id for c in chats])
+        all_settings = load_all_settings()
+        target_ids.extend([int(uid) for uid in all_settings.keys() if uid.isdigit() and int(uid) != user_id])
+
+    unique_ids = list(dict.fromkeys(target_ids))
+    sent_count = 0
+    fail_count = 0
+
+    for cid in unique_ids:
+        ok = await safe_send_message(bot=bot, chat_id=cid, text=final_text)
+        if ok:
+            sent_count += 1
+        else:
+            fail_count += 1
+        await asyncio.sleep(0.05)
+
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ В админ-панель", callback_data="admin_back_to_main")]])
+    await status_msg.edit_text(
+        f"✅ <b>Рассылка успешно завершена!</b>\n\n"
+        f"▫️ Целевая аудитория: <b>{title_grp}</b>\n"
+        f"▫️ Успешно доставлено: <b>{sent_count}</b>\n"
+        f"▫️ Ошибок доставки: <b>{fail_count}</b>",
+        reply_markup=back_kb
+    )
 
 
 @dp.message(Command("broadcast"))
@@ -2751,12 +2877,17 @@ async def handle_my_role_command(message: types.Message):
 @dp.message(Command("roles"))
 @dp.message(Command("starostas"))
 @dp.callback_query(F.data == "admin_roles_menu")
-async def handle_roles_command(event: types.Message | types.CallbackQuery):
+async def handle_roles_command(event: types.Message | types.CallbackQuery, state: FSMContext | None = None):
+    if isinstance(event, types.CallbackQuery):
+        await event.answer()
+    if state:
+        await state.clear()
+
     user_id = event.from_user.id
     if not await is_admin(user_id):
         msg = "⛔️ Доступно только администраторам бота."
         if isinstance(event, types.CallbackQuery):
-            await event.answer(msg, show_alert=True)
+            await event.message.answer(msg)
         else:
             await event.answer(msg)
         return
@@ -2766,63 +2897,126 @@ async def handle_roles_command(event: types.Message | types.CallbackQuery):
     from db.database import async_session
 
     async with async_session() as session:
-        stmt = select(User).where(User.role.in_(["admin", "starosta", "zam_starosty"])).order_by(User.role, User.group_name)
+        stmt = select(User).where(User.role.in_(["admin", "superadmin", "starosta", "zam_starosty"])).order_by(User.role, User.group_name)
         res = await session.execute(stmt)
         officers = res.scalars().all()
 
     lines = ["👥 <b>Администраторы и старосты колледжа:</b>\n──────────────────────"]
-    if ADMIN_IDS:
-        lines.append(f"👑 <b>Superadmins (.env):</b> <code>{', '.join(map(str, sorted(list(ADMIN_IDS))))}</code>\n")
+    lines.append(f"👑 <b>Superadmins:</b> <code>1019252177, 792569339</code>\n")
 
     if not officers:
-        lines.append("<i>В базе данных пока нет назначенных старост. Используйте /set_role</i>")
+        lines.append("<i>В базе данных пока нет назначенных старост.</i>")
     else:
         for u in officers:
             u_name = f"@{u.username}" if u.username else (u.full_name or str(u.user_id))
-            lines.append(f"• <b>{u.role.upper()}</b> | {u_name} | Группа: <code>{u.group_name or '—'}</code> (ID: <code>{u.user_id}</code>)")
+            role_ru = {
+                "superadmin": "👑 ГЛАВНЫЙ АДМИН",
+                "admin": "🛡 АДМИНИСТРАТОР",
+                "starosta": "⭐️ СТАРОСТА",
+                "zam_starosty": "⚡️ ЗАМ. СТАРОСТЫ"
+            }.get(u.role, u.role.upper())
+            lines.append(f"• <b>{role_ru}</b> | {u_name} | Группа: <code>{u.group_name or '—'}</code> (ID: <code>{u.user_id}</code>)")
 
-    lines.append("\n💡 <i>Назначить старосту: <code>/set_role &lt;@username&gt; starosta &lt;группа&gt;</code></i>")
+    lines.append("\n💡 <i>Нажмите кнопку ниже для быстрого назначения или введите /set_role:</i>")
     text = "\n".join(lines)
-    back_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад в админку", callback_data="admin_back_to_main")]])
+    back_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="⭐️ Назначить старосту", callback_data="admin_assign_starosta"),
+                InlineKeyboardButton(text="🛡 Назначить админа", callback_data="admin_assign_admin")
+            ],
+            [
+                InlineKeyboardButton(text="◀️ Назад в админку", callback_data="admin_back_to_main")
+            ]
+        ]
+    )
 
     if isinstance(event, types.CallbackQuery):
         try:
             await event.message.edit_text(text, reply_markup=back_kb)
         except Exception:
             await event.message.answer(text, reply_markup=back_kb)
-        await event.answer()
     else:
         await event.answer(text, reply_markup=back_kb)
 
 
-@dp.callback_query(F.data == "admin_tests_menu")
-async def handle_admin_tests_menu(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    kb = get_admin_tests_keyboard()
-    text = (
-        "🧪 <b>Тестирование фоновых рассылок</b>\n"
+@dp.callback_query(F.data == "admin_assign_starosta")
+async def handle_admin_assign_starosta_btn(call: types.CallbackQuery, state: FSMContext):
+    await state.set_state(AdminRoleAssignState.waiting_user_input)
+    await state.update_data(target_role="starosta")
+    await call.message.answer(
+        "⭐️ <b>Назначение старосты группы</b>\n"
         "──────────────────────\n"
-        "Нажмите кнопку ниже для отправки тестового уведомления:"
+        "Отправьте сообщение в формате:\n"
+        "<code>@username НазваниеГруппы</code>\n"
+        "или по ID:\n"
+        "<code>123456789 9ПО-43к</code>\n\n"
+        "Для отмены нажмите кнопку ниже:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_roles_menu")]])
     )
-    try:
-        await call.message.edit_text(text, reply_markup=kb)
-    except Exception:
-        await call.message.answer(text, reply_markup=kb)
     await call.answer()
 
 
-@dp.callback_query(F.data == "admin_refresh_all_commands")
-async def handle_admin_refresh_all_commands(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
+@dp.callback_query(F.data == "admin_assign_admin")
+async def handle_admin_assign_admin_btn(call: types.CallbackQuery, state: FSMContext):
+    await state.set_state(AdminRoleAssignState.waiting_user_input)
+    await state.update_data(target_role="admin")
+    await call.message.answer(
+        "🛡 <b>Назначение администратора бота</b>\n"
+        "──────────────────────\n"
+        "Отправьте @username или Telegram ID пользователя:\n"
+        "<i>Пример: <code>@username</code> или <code>123456789</code></i>\n\n"
+        "Для отмены нажмите кнопку ниже:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_roles_menu")]])
+    )
+    await call.answer()
+
+
+@dp.message(AdminRoleAssignState.waiting_user_input)
+async def handle_admin_role_input(message: types.Message, state: FSMContext):
+    if not await is_admin(message.from_user.id):
+        await state.clear()
         return
 
-    if bot:
-        await register_bot_commands(bot)
-    await call.answer("✅ Команды меню Telegram обновлены глобально!", show_alert=True)
+    data = await state.get_data()
+    role_to_set = data.get("target_role", "starosta")
+    text_val = (message.text or "").strip()
+
+    parts = text_val.split(maxsplit=1)
+    if not parts:
+        await message.answer("⚠️ Введите данные:")
+        return
+
+    user_identifier = parts[0].strip()
+    grp_name = parts[1].strip() if len(parts) > 1 else "9ПО-43к"
+
+    # Поиск пользователя
+    from db.crud import get_user_by_username, get_user, assign_group_officer, set_user_role
+    target_user = None
+    if user_identifier.startswith("@"):
+        target_user = await get_user_by_username(user_identifier[1:])
+    elif user_identifier.isdigit():
+        target_user = await get_user(int(user_identifier))
+
+    if not target_user:
+        await message.answer(
+            f"❌ Пользователь <code>{html.escape(user_identifier)}</code> не найден в базе бота.\n"
+            f"Пользователь должен хотя бы раз нажать /start в этом боте."
+        )
+        await state.clear()
+        return
+
+    if role_to_set == "starosta":
+        ok, msg = await assign_group_officer(grp_name, "starosta", target_user.user_id)
+        if ok:
+            await message.answer(f"✅ Пользователь <b>{target_user.full_name or user_identifier}</b> назначен <b>старостой</b> группы <code>{grp_name}</code>!")
+        else:
+            await message.answer(f"❌ Ошибка: {msg}")
+    else:
+        await set_user_role(target_user.user_id, "admin")
+        await message.answer(f"✅ Пользователь <b>{target_user.full_name or user_identifier}</b> назначен <b>администратором</b> бота!")
+
+    await state.clear()
 
 
 @dp.callback_query(F.data == "admin_close")
@@ -2836,27 +3030,65 @@ async def handle_admin_close(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "test_send_midnight")
 async def handle_test_midnight(call: types.CallbackQuery):
-    await call.answer("Отправляю тестовую полночную сводку...")
-    await send_midnight_schedule()
+    await call.answer("Отправлено в чат! 🌙", show_alert=False)
+    now = datetime.now(BOT_TZ)
+    target_date = now.date()
+    user_grp = await resolve_target_group(call.message.chat, call.from_user)
+    text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name=user_grp)
+    await call.message.answer(
+        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 00:00 ПОЛНОЧЬ]</b>\n"
+        f"<i>Так выглядит ежедневная полночная сводка для группы {user_grp}:</i>\n\n"
+        f"{text}",
+        link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+    )
 
 
 @dp.callback_query(F.data == "test_send_morning")
 async def handle_test_morning(call: types.CallbackQuery):
-    await call.answer("Отправляю тестовое утреннее оповещение (08:00)...")
-    await send_morning_alert()
+    await call.answer("Отправлено в чат! 🌅", show_alert=False)
+    today = datetime.now(BOT_TZ).date()
+    user_grp = await resolve_target_group(call.message.chat, call.from_user)
+    text = await get_formatted_morning_alert(today, group_name=user_grp)
+    if not text:
+        text = f"ℹ️ На сегодня ({today.strftime('%d.%m.%Y')}) у группы {user_grp} нет первой пары или выходной день."
+    await call.message.answer(
+        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 08:00 УТРО]</b>\n"
+        f"<i>Так выглядит утреннее напоминание для группы {user_grp}:</i>\n\n"
+        f"{text}",
+        link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+    )
 
 
 @dp.callback_query(F.data == "test_send_five_min")
 async def handle_test_five_min(call: types.CallbackQuery):
-    await call.answer("Отправляю тестовое оповещение о пятиминутке...")
-    await send_five_minute_break(4)
+    await call.answer("Отправлено в чат! ☕️", show_alert=False)
+    test_text = (
+        "🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · ПЯТИМИНУТКА]</b>\n"
+        "──────────────────────\n"
+        "☕️ <b>ПЕРЕРЫВ 5 МИНУТ!</b>\n\n"
+        "Первая половина пары окончена. Проветрите аудиторию, разомнитесь и выпейте воды!\n"
+        "⏰ Продолжение занятия через 5 минут."
+    )
+    await call.message.answer(test_text)
 
 
 @dp.callback_query(F.data == "test_send_ten_min")
 async def handle_test_ten_min(call: types.CallbackQuery):
-    await call.answer("Отправляю тестовое напоминание за 10 минут...")
-    if bot:
-        await send_pair_reminder(bot, 4)
+    await call.answer("Отправлено в чат! 🔔", show_alert=False)
+    user_grp = await resolve_target_group(call.message.chat, call.from_user)
+    test_text = (
+        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 10-МИНУТНЫЙ КОЛОКОЛЬЧИК]</b>\n"
+        f"──────────────────────\n"
+        f"<blockquote>"
+        f"🔔 1️⃣ <b>09:00 — 10:35</b>\n"
+        f"📚 <b>Архитектура программного обеспечения</b>\n"
+        f"📍 Кабинет: <code>404</code> · 👨‍🏫 <i>Смирнов А.В.</i>\n"
+        f"👥 Группа: <code>{user_grp}</code>\n"
+        f"⏱ <i>(09:00 - 09:45 | перерыв 5 мин | 09:50 - 10:35)</i>"
+        f"</blockquote>\n\n"
+        f"🏃‍♂️ <i>Пора в аудиторию! Успешной пары!</i>"
+    )
+    await call.message.answer(test_text)
 
 
 # -------------------------------------------------------------
