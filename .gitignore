@@ -13,3 +13,5 @@ bot.pid
 .bot_status.json
 venv/
 scratch/
+webapp/node_modules/
+webapp/dist/

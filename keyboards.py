@@ -79,7 +79,7 @@ def get_moodle_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🌐 Войти в СДО Moodle", url="https://moodle.astanait.edu.kz")
+                InlineKeyboardButton(text="🌐 Войти в СДО Moodle", url="https://do.eduhouse.ru")
             ],
             [
                 InlineKeyboardButton(text="📄 Скачать титульный лист (.docx)", callback_data="download_maket_docx")

@@ -41,3 +41,6 @@ if ADMIN_ID_STR.isdigit():
     ADMIN_IDS.add(int(ADMIN_ID_STR))
 
 ADMIN_ID = 1019252177
+
+# URL для Telegram WebApp (Mini App)
+WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip()

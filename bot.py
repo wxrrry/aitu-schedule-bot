@@ -17,7 +17,7 @@ import html
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS
+from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS, WEBAPP_URL
 from schedule_data import (
     SCHEDULE,
     DAYS_RU,
@@ -249,6 +249,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 dp = Dispatcher()
+
+# Подключение модульных роутеров aiogram 3.x согласно стандартам .rules.md
+try:
+    from handlers import setup_routers
+    setup_routers(dp)
+except Exception as e:
+    logger.warning(f"Ошибка подключения модульных роутеров handlers: {e}")
+
 scheduler = AsyncIOScheduler(timezone=BOT_TZ)
 bot: Bot | None = None
 
@@ -3552,7 +3560,7 @@ async def handle_inline_query(inline_query: types.InlineQuery):
         types.InlineQueryResultArticle(
             id="inline_moodle",
             title="📁 СДО Moodle и материалы",
-            description="Ссылка на moodle.astanait.edu.kz и макет титульника",
+            description="Ссылка на do.eduhouse.ru и макет титульника",
             input_message_content=types.InputTextMessageContent(
                 message_text=moodle_text,
                 parse_mode=ParseMode.HTML
@@ -3992,6 +4000,19 @@ async def main():
         
         logger.info(f"Планировщик запущен. Часовой пояс: {BOT_TZ}. Рассылки в 00:00, 08:00, пятиминутки и напоминания за 10 мин.")
         
+        # Настройка нативной кнопки меню Mini App в левом нижнем углу чата (MenuButtonWebApp)
+        if WEBAPP_URL and WEBAPP_URL.startswith("https://"):
+            try:
+                await bot.set_chat_menu_button(
+                    menu_button=types.MenuButtonWebApp(
+                        text="📱 Mini App",
+                        web_app=types.WebAppInfo(url=WEBAPP_URL)
+                    )
+                )
+                logger.info(f"Нативная кнопка MenuButtonWebApp настроена: {WEBAPP_URL}")
+            except Exception as e:
+                logger.warning(f"Не удалось настроить MenuButtonWebApp: {e}")
+
         # Удаляем вебхуки если были, и запускаем опрос
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(

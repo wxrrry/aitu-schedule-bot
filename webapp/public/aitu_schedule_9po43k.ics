@@ -1,0 +1,323 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//AITU//9PO-43k Schedule Bot//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Расписание 9ПО-43к (AITU)
+X-WR-TIMEZONE:Europe/Moscow
+BEGIN:VEVENT
+UID:aitu-9po43k-1@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261012T090000
+DTEND;TZID=Europe/Moscow:20261012T103500
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[1] МДК 04.01 Внедрение и поддержка КС (каб. 305)
+LOCATION:Кабинет 305, AITU
+DESCRIPTION:Пара №1\nПреподаватель: Смирнова Анастасия Владимировна\nКабинет: 305\nНеделя: Числитель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-2@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261019T090000
+DTEND;TZID=Europe/Moscow:20261019T103500
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[1] Физическая культура (каб. С/з)
+LOCATION:Кабинет С/з, AITU
+DESCRIPTION:Пара №1\nПреподаватель: Червинский Виталий Иванович\nКабинет: С/з\nНеделя: Знаменатель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-3@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261012T104500
+DTEND;TZID=Europe/Moscow:20261012T122000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[2] Психология общения (каб. 520)
+LOCATION:Кабинет 520, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Ерошкина Марина Юрьевна\nКабинет: 520
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-4@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261012T125500
+DTEND;TZID=Europe/Moscow:20261012T143000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[3] Безопасность жизнедеятельности (БЖД) (каб. 505)
+LOCATION:Кабинет 505, AITU
+DESCRIPTION:Пара №3\nПреподаватель: Осипов Денис Леонидович\nКабинет: 505
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-5@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261012T144000
+DTEND;TZID=Europe/Moscow:20261012T161500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[4] Безопасность жизнедеятельности (БЖД) (каб. 505)
+LOCATION:Кабинет 505, AITU
+DESCRIPTION:Пара №4\nПреподаватель: Осипов Денис Леонидович\nКабинет: 505
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-6@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261013T090000
+DTEND;TZID=Europe/Moscow:20261013T103500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[1] Безопасность жизнедеятельности (БЖД) (каб. 505)
+LOCATION:Кабинет 505, AITU
+DESCRIPTION:Пара №1\nПреподаватель: Осипов Денис Леонидович\nКабинет: 505
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-7@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261013T104500
+DTEND;TZID=Europe/Moscow:20261013T122000
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[2] Менеджмент в ПД (каб. 612)
+LOCATION:Кабинет 612, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Избасарова А.К.\nКабинет: 612\nНеделя: Числитель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-8@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261020T104500
+DTEND;TZID=Europe/Moscow:20261020T122000
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[2] МДК 07.02 Сертификация ИС (каб. 622)
+LOCATION:Кабинет 622, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Щербакова Мария Александровна\nКабинет: 622\nНеделя: Знаменатель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-9@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261013T125500
+DTEND;TZID=Europe/Moscow:20261013T143000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[3] МДК 04.01 Внедрение и поддержка КС (каб. 305)
+LOCATION:Кабинет 305, AITU
+DESCRIPTION:Пара №3\nПреподаватель: Смирнова Анастасия Владимировна\nКабинет: 305
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-10@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261013T144000
+DTEND;TZID=Europe/Moscow:20261013T161500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[4] Иностранный язык (каб. 515)
+LOCATION:Кабинет 515, AITU
+DESCRIPTION:Пара №4\nПреподаватель: Клещева Елена Георгиевна\nКабинет: 515
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-11@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261014T104500
+DTEND;TZID=Europe/Moscow:20261014T122000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[2] Менеджмент в ПД (каб. 609)
+LOCATION:Кабинет 609, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Избасарова А.К.\nКабинет: 609
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-12@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261014T125500
+DTEND;TZID=Europe/Moscow:20261014T143000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[3] МДК 04.02 Обеспечение качества КС (каб. 308)
+LOCATION:Кабинет 308, AITU
+DESCRIPTION:Пара №3\nПреподаватель: Никулина Валентина Андреевна\nКабинет: 308
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-13@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261014T144000
+DTEND;TZID=Europe/Moscow:20261014T161500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[4] МДК 04.02 Обеспечение качества КС (каб. 308)
+LOCATION:Кабинет 308, AITU
+DESCRIPTION:Пара №4\nПреподаватель: Никулина Валентина Андреевна\nКабинет: 308
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-14@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261015T090000
+DTEND;TZID=Europe/Moscow:20261015T103500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[1] Физическая культура (каб. С/з)
+LOCATION:Кабинет С/з, AITU
+DESCRIPTION:Пара №1\nПреподаватель: Червинский Виталий Иванович\nКабинет: С/з
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-15@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261015T104500
+DTEND;TZID=Europe/Moscow:20261015T122000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[2] Иностранный язык (каб. 515)
+LOCATION:Кабинет 515, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Клещева Елена Георгиевна\nКабинет: 515
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-16@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261015T125500
+DTEND;TZID=Europe/Moscow:20261015T143000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[3] МДК 07.02 Сертификация ИС (каб. 304)
+LOCATION:Кабинет 304, AITU
+DESCRIPTION:Пара №3\nПреподаватель: Щербакова Мария Александровна\nКабинет: 304
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-17@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261022T144000
+DTEND;TZID=Europe/Moscow:20261022T161500
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[4] Психология общения (каб. 609)
+LOCATION:Кабинет 609, AITU
+DESCRIPTION:Пара №4\nПреподаватель: Ерошкина Марина Юрьевна\nКабинет: 609\nНеделя: Знаменатель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-18@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261023T090000
+DTEND;TZID=Europe/Moscow:20261023T103500
+RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270701T000000Z
+SUMMARY:[1] Экономика отрасли (каб. 711)
+LOCATION:Кабинет 711, AITU
+DESCRIPTION:Пара №1\nПреподаватель: Петрова Елена Александровна\nКабинет: 711\nНеделя: Знаменатель
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-19@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261016T104500
+DTEND;TZID=Europe/Moscow:20261016T122000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[2] Экономика отрасли (каб. 711)
+LOCATION:Кабинет 711, AITU
+DESCRIPTION:Пара №2\nПреподаватель: Петрова Елена Александровна\nКабинет: 711
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-20@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261016T125500
+DTEND;TZID=Europe/Moscow:20261016T143000
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[3] МДК 04.01 Внедрение и поддержка КС (каб. 305)
+LOCATION:Кабинет 305, AITU
+DESCRIPTION:Пара №3\nПреподаватель: Смирнова Анастасия Владимировна\nКабинет: 305
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:aitu-9po43k-21@aitubot
+DTSTAMP:20261016T111516Z
+DTSTART;TZID=Europe/Moscow:20261016T144000
+DTEND;TZID=Europe/Moscow:20261016T161500
+RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=20270701T000000Z
+SUMMARY:[4] МДК 07.02 Сертификация ИС (каб. 422)
+LOCATION:Кабинет 422, AITU
+DESCRIPTION:Пара №4\nПреподаватель: Щербакова Мария Александровна\nКабинет: 422
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Напоминание о паре через 15 минут
+END:VALARM
+END:VEVENT
+END:VCALENDAR
