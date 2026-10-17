@@ -207,12 +207,4 @@ def get_user_settings_keyboard(
             )
         ])
 
-    if is_admin:
-        buttons.append([
-            InlineKeyboardButton(
-                text="👑 Перейти в Админ-панель",
-                callback_data="open_admin_panel"
-            )
-        ])
-
     return InlineKeyboardMarkup(inline_keyboard=buttons)

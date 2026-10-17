@@ -143,13 +143,6 @@ from user_settings import (
     get_users_with_setting,
     load_all_settings
 )
-from admin import (
-    get_admin_dashboard_text,
-    get_admin_main_keyboard,
-    get_admin_replacements_keyboard,
-    get_admin_tests_keyboard,
-    run_git_pull
-)
 from lectures import (
     get_all_lectures,
     get_lecture_by_id,
@@ -184,14 +177,6 @@ class StarostaUIState(StatesGroup):
     waiting_zam_custom_date = State()
     waiting_zam_details = State()
 
-
-class AdminBroadcastState(StatesGroup):
-    waiting_broadcast_text = State()
-    waiting_broadcast_target = State()
-
-
-class AdminRoleAssignState(StatesGroup):
-    waiting_user_input = State()
 
 
 async def resolve_target_group(chat: types.Chat | None = None, user: types.User | None = None) -> str:
@@ -234,7 +219,6 @@ async def register_bot_commands(bot_instance: Bot):
             types.BotCommand(command="parity", description="🏷 Чётность (числ / знам)"),
             types.BotCommand(command="bells", description="🔔 Расписание звонков"),
             types.BotCommand(command="id", description="🆔 Узнать свой Telegram ID"),
-            types.BotCommand(command="admin", description="👑 Панель администратора"),
             types.BotCommand(command="help", description="📖 Полная справка"),
         ])
         logger.info("Команды меню бота успешно зарегистрированы в Telegram.")
@@ -1535,349 +1519,29 @@ async def handle_refresh_command(message: types.Message):
 # -------------------------------------------------------------
 # Раздел: Панель администратора
 # -------------------------------------------------------------
-@dp.message(Command("admin", ignore_case=True))
+# -------------------------------------------------------------
+# Раздел: Управление администратора (перенесено в контроллер)
+# -------------------------------------------------------------
+@dp.message(Command("admin", "panel", "broadcast", ignore_case=True))
 @dp.message(F.text.lower().in_(["/admin", "admin", "админ", "админка", "/админ", "панель управления", "админ панель"]))
-@dp.callback_query(F.data == "open_admin_panel")
-@dp.callback_query(F.data == "admin_back_to_main")
-async def handle_admin_panel(event: types.Message | types.CallbackQuery):
-    user_id = event.from_user.id
-    
-    if not await is_admin(user_id):
-        msg = "⛔️ Панель администратора доступна только главным администраторам бота."
-        if isinstance(event, types.CallbackQuery):
-            await event.answer(msg, show_alert=True)
-        else:
-            await event.answer(msg)
-        return
-
-    all_grps = await get_all_groups()
-    users_cnt = await count_all_users()
-    text = get_admin_dashboard_text(
-        start_time=BOT_START_TIME,
-        total_users_db=users_cnt,
-        total_groups_db=len(all_grps)
+@dp.callback_query(F.data.in_(["open_admin_panel", "admin_back_to_main", "admin_broadcast_menu", "admin_manage_zameny", "admin_git_pull", "admin_restart"]))
+async def handle_admin_panel_redirect(event: types.Message | types.CallbackQuery):
+    msg = (
+        "👑 <b>Панель супер-администратора перенесена!</b>\n"
+        "──────────────────────────────\n"
+        "Управление ботом, расписанием, рассылки, парсинг файлов Excel/Word, "
+        "логи и мониторинг полностью перенесены в выделенного <b>бота-контроллера</b>.\n\n"
+        "ℹ️ <i>Пожалуйста, используйте бота управления (AITU Schedule Controller) "
+        "для доступа к панели супер-администратора.</i>"
     )
-    kb = get_admin_main_keyboard()
-
     if isinstance(event, types.CallbackQuery):
+        await event.answer("Панель перенесена в бота-контроллера 👑", show_alert=True)
         try:
-            await event.message.edit_text(text, reply_markup=kb)
-        except TelegramBadRequest as e:
-            if "message is not modified" not in str(e).lower():
-                await event.message.answer(text, reply_markup=kb)
-        await event.answer()
+            await event.message.edit_text(msg)
+        except Exception:
+            await event.message.answer(msg)
     else:
-        await event.answer(text, reply_markup=kb)
-
-
-@dp.callback_query(F.data == "admin_git_pull")
-async def handle_admin_git_pull(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    await call.answer("⏳ Выполняю git pull origin main...")
-    status_msg = await call.message.answer("⏳ <i>Подтягиваю изменения с GitHub репозитория...</i>")
-    success, output = run_git_pull()
-    
-    if bot:
-        await register_bot_commands(bot)
-
-    if success:
-        result_text = (
-            "✅ <b>Git pull выполнен успешно!</b>\n\n"
-            f"<pre>{html.escape(output[:1500])}</pre>\n\n"
-            "💡 <i>Если изменился код Python, нажмите «⚡️ Рестарт бота» в админке для мгновенного применения!</i>"
-        )
-    else:
-        result_text = (
-            "❌ <b>Ошибка при выполнении git pull:</b>\n\n"
-            f"<pre>{html.escape(output[:1500])}</pre>"
-        )
-
-    await status_msg.edit_text(result_text)
-
-
-@dp.callback_query(F.data == "admin_restart")
-async def handle_admin_restart(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    await call.answer("⚡️ Перезапускаю процесс бота...", show_alert=True)
-    await call.message.answer(
-        "🔄 <b>Перезапуск процесса бота...</b>\n\n"
-        "Бот снова выйдет на связь через 2-3 секунды с обновлённым кодом."
-    )
-    
-    def _restart():
-        logger.info("Мягкий перезапуск процесса бота по команде администратора...")
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-    asyncio.get_event_loop().call_later(1.0, _restart)
-
-
-@dp.callback_query(F.data == "admin_manage_zameny")
-async def handle_admin_manage_zameny(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    kb = get_admin_replacements_keyboard()
-    summary = format_replacements_summary()
-    text = (
-        "⚠️ <b>Управление заменами и отменами пар:</b>\n"
-        "──────────────────────\n"
-        f"{summary}\n\n"
-        "👇 <i>Нажмите кнопку ниже, чтобы удалить нужную замену в 1 клик, или используйте команду:</i>\n"
-        "<code>/zamena &lt;дата&gt; &lt;пара&gt; &lt;предмет/отмена&gt;</code>"
-    )
-    try:
-        await call.message.edit_text(text, reply_markup=kb)
-    except Exception:
-        await call.message.answer(text, reply_markup=kb)
-    await call.answer()
-
-
-@dp.callback_query(F.data.startswith("adm_del_zam_"))
-async def handle_admin_delete_zamena(call: types.CallbackQuery):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    parts = call.data.split("_")
-    date_str = parts[3]
-    p_num = int(parts[4])
-    
-    d_obj = parse_date_input(date_str)
-    if d_obj:
-        delete_replacement(d_obj, p_num)
-        await call.answer(f"Замена на {date_str} пара {p_num} удалена! 🗑", show_alert=False)
-    
-    kb = get_admin_replacements_keyboard()
-    summary = format_replacements_summary()
-    text = (
-        "⚠️ <b>Управление заменами и отменами пар:</b>\n"
-        "──────────────────────\n"
-        f"{summary}\n\n"
-        "👇 <i>Нажмите кнопку ниже, чтобы удалить нужную замену в 1 клик:</i>"
-    )
-    try:
-        await call.message.edit_text(text, reply_markup=kb)
-    except Exception:
-        pass
-
-
-@dp.callback_query(F.data == "admin_broadcast_menu")
-async def handle_admin_broadcast_menu(call: types.CallbackQuery, state: FSMContext):
-    if not await check_admin_privileges(call.from_user.id, call.message.chat):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        return
-
-    await state.set_state(AdminBroadcastState.waiting_broadcast_text)
-    text = (
-        "📢 <b>Рассылка объявлений от имени администрации</b>\n"
-        "──────────────────────\n"
-        "✏️ <b>Отправьте в ответ текст сообщения</b>, которое хотите разослать.\n\n"
-        "<i>Поддерживается форматирование Telegram (жирный текст, курсив, ссылки).</i>\n\n"
-        "После отправки текста вы сможете выбрать целевую аудиторию и подтвердить рассылку."
-    )
-    back_kb = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_broadcast_cancel")]]
-    )
-    try:
-        await call.message.edit_text(text, reply_markup=back_kb)
-    except Exception:
-        await call.message.answer(text, reply_markup=back_kb)
-    await call.answer()
-
-
-@dp.callback_query(F.data == "admin_broadcast_cancel")
-async def handle_admin_broadcast_cancel(call: types.CallbackQuery, state: FSMContext):
-    await state.clear()
-    await handle_admin_panel(call)
-
-
-@dp.message(AdminBroadcastState.waiting_broadcast_text)
-async def handle_admin_broadcast_text_received(message: types.Message, state: FSMContext):
-    if not await is_admin(message.from_user.id):
-        await state.clear()
-        return
-
-    text_to_send = message.html_text or message.text or ""
-    if not text_to_send.strip():
-        await message.answer("⚠️ Сообщение не должно быть пустым. Отправьте текст объявления:")
-        return
-
-    await state.update_data(broadcast_body=text_to_send)
-    await state.set_state(AdminBroadcastState.waiting_broadcast_target)
-
-    preview_text = (
-        f"📢 <b>ПРЕДПРОСМОТР РАССЫЛКИ:</b>\n"
-        f"──────────────────────\n"
-        f"{text_to_send}\n"
-        f"──────────────────────\n"
-        f"👤 <i>Отправитель: {html.escape(message.from_user.full_name or 'Администрация')}</i>\n\n"
-        f"🎯 <b>Выберите, кому отправить сообщение:</b>"
-    )
-
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="👥 Всем студентам колледжа", callback_data="bcast_target_all")],
-            [InlineKeyboardButton(text="🎓 Только группе 9ПО-43к", callback_data="bcast_target_grp_9ПО-43к")],
-            [InlineKeyboardButton(text="💬 Во все беседы (групповые чаты)", callback_data="bcast_target_chats")],
-            [InlineKeyboardButton(text="❌ Отменить рассылку", callback_data="admin_broadcast_cancel")]
-        ]
-    )
-    await message.answer(preview_text, reply_markup=kb)
-
-
-@dp.callback_query(F.data.startswith("bcast_target_"))
-async def handle_admin_broadcast_execute(call: types.CallbackQuery, state: FSMContext):
-    user_id = call.from_user.id
-    if not await is_admin(user_id):
-        await call.answer("⛔️ Отказано в доступе", show_alert=True)
-        await state.clear()
-        return
-
-    data = await state.get_data()
-    body = data.get("broadcast_body")
-    if not body:
-        await call.answer("⚠️ Текст сообщения утерян. Попробуйте снова.", show_alert=True)
-        await state.clear()
-        await handle_admin_panel(call)
-        return
-
-    target = call.data.replace("bcast_target_", "")
-    await state.clear()
-
-    if target == "all":
-        title_grp = "ДЛЯ ВСЕХ СТУДЕНТОВ"
-    elif target == "chats":
-        title_grp = "ДЛЯ ГРУППОВЫХ БЕСЕД"
-    else:
-        grp_name = target.replace("grp_", "")
-        title_grp = f"ДЛЯ ГРУППЫ {grp_name}"
-
-    final_text = (
-        f"📢 <b>ОБЪЯВЛЕНИЕ {title_grp}</b>\n"
-        f"──────────────────────\n"
-        f"{body}\n\n"
-        f"👤 <i>От: {html.escape(call.from_user.full_name or 'Администрация')}</i>"
-    )
-
-    status_msg = await call.message.answer(f"⏳ <i>Выполняю рассылку ({title_grp})...</i>")
-    await call.answer()
-
-    from services.broadcaster import safe_send_message
-    target_ids = []
-
-    if target == "chats":
-        chats = await get_all_chat_bindings()
-        target_ids = [c.chat_id for c in chats]
-    elif target.startswith("grp_"):
-        grp_name = target.replace("grp_", "")
-        bound = await get_chats_for_group(grp_name)
-        target_ids.extend([b.chat_id for b in bound])
-        users = await get_users_by_group(grp_name)
-        target_ids.extend([u.user_id for u in users if u.user_id != user_id])
-    else:
-        # All
-        chats = await get_all_chat_bindings()
-        target_ids.extend([c.chat_id for c in chats])
-        all_settings = load_all_settings()
-        target_ids.extend([int(uid) for uid in all_settings.keys() if uid.isdigit() and int(uid) != user_id])
-
-    unique_ids = list(dict.fromkeys(target_ids))
-    sent_count = 0
-    fail_count = 0
-
-    for cid in unique_ids:
-        ok = await safe_send_message(bot=bot, chat_id=cid, text=final_text)
-        if ok:
-            sent_count += 1
-        else:
-            fail_count += 1
-        await asyncio.sleep(0.05)
-
-    back_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ В админ-панель", callback_data="admin_back_to_main")]])
-    await status_msg.edit_text(
-        f"✅ <b>Рассылка успешно завершена!</b>\n\n"
-        f"▫️ Целевая аудитория: <b>{title_grp}</b>\n"
-        f"▫️ Успешно доставлено: <b>{sent_count}</b>\n"
-        f"▫️ Ошибок доставки: <b>{fail_count}</b>",
-        reply_markup=back_kb
-    )
-
-
-@dp.message(Command("broadcast"))
-async def handle_broadcast_command(message: types.Message):
-    if not await is_admin(message.from_user.id):
-        await message.answer("⛔️ Эта команда доступна только администраторам бота.")
-        return
-
-    parts = message.text.split(maxsplit=2)
-    if len(parts) < 2 or not parts[1].strip():
-        await message.answer(
-            "ℹ️ <b>Формат рассылки:</b>\n"
-            "▫️ Всем: <code>/broadcast &lt;текст сообщения&gt;</code>\n"
-            "▫️ Или конкретной группе: <code>/broadcast &lt;группа&gt; &lt;текст сообщения&gt;</code>\n\n"
-            "<i>Пример: <code>/broadcast 9ПО-43к Завтра первая пара отменена!</code></i>",
-            reply_markup=main_keyboard
-        )
-        return
-
-    first_arg = parts[1].strip()
-    target_group = None
-    existing_grp = await get_group_by_name(first_arg)
-    if existing_grp and len(parts) >= 3:
-        target_group = existing_grp.name
-        message_body = parts[2].strip()
-    else:
-        message_body = message.text.split(maxsplit=1)[1].strip()
-
-    title_grp = f"ДЛЯ ГРУППЫ {target_group}" if target_group else "ДЛЯ ВСЕХ СТУДЕНТОВ"
-    broadcast_text = (
-        f"📢 <b>ОБЪЯВЛЕНИЕ {title_grp}</b>\n"
-        f"──────────────────────\n"
-        f"{message_body}\n\n"
-        f"👤 <i>От: {html.escape(message.from_user.full_name or 'Администрация')}</i>"
-    )
-
-    status_msg = await message.answer(f"⏳ <i>Рассылаю сообщение ({title_grp})...</i>")
-    sent_count = 0
-    fail_count = 0
-
-    from services.broadcaster import safe_send_message
-
-    target_chat_ids = []
-    if target_group:
-        bound_chats = await get_chats_for_group(target_group)
-        target_chat_ids.extend([b.chat_id for b in bound_chats])
-        target_users = await get_users_by_group(target_group)
-        target_chat_ids.extend([u.user_id for u in target_users if u.user_id != message.from_user.id])
-    else:
-        all_chats = await get_all_chat_bindings()
-        target_chat_ids.extend([b.chat_id for b in all_chats])
-        all_users_settings = load_all_settings()
-        target_chat_ids.extend([int(uid) for uid in all_users_settings.keys() if uid.isdigit() and int(uid) != message.from_user.id])
-
-    # Удаляем дубликаты сохраняя порядок
-    unique_ids = list(dict.fromkeys(target_chat_ids))
-    for cid in unique_ids:
-        ok = await safe_send_message(bot=bot, chat_id=cid, text=broadcast_text)
-        if ok:
-            sent_count += 1
-        else:
-            fail_count += 1
-        await asyncio.sleep(0.05)
-
-    await status_msg.edit_text(
-        f"✅ <b>Рассылка успешно завершена!</b>\n\n"
-        f"▫️ Получатели: <b>{title_grp}</b>\n"
-        f"▫️ Доставлено: <b>{sent_count}</b> получателям\n"
-        f"▫️ Ошибок: <b>{fail_count}</b>"
-    )
+        await event.answer(msg)
 
 
 # -------------------------------------------------------------
@@ -2882,221 +2546,22 @@ async def handle_my_role_command(message: types.Message):
     )
 
 
-@dp.message(Command("roles"))
-@dp.message(Command("starostas"))
-@dp.callback_query(F.data == "admin_roles_menu")
-async def handle_roles_command(event: types.Message | types.CallbackQuery, state: FSMContext | None = None):
-    if isinstance(event, types.CallbackQuery):
-        await event.answer()
-    if state:
-        await state.clear()
-
-    user_id = event.from_user.id
-    if not await is_admin(user_id):
-        msg = "⛔️ Доступно только администраторам бота."
-        if isinstance(event, types.CallbackQuery):
-            await event.message.answer(msg)
-        else:
-            await event.answer(msg)
-        return
-
-    from sqlalchemy import select
-    from db.models import User
-    from db.database import async_session
-
-    async with async_session() as session:
-        stmt = select(User).where(User.role.in_(["admin", "superadmin", "starosta", "zam_starosty"])).order_by(User.role, User.group_name)
-        res = await session.execute(stmt)
-        officers = res.scalars().all()
-
-    lines = ["👥 <b>Администраторы и старосты колледжа:</b>\n──────────────────────"]
-    lines.append(f"👑 <b>Superadmins:</b> <code>1019252177, 792569339</code>\n")
-
-    if not officers:
-        lines.append("<i>В базе данных пока нет назначенных старост.</i>")
-    else:
-        for u in officers:
-            u_name = f"@{u.username}" if u.username else (u.full_name or str(u.user_id))
-            role_ru = {
-                "superadmin": "👑 ГЛАВНЫЙ АДМИН",
-                "admin": "🛡 АДМИНИСТРАТОР",
-                "starosta": "⭐️ СТАРОСТА",
-                "zam_starosty": "⚡️ ЗАМ. СТАРОСТЫ"
-            }.get(u.role, u.role.upper())
-            lines.append(f"• <b>{role_ru}</b> | {u_name} | Группа: <code>{u.group_name or '—'}</code> (ID: <code>{u.user_id}</code>)")
-
-    lines.append("\n💡 <i>Нажмите кнопку ниже для быстрого назначения или введите /set_role:</i>")
-    text = "\n".join(lines)
-    back_kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="⭐️ Назначить старосту", callback_data="admin_assign_starosta"),
-                InlineKeyboardButton(text="🛡 Назначить админа", callback_data="admin_assign_admin")
-            ],
-            [
-                InlineKeyboardButton(text="◀️ Назад в админку", callback_data="admin_back_to_main")
-            ]
-        ]
+@dp.message(Command("roles", "starostas", "set_role", "test_broadcast"))
+@dp.callback_query(F.data.in_(["admin_roles_menu", "admin_assign_starosta", "admin_assign_admin", "admin_close", "test_send_midnight", "test_send_morning", "test_send_five_min", "test_send_ten_min"]))
+async def handle_admin_roles_redirect(event: types.Message | types.CallbackQuery):
+    msg = (
+        "👥 <b>Управление ролями и тестирование перенесены в контроллер!</b>\n\n"
+        "Назначение старост, администраторов и тесты рассылок теперь выполняются "
+        "через <b>AITU Schedule Controller</b>."
     )
-
     if isinstance(event, types.CallbackQuery):
+        await event.answer("Перенесено в бота-контроллера 👑", show_alert=True)
         try:
-            await event.message.edit_text(text, reply_markup=back_kb)
+            await event.message.edit_text(msg)
         except Exception:
-            await event.message.answer(text, reply_markup=back_kb)
+            await event.message.answer(msg)
     else:
-        await event.answer(text, reply_markup=back_kb)
-
-
-@dp.callback_query(F.data == "admin_assign_starosta")
-async def handle_admin_assign_starosta_btn(call: types.CallbackQuery, state: FSMContext):
-    await state.set_state(AdminRoleAssignState.waiting_user_input)
-    await state.update_data(target_role="starosta")
-    await call.message.answer(
-        "⭐️ <b>Назначение старосты группы</b>\n"
-        "──────────────────────\n"
-        "Отправьте сообщение в формате:\n"
-        "<code>@username НазваниеГруппы</code>\n"
-        "или по ID:\n"
-        "<code>123456789 9ПО-43к</code>\n\n"
-        "Для отмены нажмите кнопку ниже:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_roles_menu")]])
-    )
-    await call.answer()
-
-
-@dp.callback_query(F.data == "admin_assign_admin")
-async def handle_admin_assign_admin_btn(call: types.CallbackQuery, state: FSMContext):
-    await state.set_state(AdminRoleAssignState.waiting_user_input)
-    await state.update_data(target_role="admin")
-    await call.message.answer(
-        "🛡 <b>Назначение администратора бота</b>\n"
-        "──────────────────────\n"
-        "Отправьте @username или Telegram ID пользователя:\n"
-        "<i>Пример: <code>@username</code> или <code>123456789</code></i>\n\n"
-        "Для отмены нажмите кнопку ниже:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="admin_roles_menu")]])
-    )
-    await call.answer()
-
-
-@dp.message(AdminRoleAssignState.waiting_user_input)
-async def handle_admin_role_input(message: types.Message, state: FSMContext):
-    if not await is_admin(message.from_user.id):
-        await state.clear()
-        return
-
-    data = await state.get_data()
-    role_to_set = data.get("target_role", "starosta")
-    text_val = (message.text or "").strip()
-
-    parts = text_val.split(maxsplit=1)
-    if not parts:
-        await message.answer("⚠️ Введите данные:")
-        return
-
-    user_identifier = parts[0].strip()
-    grp_name = parts[1].strip() if len(parts) > 1 else "9ПО-43к"
-
-    # Поиск пользователя
-    from db.crud import get_user_by_username, get_user, assign_group_officer, set_user_role
-    target_user = None
-    if user_identifier.startswith("@"):
-        target_user = await get_user_by_username(user_identifier[1:])
-    elif user_identifier.isdigit():
-        target_user = await get_user(int(user_identifier))
-
-    if not target_user:
-        await message.answer(
-            f"❌ Пользователь <code>{html.escape(user_identifier)}</code> не найден в базе бота.\n"
-            f"Пользователь должен хотя бы раз нажать /start в этом боте."
-        )
-        await state.clear()
-        return
-
-    if role_to_set == "starosta":
-        ok, msg = await assign_group_officer(grp_name, "starosta", target_user.user_id)
-        if ok:
-            await message.answer(f"✅ Пользователь <b>{target_user.full_name or user_identifier}</b> назначен <b>старостой</b> группы <code>{grp_name}</code>!")
-        else:
-            await message.answer(f"❌ Ошибка: {msg}")
-    else:
-        await set_user_role(target_user.user_id, "admin")
-        await message.answer(f"✅ Пользователь <b>{target_user.full_name or user_identifier}</b> назначен <b>администратором</b> бота!")
-
-    await state.clear()
-
-
-@dp.callback_query(F.data == "admin_close")
-async def handle_admin_close(call: types.CallbackQuery):
-    try:
-        await call.message.delete()
-    except Exception:
-        await call.message.edit_text("Панель закрыта.")
-    await call.answer()
-
-
-@dp.callback_query(F.data == "test_send_midnight")
-async def handle_test_midnight(call: types.CallbackQuery):
-    await call.answer("Отправлено в чат! 🌙", show_alert=False)
-    now = datetime.now(BOT_TZ)
-    target_date = now.date()
-    user_grp = await resolve_target_group(call.message.chat, call.from_user)
-    text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name=user_grp)
-    await call.message.answer(
-        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 00:00 ПОЛНОЧЬ]</b>\n"
-        f"<i>Так выглядит ежедневная полночная сводка для группы {user_grp}:</i>\n\n"
-        f"{text}",
-        link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-    )
-
-
-@dp.callback_query(F.data == "test_send_morning")
-async def handle_test_morning(call: types.CallbackQuery):
-    await call.answer("Отправлено в чат! 🌅", show_alert=False)
-    today = datetime.now(BOT_TZ).date()
-    user_grp = await resolve_target_group(call.message.chat, call.from_user)
-    text = await get_formatted_morning_alert(today, group_name=user_grp)
-    if not text:
-        text = f"ℹ️ На сегодня ({today.strftime('%d.%m.%Y')}) у группы {user_grp} нет первой пары или выходной день."
-    await call.message.answer(
-        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 08:00 УТРО]</b>\n"
-        f"<i>Так выглядит утреннее напоминание для группы {user_grp}:</i>\n\n"
-        f"{text}",
-        link_preview_options=types.LinkPreviewOptions(is_disabled=True)
-    )
-
-
-@dp.callback_query(F.data == "test_send_five_min")
-async def handle_test_five_min(call: types.CallbackQuery):
-    await call.answer("Отправлено в чат! ☕️", show_alert=False)
-    test_text = (
-        "🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · ПЯТИМИНУТКА]</b>\n"
-        "──────────────────────\n"
-        "☕️ <b>ПЕРЕРЫВ 5 МИНУТ!</b>\n\n"
-        "Первая половина пары окончена. Проветрите аудиторию, разомнитесь и выпейте воды!\n"
-        "⏰ Продолжение занятия через 5 минут."
-    )
-    await call.message.answer(test_text)
-
-
-@dp.callback_query(F.data == "test_send_ten_min")
-async def handle_test_ten_min(call: types.CallbackQuery):
-    await call.answer("Отправлено в чат! 🔔", show_alert=False)
-    user_grp = await resolve_target_group(call.message.chat, call.from_user)
-    test_text = (
-        f"🧪 <b>[ТЕСТОВЫЙ ПРЕДПРОСМОТР · 10-МИНУТНЫЙ КОЛОКОЛЬЧИК]</b>\n"
-        f"──────────────────────\n"
-        f"<blockquote>"
-        f"🔔 1️⃣ <b>09:00 — 10:35</b>\n"
-        f"📚 <b>Архитектура программного обеспечения</b>\n"
-        f"📍 Кабинет: <code>404</code> · 👨‍🏫 <i>Смирнов А.В.</i>\n"
-        f"👥 Группа: <code>{user_grp}</code>\n"
-        f"⏱ <i>(09:00 - 09:45 | перерыв 5 мин | 09:50 - 10:35)</i>"
-        f"</blockquote>\n\n"
-        f"🏃‍♂️ <i>Пора в аудиторию! Успешной пары!</i>"
-    )
-    await call.message.answer(test_text)
+        await event.answer(msg)
 
 
 # -------------------------------------------------------------
@@ -3395,16 +2860,12 @@ async def handle_document_upload(message: types.Message):
             )
 
         elif filename.endswith((".xlsx", ".xls")):
-            from services.parser import parse_and_apply_excel_schedule
-            result = await parse_and_apply_excel_schedule(temp_path)
-            groups_str = ", ".join(sorted(list(result["groups_found"]))) if result["groups_found"] else "—"
-
             await status_msg.edit_text(
-                f"✅ <b>Семестровое расписание успешно обновлено!</b>\n\n"
-                f"👥 <b>Найдено групп:</b> <b>{len(result['groups_found'])}</b> (<code>{groups_str}</code>)\n"
-                f"📚 <b>Внесено пар в БД:</b> <b>{result.get('applied_count', 0)}</b>\n\n"
-                f"<i>Студенты уже видят актуальное расписание!</i>"
+                "👑 <b>Загрузка семестрового расписания перенесена в контроллер!</b>\n\n"
+                "Для обновления семестрового расписания колледжа отправьте таблицу <code>.xlsx</code> "
+                "в чат с <b>AITU Schedule Controller</b>."
             )
+            return
 
     except Exception as e:
         logger.error(f"Ошибка парсинга документа {doc.file_name}: {e}")
@@ -3685,11 +3146,11 @@ async def handle_help(message: types.Message):
         "👨‍🏫 /teachers — Справочник преподавателей группы\n"
         "📍 /room <code>&lt;номер&gt;</code> — Поиск пар по кабинету (например, <code>/room 305</code>)\n"
         "📥 /calendar — Скачать расписание в календарь смартфона (.ics)\n\n"
-        "👑 <b>Для старосты и админов:</b>\n"
-        "👑 /admin — Интерактивная панель администратора\n"
-        "✏️ /zamena <code>&lt;дата&gt; &lt;пара&gt; &lt;текст/отмена&gt;</code> — Добавить замену\n"
+        "⭐️ <b>Кабинет старосты группы:</b>\n"
+        "⭐️ /starosta — Панель управления и выборы старосты группы\n"
+        "✏️ /zamena <code>&lt;дата&gt; &lt;пара&gt; &lt;текст/отмена&gt;</code> — Внести замену для своей группы\n"
         "🗑 /zamena del <code>&lt;дата&gt; &lt;пара&gt;</code> — Удалить замену\n"
-        "📢 /broadcast <code>&lt;текст&gt;</code> — Объявление для группы и подписчиков\n\n"
+        "🔗 /bind <code>&lt;Группа&gt;</code> — Привязать беседу Telegram к группе\n\n"
         "💬 <b>Инлайн-режим:</b>\n"
         "Напишите <code>@aituraspisaniebot</code> в любом чате Telegram, чтобы поделиться расписанием!\n\n"
         "⚙️ <b>Навигация:</b>\n"
@@ -3707,19 +3168,6 @@ async def handle_chat_id(message: types.Message):
         f"Скопируйте его и пропишите в <code>CHAT_ID</code> вашего бота.",
         reply_markup=main_keyboard
     )
-
-
-@dp.message(Command("test_broadcast"))
-async def handle_test_broadcast(message: types.Message):
-    if ADMIN_ID and message.from_user.id != ADMIN_ID:
-        await message.answer("⛔️ Эта команда доступна только администратору.")
-        return
-        
-    await message.answer("⏳ Тестирую отправку рассылок...")
-    await send_midnight_schedule()
-    await send_morning_alert()
-    await send_five_minute_break(2)
-    await message.answer("✅ Тест отправки завершён (полночь, 08:00 и пятиминутка).")
 
 
 # Простой HTTP health-check сервер для Koyeb / Render / Watchdog
