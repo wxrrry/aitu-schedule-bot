@@ -3,7 +3,9 @@ import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import ScheduleTab from './components/ScheduleTab';
 import ErrorBoundary from './components/ErrorBoundary';
+import TelegramOnlyGuard from './components/TelegramOnlyGuard';
 import { getInitialUserProfile, saveUserProfile, syncProfileFromCloud, isSuperAdmin } from './utils/userProfile';
+import { isInsideTelegram } from './utils/telegram';
 
 // Динамический импорт (Code Splitting) для ускорения первичной загрузки в Telegram WebView
 const LecturesTab = lazy(() => import('./components/LecturesTab'));
@@ -66,6 +68,11 @@ export default function App() {
       }
     });
   }, []);
+
+  // Если приложение открыто в обычном браузере по ссылке, а не внутри Telegram Mini App
+  if (!isInsideTelegram()) {
+    return <TelegramOnlyGuard />;
+  }
 
   return (
     <ErrorBoundary>

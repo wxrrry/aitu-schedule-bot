@@ -144,3 +144,60 @@ export const cloudStorage = {
   }
 };
 
+
+// Проверка, запущено ли приложение внутри Telegram Mini App
+export function isInsideTelegram() {
+  if (typeof window === 'undefined') return true;
+
+  // 1. Проверяем URL параметры (query и hash), которые Telegram всегда добавляет
+  try {
+    const searchParams = new URLSearchParams(window.location.search);
+    // Возможность предпросмотра для администратора/разработчика через ?preview=1 или ?dev=1
+    if (searchParams.get('preview') === '1' || searchParams.get('dev') === '1') {
+      return true;
+    }
+    if (
+      searchParams.has('tgWebAppPlatform') ||
+      searchParams.has('tgWebAppData') ||
+      searchParams.has('tgWebAppVersion') ||
+      searchParams.has('tgWebAppThemeParams')
+    ) {
+      return true;
+    }
+
+    if (
+      window.location.hash.includes('tgWebAppData=') ||
+      window.location.hash.includes('tgWebAppPlatform=') ||
+      window.location.hash.includes('tgWebAppThemeParams=')
+    ) {
+      return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 2. Telegram WebApp SDK объект
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return false;
+
+  // В реальном клиенте Telegram передается непустая строка initData
+  if (typeof webApp.initData === 'string' && webApp.initData.trim().length > 0) {
+    return true;
+  }
+
+  // initDataUnsafe содержит данные пользователя, чата или запроса
+  if (
+    webApp.initDataUnsafe &&
+    (webApp.initDataUnsafe.user || webApp.initDataUnsafe.query_id || webApp.initDataUnsafe.start_param)
+  ) {
+    return true;
+  }
+
+  // Платформа Telegram (ios, android, tdesktop, macos, web, weba) не равна 'unknown'
+  if (webApp.platform && webApp.platform !== 'unknown') {
+    return true;
+  }
+
+  return false;
+}
+
