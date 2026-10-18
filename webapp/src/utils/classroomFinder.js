@@ -103,3 +103,109 @@ export function getRoomOccupancy(dayIndex = 0, pairNum = 1, parity = 'chislitel'
     totalCount: ALL_COLLEGE_ROOMS.length
   };
 }
+
+/**
+ * Извлекает полный список всех преподавателей колледжа из расписания всех групп
+ */
+export function getAllTeachersFromSchedule() {
+  const teacherMap = new Map();
+
+  Object.entries(allGroupsSchedule).forEach(([groupName, groupData]) => {
+    if (!groupData?.days) return;
+    Object.entries(groupData.days).forEach(([dayKey, dayData]) => {
+      Object.entries(dayData).forEach(([pairKey, pair]) => {
+        const checkLesson = (l) => {
+          if (!l || !l.teacher || l.teacher === '—') return;
+          const tName = l.teacher.trim();
+          if (!teacherMap.has(tName)) {
+            teacherMap.set(tName, {
+              name: tName,
+              subjects: new Set(),
+              rooms: new Set(),
+              groups: new Set()
+            });
+          }
+          const tObj = teacherMap.get(tName);
+          if (l.subject && l.subject !== '—') tObj.subjects.add(l.subject.trim());
+          if (l.room && l.room !== '—') tObj.rooms.add(l.room.trim());
+          tObj.groups.add(groupName);
+        };
+
+        if (pair.split) {
+          checkLesson(pair.chislitel);
+          checkLesson(pair.znamenatel);
+        } else {
+          checkLesson(pair);
+        }
+      });
+    });
+  });
+
+  return Array.from(teacherMap.values()).map(t => ({
+    name: t.name,
+    subjects: Array.from(t.subjects),
+    rooms: Array.from(t.rooms),
+    groups: Array.from(t.groups)
+  })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+}
+
+/**
+ * Ищет текущий статус и расписание преподавателя в реальном времени
+ */
+export function findTeacherLiveStatus(teacherNameQuery, dayIndex = 0, currentPairNum = 1, parity = 'chislitel') {
+  if (!teacherNameQuery || !teacherNameQuery.trim()) return null;
+  const q = teacherNameQuery.toLowerCase().trim();
+
+  const dayKey = String(dayIndex);
+  const lessonsToday = [];
+  const weeklyLessons = [];
+
+  Object.entries(allGroupsSchedule).forEach(([groupName, groupData]) => {
+    if (!groupData?.days) return;
+
+    Object.entries(groupData.days).forEach(([dKey, dayData]) => {
+      Object.entries(dayData).forEach(([pKey, pair]) => {
+        const pairNum = Number(pKey);
+        let activeLesson = null;
+        if (pair.split) {
+          activeLesson = pair[parity] || pair.chislitel || pair.znamenatel;
+        } else {
+          activeLesson = pair;
+        }
+
+        if (activeLesson && activeLesson.teacher && activeLesson.teacher.toLowerCase().includes(q)) {
+          const item = {
+            dayIndex: Number(dKey),
+            pairNum,
+            group: groupName,
+            course: groupData.course || 1,
+            subject: activeLesson.subject || 'Занятие',
+            room: activeLesson.room || '—',
+            teacher: activeLesson.teacher
+          };
+          weeklyLessons.push(item);
+          if (dKey === dayKey) {
+            lessonsToday.push(item);
+          }
+        }
+      });
+    });
+  });
+
+  lessonsToday.sort((a, b) => a.pairNum - b.pairNum);
+  weeklyLessons.sort((a, b) => a.dayIndex === b.dayIndex ? a.pairNum - b.pairNum : a.dayIndex - b.dayIndex);
+
+  const currentPairLesson = lessonsToday.find(l => l.pairNum === currentPairNum) || null;
+  const nextPairLesson = lessonsToday.find(l => l.pairNum > currentPairNum) || null;
+
+  return {
+    query: teacherNameQuery,
+    matchedTeacher: lessonsToday[0]?.teacher || weeklyLessons[0]?.teacher || teacherNameQuery,
+    isTeachingNow: Boolean(currentPairLesson),
+    currentPairLesson,
+    nextPairLesson,
+    lessonsToday,
+    weeklyLessons,
+    totalPairsThisWeek: weeklyLessons.length
+  };
+}

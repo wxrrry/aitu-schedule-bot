@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   DEFAULT_GROUP,
   POPULAR_GROUPS,
@@ -24,6 +24,7 @@ import {
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
 import AllCoursesBellTable from './AllCoursesBellTable';
 import AuditoriumFinderModal from './AuditoriumFinderModal';
+import DeadlinesModal from './DeadlinesModal';
 import { 
   Clock, 
   MapPin, 
@@ -118,6 +119,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   const [selectedPairDetail, setSelectedPairDetail] = useState(null);
   const [isAuditoriumModalOpen, setIsAuditoriumModalOpen] = useState(false);
   const [auditoriumInitialTab, setAuditoriumInitialTab] = useState('rooms');
+  const [isDeadlinesModalOpen, setIsDeadlinesModalOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(() => getCurrentPairStatus(new Date(), parity, selectedGroup));
 
   // Замены и отмены пар (zameny.json)
@@ -136,14 +138,41 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   });
   const [newTaskInput, setNewTaskInput] = useState('');
 
+  // Расчет всех уникальных предметов группы для быстрого выбора дедлайна
+  const allGroupSubjects = useMemo(() => {
+    const set = new Set();
+    [0, 1, 2, 3, 4, 5].forEach(d => {
+      const pCh = getPairsForDay(d, 'chislitel', selectedGroup);
+      const pZn = getPairsForDay(d, 'znamenatel', selectedGroup);
+      pCh.concat(pZn).forEach(p => {
+        if (p.subject && p.subject !== '—' && p.hasLesson) {
+          set.add(p.subject.trim());
+        }
+      });
+    });
+    return Array.from(set).sort();
+  }, [selectedGroup]);
+
+  // Подсчет активных несданных работ
+  const totalActiveTasksCount = useMemo(() => {
+    let count = 0;
+    Object.values(tasks).forEach(list => {
+      if (Array.isArray(list)) {
+        count += list.filter(t => !t.done).length;
+      }
+    });
+    return count;
+  }, [tasks]);
+
   // Привязка Telegram BackButton
   useTelegramBackButton(
-    !!selectedPairDetail || isAuditoriumModalOpen || showGroupModal,
+    !!selectedPairDetail || isAuditoriumModalOpen || showGroupModal || isDeadlinesModalOpen,
     () => {
       setSelectedPairDetail(null);
       setIsAuditoriumModalOpen(false);
       setShowGroupModal(false);
       setShowAddReplacement(false);
+      setIsDeadlinesModalOpen(false);
     }
   );
 
@@ -501,13 +530,39 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
         {/* If weekend, lunch break, or between classes */}
         {currentStatus.type !== 'in_pair' && (
-          <div className="space-y-1 text-xs">
-            <p className="text-zinc-300 font-sans leading-relaxed">
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white uppercase font-mono">
+                {currentStatus.type === 'lunch' ? 'ОБЕД ДЛЯ КУРСА' : (currentStatus.type === 'break' ? currentStatus.title : 'ЗАНЯТИЯ')}
+              </span>
+              {currentStatus.remaining !== undefined && (
+                <span className="px-2 py-0.5 bg-amber-950/70 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                  ОСТАЛОСЬ: {currentStatus.remaining} МИН
+                </span>
+              )}
+            </div>
+
+            <p className="text-zinc-300 font-sans text-xs leading-relaxed">
               {currentStatus.message}
             </p>
+
+            {/* Break / Lunch Progress Bar */}
+            {currentStatus.progress !== undefined && (
+              <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
+                <div className="flex justify-between font-mono text-[10px] text-zinc-400">
+                  <span className="tracking-wider">ДО ЗВОНКА НА ПАРУ: {currentStatus.remaining} МИН</span>
+                  <span className="text-amber-300 font-semibold tracking-wider">ПРОШЛО {currentStatus.progress}%</span>
+                </div>
+                <div className="w-full h-1 bg-zinc-900 border border-white/10 overflow-hidden">
+                  <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${currentStatus.progress}%` }} />
+                </div>
+              </div>
+            )}
+
             {currentStatus.nextPair && currentStatus.nextPair.hasLesson && (
-              <div className="font-mono text-[11px] text-zinc-400 pt-1">
-                СЛЕДУЮЩАЯ: {currentStatus.nextPair.pair} · {currentStatus.nextPair.subject} ({currentStatus.nextPair.room})
+              <div className="p-2 bg-black border border-white/10 font-mono text-[11px] text-zinc-300 flex items-center justify-between flex-wrap gap-1">
+                <span className="text-zinc-500">СЛЕДУЮЩАЯ ПАРА:</span>
+                <span className="text-white font-bold">{currentStatus.nextPair.pair} · {currentStatus.nextPair.subject} ({currentStatus.nextPair.room})</span>
               </div>
             )}
           </div>
@@ -538,61 +593,68 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         ))}
       </div>
 
-      {/* Control Bar: Multi-Group Selector, Teachers Directory & Parity/Week Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-y-2 font-mono text-[11px] px-1 text-zinc-400 border-b border-white/[0.06] pb-2">
+      {/* Control Bar: Multi-Group Selector, Teachers Directory, Rooms & Personal Deadlines */}
+      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] px-0.5 border-b border-white/[0.06] pb-2">
         {/* Clickable Group Selector Button */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setShowGroupModal(true);
-              triggerHaptic('light');
-            }}
-            className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-white/20 text-white font-mono text-[10px] font-bold tracking-wider uppercase hover:border-white transition-colors"
-          >
-            <Users className="w-3 h-3 text-zinc-400" />
-            <span>ГРУППА // {selectedGroup} ({currentCourse} КУРС)</span>
-            <ChevronDown className="w-3 h-3 text-zinc-500" />
-          </button>
-          <span className="text-zinc-600">·</span>
-          <button
-            onClick={() => {
-              setAuditoriumInitialTab('rooms');
-              setIsAuditoriumModalOpen(true);
-              triggerHaptic('light');
-            }}
-            className="text-[10px] text-emerald-400 hover:text-emerald-300 uppercase underline font-semibold"
-          >
-            🏛 КАБИНЕТЫ
-          </button>
-          <span className="text-zinc-600">·</span>
+        <button
+          onClick={() => {
+            setShowGroupModal(true);
+            triggerHaptic('light');
+          }}
+          className="flex items-center gap-1.5 px-2 py-1 bg-zinc-900 border border-white/20 text-white font-mono text-[10px] font-bold tracking-wider uppercase hover:border-white transition-colors"
+        >
+          <Users className="w-3 h-3 text-zinc-400" />
+          <span>ГРУППА // {selectedGroup}</span>
+          <ChevronDown className="w-3 h-3 text-zinc-500" />
+        </button>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => {
               setAuditoriumInitialTab('teachers');
               setIsAuditoriumModalOpen(true);
               triggerHaptic('light');
             }}
-            className="text-[10px] text-zinc-400 hover:text-white uppercase underline"
+            className="flex items-center gap-1 px-2 py-1 bg-black border border-white/15 hover:border-white/40 text-zinc-300 hover:text-white uppercase font-bold transition-colors"
           >
-            ПРЕПОДАВАТЕЛИ
+            <span>👨‍🏫 ПРЕПОДАВАТЕЛИ</span>
           </button>
-          {onOpenProfile && (
-            <>
-              <span className="text-zinc-600">·</span>
-              <button
-                onClick={() => {
-                  onOpenProfile();
-                  triggerHaptic('light');
-                }}
-                className="text-[10px] text-zinc-300 hover:text-white uppercase underline font-semibold"
-              >
-                ПРОФИЛЬ
-              </button>
-            </>
-          )}
+
+          <button
+            onClick={() => {
+              setAuditoriumInitialTab('rooms');
+              setIsAuditoriumModalOpen(true);
+              triggerHaptic('light');
+            }}
+            className="flex items-center gap-1 px-2 py-1 bg-black border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 uppercase font-bold transition-colors"
+          >
+            <span>🏛 КАБИНЕТЫ</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsDeadlinesModalOpen(true);
+              triggerHaptic('light');
+            }}
+            className="flex items-center gap-1 px-2 py-1 bg-amber-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-300 uppercase font-bold transition-colors"
+          >
+            <span>📝 ДЕДЛАЙНЫ ({totalActiveTasksCount})</span>
+          </button>
         </div>
 
-        {/* Parity badge */}
+        {/* Parity badge & Profile */}
         <div className="flex items-center gap-1.5">
+          {onOpenProfile && (
+            <button
+              onClick={() => {
+                onOpenProfile();
+                triggerHaptic('light');
+              }}
+              className="text-[10px] text-zinc-400 hover:text-white uppercase font-mono px-1.5 py-0.5 bg-black border border-white/10"
+            >
+              ПРОФИЛЬ
+            </button>
+          )}
           <span className="px-2 py-0.5 border border-white/20 text-white font-mono text-[10px] font-bold tracking-wider uppercase">
             [{parity === 'chislitel' ? 'ЧИСЛИТЕЛЬ' : 'ЗНАМЕНАТЕЛЬ'}]
           </span>
@@ -1429,6 +1491,20 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         currentParity={parity}
         currentDayIndex={todayIndex}
         currentPairNum={currentStatus?.currentPair?.pair || 1}
+      />
+
+      {/* Единый чек-лист лабораторных работ и дедлайнов студента */}
+      <DeadlinesModal
+        isOpen={isDeadlinesModalOpen}
+        onClose={() => setIsDeadlinesModalOpen(false)}
+        tasks={tasks}
+        onAddTask={(subj, text) => {
+          setNewTaskInput(text);
+          handleAddTask(subj);
+        }}
+        onToggleTask={handleToggleTask}
+        onDeleteTask={handleDeleteTask}
+        availableSubjects={allGroupSubjects}
       />
     </div>
   );

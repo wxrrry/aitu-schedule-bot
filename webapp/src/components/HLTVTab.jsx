@@ -14,7 +14,13 @@ import {
   ArrowRight,
   Plus,
   Settings,
-  GitBranch
+  GitBranch,
+  Camera,
+  Copy,
+  Check,
+  Upload,
+  Maximize2,
+  X
 } from 'lucide-react';
 import { 
   TOURNAMENTS_LIST,
@@ -29,9 +35,10 @@ import TournamentOrganizerModal from './TournamentOrganizerModal';
 import { 
   getAllTournaments, 
   getTournamentRegistrations,
-  syncTournamentsFromApi 
+  syncTournamentsFromApi,
+  confirmMatchScoreAndAdvance
 } from '../utils/tournamentManager';
-import { getUserProfile } from '../utils/userProfile';
+import { getUserProfile, isSuperAdmin } from '../utils/userProfile';
 import { useTelegramBackButton, triggerHaptic, openBotCommand } from '../utils/telegram';
 
 export default function HLTVTab() {
@@ -43,12 +50,21 @@ export default function HLTVTab() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [rootTab, setRootTab] = useState('tournaments'); // 'tournaments', 'players'
 
+  // Match screenshot & scoring state
+  const [viewingScreenshot, setViewingScreenshot] = useState(null);
+  const [editingScoreMatchId, setEditingScoreMatchId] = useState(null);
+  const [scoreTeam1, setScoreTeam1] = useState('2');
+  const [scoreTeam2, setScoreTeam2] = useState('0');
+  const [scoreScreenshot, setScoreScreenshot] = useState(null);
+  const [copiedMatchId, setCopiedMatchId] = useState(null);
+
   // Tournament organization modals
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isOrganizerModalOpen, setIsOrganizerModalOpen] = useState(false);
   const [registerTournament, setRegisterTournament] = useState(null);
 
   const profile = getUserProfile();
+  const isSuper = isSuperAdmin(profile?.id);
 
   useEffect(() => {
     syncTournamentsFromApi();
@@ -129,6 +145,44 @@ export default function HLTVTab() {
     };
     setSelectedPlayer(p);
     triggerHaptic('selection');
+  };
+
+  const handleCopyMatchResult = (match) => {
+    if (!match) return;
+    const winner = match.team1.score > match.team2.score ? match.team1.name : match.team2.name;
+    const text = `🏆 AITU CS2: ${match.team1.name} [${match.team1.score}:${match.team2.score}] ${match.team2.name} (${match.stage})\nПобедитель матча: ${winner} 🏆`;
+    navigator.clipboard?.writeText(text);
+    setCopiedMatchId(match.id);
+    triggerHaptic('selection');
+    setTimeout(() => setCopiedMatchId(null), 2500);
+  };
+
+  const handleScreenshotFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setScoreScreenshot(reader.result);
+      triggerHaptic('light');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleConfirmMatchScore = (matchId) => {
+    if (!selectedTournament || !matchId) return;
+    const updated = confirmMatchScoreAndAdvance(
+      selectedTournament.id,
+      matchId,
+      scoreTeam1,
+      scoreTeam2,
+      scoreScreenshot
+    );
+    if (updated) {
+      setSelectedTournament({ ...updated });
+      setEditingScoreMatchId(null);
+      setScoreScreenshot(null);
+      triggerHaptic('success');
+    }
   };
 
   const activeMatch = selectedTournament?.matches?.find(m => m.id === selectedMatchId) || selectedTournament?.matches?.[0];
@@ -789,31 +843,223 @@ export default function HLTVTab() {
                         </button>
                       </div>
 
-                      {/* Maps Played */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">
-                          РЕЗУЛЬТАТЫ ПО КАРТАМ:
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          {activeMatch.maps.map((map, i) => (
-                            <div key={i} className="p-2.5 bg-black border border-white/10 space-y-1">
-                              <div className="flex items-center justify-between text-[10px]">
-                                <span className="font-bold text-white uppercase">{map.name}</span>
-                                <span className="text-zinc-500 text-[9px]">{map.duration}</span>
+                      {/* Match Actions Toolbar: Copy for Telegram & Admin Score Entry */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-white/[0.06] text-[10px]">
+                        <button
+                          onClick={() => handleCopyMatchResult(activeMatch)}
+                          className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-bold uppercase transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {copiedMatchId === activeMatch.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400">СКОПИРОВАНО!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-amber-400" />
+                              <span>СКОПИРОВАТЬ ИТОГ В ТЕЛЕГРАМ</span>
+                            </>
+                          )}
+                        </button>
+
+                        {(isSuper || selectedTournament.type === 'upcoming' || selectedTournament.status === 'ИДЁТ' || selectedTournament.status === 'ПРИЁМ ЗАЯВОК') && (
+                          <button
+                            onClick={() => {
+                              if (editingScoreMatchId === activeMatch.id) {
+                                setEditingScoreMatchId(null);
+                              } else {
+                                setEditingScoreMatchId(activeMatch.id);
+                                setScoreTeam1(String(activeMatch.team1.score || '2'));
+                                setScoreTeam2(String(activeMatch.team2.score || '0'));
+                                setScoreScreenshot(activeMatch.screenshotUrl || null);
+                              }
+                              triggerHaptic('light');
+                            }}
+                            className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase transition-colors inline-flex items-center gap-1.5 cursor-pointer ml-auto"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>{editingScoreMatchId === activeMatch.id ? 'ЗАКРЫТЬ ФОРМУ' : '⚡ ВНЕСТИ СЧЁТ И СЕТКУ'}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Score Confirmation & Automatic Bracket Advance Form */}
+                      {editingScoreMatchId === activeMatch.id && (
+                        <div className="p-3 bg-zinc-950 border border-amber-500/40 space-y-3 animate-fadeIn">
+                          <div className="flex items-center justify-between text-[10px] border-b border-white/[0.08] pb-1.5">
+                            <span className="font-bold text-amber-300 uppercase flex items-center gap-1">
+                              <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+                              <span>ФИКСАЦИЯ СЧЁТА И ПРОДВИЖЕНИЕ ПО СЕТКЕ</span>
+                            </span>
+                            <span className="text-zinc-500">ADMIN PANEL</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="flex-1">
+                                <span className="text-[10px] text-zinc-400 block truncate mb-1">{activeMatch.team1.name}:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="3"
+                                  value={scoreTeam1}
+                                  onChange={(e) => setScoreTeam1(e.target.value)}
+                                  className="w-full bg-black border border-white/20 p-1.5 text-center text-white font-bold"
+                                />
                               </div>
-                              <div className="flex items-center justify-between text-xs font-bold">
-                                <span className={map.score1 > map.score2 ? "text-emerald-400" : "text-zinc-400"}>
-                                  {activeMatch.team1.name}: {map.score1}
-                                </span>
-                                <span className="text-zinc-600">·</span>
-                                <span className={map.score2 > map.score1 ? "text-emerald-400" : "text-zinc-400"}>
-                                  {activeMatch.team2.name}: {map.score2}
-                                </span>
+                              <span className="text-zinc-500 font-bold text-lg pt-4">:</span>
+                              <div className="flex-1">
+                                <span className="text-[10px] text-zinc-400 block truncate mb-1">{activeMatch.team2.name}:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="3"
+                                  value={scoreTeam2}
+                                  onChange={(e) => setScoreTeam2(e.target.value)}
+                                  className="w-full bg-black border border-white/20 p-1.5 text-center text-white font-bold"
+                                />
                               </div>
                             </div>
-                          ))}
+
+                            {/* Preset Buttons */}
+                            <div className="flex items-center gap-1.5 pt-1">
+                              <span className="text-[9px] text-zinc-500 uppercase mr-1">БЫСТРО:</span>
+                              {[
+                                { s1: '2', s2: '0' },
+                                { s1: '2', s2: '1' },
+                                { s1: '1', s2: '2' },
+                                { s1: '0', s2: '2' }
+                              ].map((p, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setScoreTeam1(p.s1);
+                                    setScoreTeam2(p.s2);
+                                    triggerHaptic('light');
+                                  }}
+                                  className="px-2 py-0.5 bg-zinc-900 border border-white/10 hover:border-amber-400 text-zinc-300 text-[10px] font-bold cursor-pointer"
+                                >
+                                  {p.s1}:{p.s2}
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Attach Screenshot File */}
+                            <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
+                              <span className="text-[10px] text-zinc-400 block uppercase font-bold">
+                                СКРИНШОТ ИТОГОВ ТАБЛО (SCOREBOARD):
+                              </span>
+                              <label className="flex items-center justify-center gap-2 p-2 bg-black border border-dashed border-white/20 hover:border-white/50 text-zinc-300 text-[10px] cursor-pointer">
+                                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                                <span>{scoreScreenshot ? '✓ СКРИНШОТ ВЫБРАН (НАЖМИТЕ ДЛЯ СМЕНЫ)' : 'ВЫБРАТЬ ИЗОБРАЖЕНИЕ СКРИНШОТА'}</span>
+                                <input type="file" accept="image/*" onChange={handleScreenshotFile} className="hidden" />
+                              </label>
+                              {scoreScreenshot && (
+                                <div className="h-20 bg-black border border-white/10 overflow-hidden rounded-xs flex items-center justify-center">
+                                  <img src={scoreScreenshot} alt="Превью" className="h-full object-contain" />
+                                </div>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmMatchScore(activeMatch.id)}
+                              className="w-full mt-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>ПОДТВЕРДИТЬ СЧЁТ И ПРОДВИНУТЬ В СЕТКЕ</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Official Scoreboard Screenshot Section */}
+                      {(activeMatch.screenshotUrl || activeMatch.screenshot) ? (
+                        <div className="p-3 bg-black border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-zinc-400 font-bold uppercase flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>ОФИЦИАЛЬНЫЙ СКРИНШОТ ТАБЛО МАТЧА (SCOREBOARD)</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setViewingScreenshot(activeMatch.screenshotUrl || activeMatch.screenshot);
+                                triggerHaptic('selection');
+                              }}
+                              className="text-cyan-400 hover:text-cyan-300 uppercase font-bold text-[9px] flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>УВЕЛИЧИТЬ</span>
+                              <Maximize2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div
+                            onClick={() => {
+                              setViewingScreenshot(activeMatch.screenshotUrl || activeMatch.screenshot);
+                              triggerHaptic('selection');
+                            }}
+                            className="w-full h-36 bg-zinc-950 border border-white/5 rounded-xs overflow-hidden flex items-center justify-center cursor-pointer group relative"
+                          >
+                            <img
+                              src={activeMatch.screenshotUrl || activeMatch.screenshot}
+                              alt="Скриншот матча"
+                              className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1 font-sans">
+                              <Maximize2 className="w-4 h-4 text-cyan-400" />
+                              <span>НАЖМИТЕ ДЛЯ ПОЛНОЭКРАННОГО ПРОСМОТРА</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-zinc-950 border border-dashed border-white/10 flex items-center justify-between gap-2 text-[10px]">
+                          <span className="text-zinc-500 font-mono">
+                            📷 Скриншот итогового табло матча ещё не прикреплен
+                          </span>
+                          <label className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-bold uppercase inline-flex items-center gap-1 cursor-pointer shrink-0">
+                            <Upload className="w-3 h-3 text-cyan-400" />
+                            <span>ПРИКРЕПИТЬ</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                handleScreenshotFile(e);
+                                setEditingScoreMatchId(activeMatch.id);
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Maps Played */}
+                      {activeMatch.maps && activeMatch.maps.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">
+                            РЕЗУЛЬТАТЫ ПО КАРТАМ:
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {activeMatch.maps.map((map, i) => (
+                              <div key={i} className="p-2.5 bg-black border border-white/10 space-y-1">
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className="font-bold text-white uppercase">{map.name}</span>
+                                  <span className="text-zinc-500 text-[9px]">{map.duration}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs font-bold">
+                                  <span className={map.score1 > map.score2 ? "text-emerald-400" : "text-zinc-400"}>
+                                    {activeMatch.team1.name}: {map.score1}
+                                  </span>
+                                  <span className="text-zinc-600">·</span>
+                                  <span className={map.score2 > map.score1 ? "text-emerald-400" : "text-zinc-400"}>
+                                    {activeMatch.team2.name}: {map.score2}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Players Scoreboard Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/[0.08]">
@@ -973,6 +1219,53 @@ export default function HLTVTab() {
           onClose={() => setIsOrganizerModalOpen(false)}
           onTournamentsUpdated={handleTournamentsUpdated}
         />
+      )}
+
+      {/* Fullscreen Screenshot Zoom Modal */}
+      {viewingScreenshot && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/95 backdrop-blur-sm animate-fadeIn font-mono"
+          onClick={() => setViewingScreenshot(null)}
+        >
+          <div 
+            className="relative max-w-3xl w-full bg-[#0e0e11] border border-neutral-700 p-4 space-y-3 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                <Camera className="w-4 h-4 text-cyan-400" />
+                <span>ТАБЛО МАТЧА · SCOREBOARD ПРОТОКОЛ</span>
+              </div>
+              <button
+                onClick={() => setViewingScreenshot(null)}
+                className="text-xs text-neutral-400 hover:text-white px-2 py-1 border border-neutral-700 hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                ✕ ЗАКРЫТЬ
+              </button>
+            </div>
+
+            <div className="bg-black border border-neutral-800 rounded-xs overflow-hidden flex items-center justify-center p-1 max-h-[75vh]">
+              <img 
+                src={viewingScreenshot} 
+                alt="Итоги матча CS2" 
+                className="w-full h-full max-h-[72vh] object-contain block select-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] text-zinc-400 font-sans pt-1">
+              <span>Официальный скриншот матча</span>
+              <a
+                href={viewingScreenshot}
+                target="_blank"
+                rel="noreferrer"
+                download="cs2_match_scoreboard.png"
+                className="text-cyan-400 hover:underline uppercase font-bold"
+              >
+                СКАЧАТЬ В ИСХОДНОМ КАЧЕСТВЕ
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

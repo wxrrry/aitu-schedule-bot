@@ -468,6 +468,154 @@ export function generateSingleEliminationBracket(teamNames) {
   };
 }
 
+// Подтверждение результатов матча, сохранение скриншота и автоматическое продвижение по сетке
+export function confirmMatchScoreAndAdvance(tournamentId, matchId, score1, score2, screenshotUrl = null) {
+  const tournaments = getAllTournaments();
+  const tourn = tournaments.find(t => t.id === tournamentId);
+  if (!tourn) return null;
+
+  const num1 = parseInt(score1, 10) || 0;
+  const num2 = parseInt(score2, 10) || 0;
+  const isWinner1 = num1 > num2;
+  const isWinner2 = num2 > num1;
+
+  // 1. Обновление матча в массиве matches
+  if (!tourn.matches) tourn.matches = [];
+  let mIdx = tourn.matches.findIndex(m => m.id === matchId);
+  
+  if (mIdx !== -1) {
+    const m = tourn.matches[mIdx];
+    m.team1.score = num1;
+    m.team2.score = num2;
+    m.team1.isWinner = isWinner1;
+    m.team2.isWinner = isWinner2;
+    if (screenshotUrl) m.screenshotUrl = screenshotUrl;
+  }
+
+  // 2. Обновление сетки bracket
+  const bracket = tourn.bracket || tourn.bracketData;
+  if (bracket) {
+    let targetMatch = null;
+    let stage = null;
+    let matchIndex = -1;
+
+    // Ищем в round2 (1/4 финала)
+    if (bracket.round2) {
+      const idx = bracket.round2.findIndex(m => m.matchId === matchId);
+      if (idx !== -1) {
+        targetMatch = bracket.round2[idx];
+        stage = 'round2';
+        matchIndex = idx;
+      }
+    }
+    // Ищем в semifinals (1/2 финала)
+    if (!targetMatch && bracket.semifinals) {
+      const idx = bracket.semifinals.findIndex(m => m.matchId === matchId);
+      if (idx !== -1) {
+        targetMatch = bracket.semifinals[idx];
+        stage = 'semifinals';
+        matchIndex = idx;
+      }
+    }
+    // Ищем в final
+    if (!targetMatch && bracket.final && bracket.final.matchId === matchId) {
+      targetMatch = bracket.final;
+      stage = 'final';
+    }
+    // Ищем в thirdPlace
+    if (!targetMatch && bracket.thirdPlace && bracket.thirdPlace.matchId === matchId) {
+      targetMatch = bracket.thirdPlace;
+      stage = 'thirdPlace';
+    }
+
+    if (targetMatch) {
+      targetMatch.team1.score = num1;
+      targetMatch.team2.score = num2;
+      targetMatch.team1.isWinner = isWinner1;
+      targetMatch.team2.isWinner = isWinner2;
+      if (screenshotUrl) targetMatch.screenshotUrl = screenshotUrl;
+
+      const winnerTeam = isWinner1 ? targetMatch.team1 : targetMatch.team2;
+      const loserTeam = isWinner1 ? targetMatch.team2 : targetMatch.team1;
+
+      // Автоматическое продвижение победителя по сетке
+      if (stage === 'round2' && bracket.semifinals) {
+        if (matchIndex === 0 && bracket.semifinals[0]) {
+          bracket.semifinals[0].team1 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+        } else if (matchIndex === 1 && bracket.semifinals[0]) {
+          bracket.semifinals[0].team2 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+        } else if (matchIndex === 2 && bracket.semifinals[1]) {
+          bracket.semifinals[1].team1 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+        } else if (matchIndex === 3 && bracket.semifinals[1]) {
+          bracket.semifinals[1].team2 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+        }
+      } else if (stage === 'semifinals') {
+        if (matchIndex === 0) {
+          if (bracket.final) bracket.final.team1 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+          if (bracket.thirdPlace) bracket.thirdPlace.team1 = { name: loserTeam.name, seed: loserTeam.seed || '', score: null, isWinner: false };
+        } else if (matchIndex === 1) {
+          if (bracket.final) bracket.final.team2 = { name: winnerTeam.name, seed: winnerTeam.seed || '', score: null, isWinner: false };
+          if (bracket.thirdPlace) bracket.thirdPlace.team2 = { name: loserTeam.name, seed: loserTeam.seed || '', score: null, isWinner: false };
+        }
+      } else if (stage === 'final') {
+        tourn.winner = `${winnerTeam.name} 🏆`;
+        tourn.secondPlace = `${loserTeam.name} 🥈`;
+        tourn.status = 'ЗАВЕРШЁН';
+        tourn.type = 'past';
+      } else if (stage === 'thirdPlace') {
+        tourn.thirdPlace = `${winnerTeam.name} 🥉`;
+      }
+    }
+  }
+
+  // Если матча еще не было в tourn.matches, добавляем его в список
+  if (mIdx === -1 && bracket) {
+    const allMatches = [...(bracket.round2 || []), ...(bracket.semifinals || []), bracket.final, bracket.thirdPlace].filter(Boolean);
+    const found = allMatches.find(m => m.matchId === matchId);
+    if (found) {
+      tourn.matches.push({
+        id: matchId,
+        title: `${found.team1?.name} vs ${found.team2?.name}`,
+        stage: matchId.includes('qf') ? '1/4 ФИНАЛА' : (matchId.includes('semi') ? '1/2 ФИНАЛА' : (matchId.includes('final') ? 'ГРАНД ФИНАЛ' : 'ПЛЕЙ-ОФФ')),
+        format: 'Best of 3 (5v5)',
+        duration: 'Завершён',
+        region: 'Москва (Custom)',
+        screenshotUrl,
+        team1: {
+          name: found.team1?.name,
+          seed: found.team1?.seed || '#1',
+          score: num1,
+          isWinner: isWinner1,
+          players: []
+        },
+        team2: {
+          name: found.team2?.name,
+          seed: found.team2?.seed || '#2',
+          score: num2,
+          isWinner: isWinner2,
+          players: []
+        },
+        maps: [
+          { name: 'Карта 1', score1: isWinner1 ? 13 : 8, score2: isWinner1 ? 8 : 13, duration: '28:10' }
+        ]
+      });
+    }
+  }
+
+  updateTournament(tournamentId, {
+    bracket: tourn.bracket,
+    bracketData: tourn.bracketData,
+    matches: tourn.matches,
+    winner: tourn.winner,
+    secondPlace: tourn.secondPlace,
+    thirdPlace: tourn.thirdPlace,
+    status: tourn.status,
+    type: tourn.type
+  });
+
+  return tourn;
+}
+
 // Обновить турнир (в БД и локально)
 export function updateTournament(tournamentId, patch) {
   const tournaments = getAllTournaments();

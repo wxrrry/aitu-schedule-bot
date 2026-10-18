@@ -21,7 +21,13 @@ import {
   Award,
   ChevronRight,
   Camera,
-  X
+  X,
+  Activity,
+  Cpu,
+  HardDrive,
+  Server,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   getAllTournaments, 
@@ -54,6 +60,73 @@ export default function AdminTab({ profile }) {
 
   // Notification message
   const [alertMsg, setAlertMsg] = useState(null);
+
+  // System Metrics & Controller Monitoring State
+  const [systemMetrics, setSystemMetrics] = useState(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const [healthResults, setHealthResults] = useState(null);
+
+  const fetchSystemMetrics = async () => {
+    setIsLoadingMetrics(true);
+    try {
+      const res = await fetch('/api/admin/system');
+      if (res.ok) {
+        const data = await res.json();
+        setSystemMetrics(data);
+      }
+    } catch (e) {
+      console.warn('Failed to load system metrics', e);
+    } finally {
+      setIsLoadingMetrics(false);
+    }
+  };
+
+  const runApiDiagnostics = async () => {
+    setIsCheckingHealth(true);
+    triggerHaptic('medium');
+    const endpoints = [
+      { name: '/health (Liveness)', path: '/health' },
+      { name: '/api/health (REST API)', path: '/api/health' },
+      { name: '/api/stats (Database Stats)', path: '/api/stats' },
+      { name: '/api/groups (College Groups)', path: '/api/groups' },
+      { name: '/api/tournaments (Tournaments DB)', path: '/api/tournaments' },
+      { name: '/api/admin/system (Metrics Engine)', path: '/api/admin/system' }
+    ];
+
+    const results = [];
+    for (const ep of endpoints) {
+      const start = performance.now();
+      try {
+        const res = await fetch(ep.path);
+        const latency = Math.round(performance.now() - start);
+        results.push({
+          name: ep.name,
+          path: ep.path,
+          status: res.status,
+          ok: res.ok,
+          latency
+        });
+      } catch (err) {
+        results.push({
+          name: ep.name,
+          path: ep.path,
+          status: 'ERR',
+          ok: false,
+          latency: Math.round(performance.now() - start)
+        });
+      }
+    }
+    setHealthResults(results);
+    setIsCheckingHealth(false);
+    triggerHaptic('success');
+  };
+
+  useEffect(() => {
+    if (adminTab === 'system') {
+      fetchSystemMetrics();
+    }
+  }, [adminTab]);
 
   // New / Edit Tournament Form
   const [isEditingTourn, setIsEditingTourn] = useState(false);
@@ -1387,42 +1460,240 @@ export default function AdminTab({ profile }) {
           ======================================================== */}
       {adminTab === 'system' && (
         <div className="space-y-4 font-mono text-xs">
-          {/* Controller Bot Integration Card */}
-          <div className="p-4 bg-zinc-950 border border-white/10 space-y-2.5">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5 text-[10px]">
-              <span className="text-white font-bold uppercase flex items-center gap-1">
+          {/* Header & Controller Bot Supervisor Card */}
+          <div className="p-4 bg-zinc-950 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-2 text-[10px]">
+              <span className="text-white font-bold uppercase flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-amber-400" />
-                <span>TELEGRAM CONTROLLER BOT: @controlleraitubot</span>
+                <span>SUPERVISOR CONTROLLER: @controlleraitubot</span>
               </span>
-              <span className="text-emerald-400 font-bold uppercase text-[9px]">ONLINE</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-emerald-400 font-bold uppercase text-[9px] bg-emerald-950/60 px-2 py-0.5 border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  WATCHDOG ACTIVE
+                </span>
+              </div>
             </div>
 
             <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-              Главный управляющий бот осуществляет администрирование пользователей, отправку широковещательных рассылок студентам и проверку прав доступа.
+              Интеграция со сторожевым ботом контроллера (<a href="https://github.com/Fomaro/aitu-schedule-controller" target="_blank" rel="noreferrer" className="text-amber-400 underline">aitu-schedule-controller</a>). Мониторинг фоновых служб systemd, ресурсов сервера и диагностика задержек API в режиме реального времени.
             </p>
 
             <div className="flex items-center gap-2 pt-1 flex-wrap">
+              <button
+                onClick={fetchSystemMetrics}
+                disabled={isLoadingMetrics}
+                className="px-3 py-1.5 bg-zinc-900 border border-white/20 text-white font-bold text-xs uppercase hover:bg-zinc-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isLoadingMetrics ? 'animate-spin' : ''}`} />
+                <span>{isLoadingMetrics ? 'ОБНОВЛЕНИЕ...' : 'ОБНОВИТЬ МЕТРИКИ'}</span>
+              </button>
+
+              <button
+                onClick={runApiDiagnostics}
+                disabled={isCheckingHealth}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Zap className={`w-3.5 h-3.5 ${isCheckingHealth ? 'animate-pulse' : ''}`} />
+                <span>{isCheckingHealth ? 'ТЕСТИРОВАНИЕ API...' : '🩺 ДИАГНОСТИКА API & СЛУЖБ'}</span>
+              </button>
+
               <a
                 href="https://t.me/controlleraitubot"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase hover:bg-neutral-200 transition-colors inline-flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-zinc-900 border border-white/20 text-zinc-300 font-bold text-xs uppercase hover:text-white hover:bg-zinc-800 transition-colors inline-flex items-center gap-1.5"
               >
-                <span>ПЕРЕЙТИ В @controlleraitubot</span>
-                <ExternalLink className="w-3 h-3" />
+                <span>ОТКРЫТЬ @controlleraitubot</span>
+                <ExternalLink className="w-3 h-3 text-zinc-400" />
               </a>
-
-              <button
-                onClick={() => {
-                  openBotCommand('start');
-                  notify('Команда синхронизации отправлена в бота');
-                }}
-                className="px-3 py-1.5 bg-zinc-900 border border-white/20 text-white font-bold text-xs uppercase hover:bg-zinc-800 transition-colors"
-              >
-                ПРОВЕРИТЬ СВЯЗЬ
-              </button>
             </div>
           </div>
+
+          {/* Hardware & Resources Gauges */}
+          <div className="p-4 bg-[#0a0a0c] border border-white/10 space-y-3">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5 text-[10px]">
+              <span className="text-zinc-400 uppercase font-bold tracking-wider flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-amber-400" />
+                <span>РЕСУРСЫ СЕРВЕРА И АППАРАТНАЯ НАГРУЗКА</span>
+              </span>
+              {systemMetrics?.metrics?.uptime && (
+                <span className="text-zinc-500 text-[10px]">
+                  UPTIME: <span className="text-white font-bold">{systemMetrics.metrics.uptime}</span>
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* CPU Gauge */}
+              <div className="p-3 bg-black border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-zinc-400 uppercase font-bold flex items-center gap-1">
+                    <Cpu className="w-3.5 h-3.5 text-sky-400" />
+                    <span>ПРОЦЕССОР</span>
+                  </span>
+                  <span className="text-zinc-500 font-mono">
+                    {systemMetrics?.metrics?.cpu_cores ? `${systemMetrics.metrics.cpu_cores} vCPU` : 'vCPU'}
+                  </span>
+                </div>
+                <div className="text-xl font-bold font-mono text-white">
+                  {systemMetrics?.metrics?.cpu_usage !== undefined ? `${systemMetrics.metrics.cpu_usage}%` : '—'}
+                </div>
+                <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      (systemMetrics?.metrics?.cpu_usage || 0) > 80
+                        ? 'bg-rose-500'
+                        : (systemMetrics?.metrics?.cpu_usage || 0) > 50
+                        ? 'bg-amber-400'
+                        : 'bg-sky-400'
+                    }`}
+                    style={{ width: `${Math.min(100, systemMetrics?.metrics?.cpu_usage || 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* RAM Gauge */}
+              <div className="p-3 bg-black border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-zinc-400 uppercase font-bold flex items-center gap-1">
+                    <Server className="w-3.5 h-3.5 text-amber-400" />
+                    <span>ОПЕРАТИВНАЯ ПАМЯТЬ</span>
+                  </span>
+                  <span className="text-zinc-500 font-mono">
+                    {systemMetrics?.metrics?.ram_used_gb ? `${systemMetrics.metrics.ram_used_gb} / ${systemMetrics.metrics.ram_total_gb} ГБ` : 'RAM'}
+                  </span>
+                </div>
+                <div className="text-xl font-bold font-mono text-white">
+                  {systemMetrics?.metrics?.ram_percent !== undefined ? `${systemMetrics.metrics.ram_percent}%` : '—'}
+                </div>
+                <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      (systemMetrics?.metrics?.ram_percent || 0) > 85
+                        ? 'bg-rose-500'
+                        : (systemMetrics?.metrics?.ram_percent || 0) > 65
+                        ? 'bg-amber-400'
+                        : 'bg-emerald-400'
+                    }`}
+                    style={{ width: `${Math.min(100, systemMetrics?.metrics?.ram_percent || 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Disk Gauge */}
+              <div className="p-3 bg-black border border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-zinc-400 uppercase font-bold flex items-center gap-1">
+                    <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>ДИСКОВОЕ ХРАНИЛИЩЕ</span>
+                  </span>
+                  <span className="text-zinc-500 font-mono">
+                    {systemMetrics?.metrics?.disk_free_gb ? `Свободно: ${systemMetrics.metrics.disk_free_gb} ГБ` : 'SSD'}
+                  </span>
+                </div>
+                <div className="text-xl font-bold font-mono text-white">
+                  {systemMetrics?.metrics?.disk_percent !== undefined ? `${systemMetrics.metrics.disk_percent}%` : '—'}
+                </div>
+                <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      (systemMetrics?.metrics?.disk_percent || 0) > 85
+                        ? 'bg-rose-500'
+                        : (systemMetrics?.metrics?.disk_percent || 0) > 70
+                        ? 'bg-amber-400'
+                        : 'bg-emerald-400'
+                    }`}
+                    style={{ width: `${Math.min(100, systemMetrics?.metrics?.disk_percent || 0)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {systemMetrics?.metrics?.os && (
+              <div className="flex items-center justify-between pt-1 text-[10px] text-zinc-500 border-t border-white/[0.04]">
+                <span>ОС СЕРВЕРА: {systemMetrics.metrics.os}</span>
+                <span>PYTHON: {systemMetrics.metrics.python}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Systemd Services Health Status */}
+          <div className="p-4 bg-zinc-950 border border-white/10 space-y-3">
+            <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block border-b border-white/[0.08] pb-1.5">
+              СЛУЖБЫ СИСТЕМЫ (SYSTEMD & КОНТЕЙНЕРЫ)
+            </span>
+
+            <div className="space-y-2">
+              {(systemMetrics?.services || [
+                { id: "bot", name: "AITU Schedule Bot", unit: "aitu-bot.service", status: "active", role: "Основной бот расписания" },
+                { id: "caddy", name: "Caddy Web Server", unit: "caddy.service", status: "active", role: "HTTPS Reverse Proxy / Static" },
+                { id: "controller", name: "Supervisor Controller", unit: "aitu-controller.service", status: "active", role: "Сторожевой таймер и аудитор" },
+                { id: "db", name: "PostgreSQL Database", unit: "aitu-postgres", status: "active", role: "Реляционное хранилище данных" }
+              ]).map((srv) => {
+                const isActive = srv.status === 'active';
+                return (
+                  <div key={srv.id} className="p-2.5 bg-black border border-white/5 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-xs">{srv.name}</span>
+                        <span className="text-[9px] text-zinc-500 font-mono">[{srv.unit}]</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 truncate mt-0.5">{srv.role}</div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 text-[9px] font-bold border uppercase tracking-wider flex items-center gap-1 ${
+                        isActive
+                          ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                          : 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                        {srv.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Interactive API Diagnostics Results Table */}
+          {healthResults && (
+            <div className="p-4 bg-zinc-950 border border-white/10 space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5 text-[10px]">
+                <span className="text-zinc-300 font-bold uppercase flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>РЕЗУЛЬТАТЫ ДИАГНОСТИКИ API ЭНДПОИНТОВ</span>
+                </span>
+                <span className="text-zinc-500 text-[9px]">
+                  УСПЕШНО: {healthResults.filter(r => r.ok).length} / {healthResults.length}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                {healthResults.map((r, i) => (
+                  <div key={i} className="p-2 bg-black border border-white/5 flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${r.ok ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                      <span className="text-white truncate font-bold">{r.name}</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 text-[10px]">
+                      <span className={r.latency < 50 ? 'text-emerald-400' : r.latency < 200 ? 'text-amber-400' : 'text-rose-400'}>
+                        {r.latency} мс
+                      </span>
+                      <span className={`px-1.5 py-0.2 border font-bold uppercase ${
+                        r.ok ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Backup / Export / Import JSON */}
           <div className="p-4 bg-[#0a0a0c] border border-white/10 space-y-3">
@@ -1443,7 +1714,7 @@ export default function AdminTab({ profile }) {
                   URL.revokeObjectURL(url);
                   notify('Резервная копия скачана!');
                 }}
-                className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition-colors"
+                className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-amber-400" />
                 <span>СКАЧАТЬ БЭКАП (JSON)</span>

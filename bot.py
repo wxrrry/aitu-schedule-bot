@@ -221,6 +221,7 @@ async def register_bot_commands(bot_instance: Bot):
             types.BotCommand(command="moodle", description="📁 СДО Moodle и материалы"),
             types.BotCommand(command="maket", description="📄 Титульный лист (.docx)"),
             types.BotCommand(command="teachers", description="👨‍🏫 Преподаватели группы"),
+            types.BotCommand(command="teacher", description="👨‍🏫 Где сейчас преподаватель"),
             types.BotCommand(command="room", description="📍 Поиск пар по кабинету"),
             types.BotCommand(command="calendar", description="📥 Добавить в календарь (.ics)"),
             types.BotCommand(command="parity", description="🏷 Чётность (числ / знам)"),
@@ -1181,6 +1182,112 @@ async def handle_teacher_detail_callback(call: types.CallbackQuery):
     except Exception:
         pass
     await call.answer()
+
+
+@dp.message(Command("teacher", "prep", "где", "учитель", ignore_case=True))
+async def handle_teacher_live_search(message: types.Message):
+    """Показывает, где преподаватель прямо сейчас по расписанию всего колледжа."""
+    from db.crud import find_teacher_lessons
+    from parity import get_week_parity
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2 or not parts[1].strip():
+        text = (
+            "👨‍🏫 <b>Где сейчас преподаватель?</b>\n"
+            "──────────────────────\n"
+            "Быстрый поиск преподавателя по расписанию всех групп колледжа.\n\n"
+            "💡 <b>Использование:</b>\n"
+            "<code>/teacher &lt;фамилия&gt;</code>\n\n"
+            "<i>Примеры:</i>\n"
+            "• <code>/teacher Иванов</code>\n"
+            "• <code>/teacher Смирнова</code>\n"
+            "• <code>/teacher Петров</code>"
+        )
+        await message.answer(text, reply_markup=get_teachers_inline_keyboard())
+        return
+
+    query = parts[1].strip()
+    now_dt = datetime.now(BOT_TZ)
+    weekday = now_dt.weekday()
+    parity_code, parity_name = get_week_parity(now_dt.date())
+
+    curr_minutes = now_dt.hour * 60 + now_dt.minute
+    # Текущая пара по стандартному расписанию звонков
+    current_pair_num = None
+    if 510 <= curr_minutes <= 605: # 08:30 - 10:05
+        current_pair_num = 1
+    elif 615 <= curr_minutes <= 710: # 10:15 - 11:50
+        current_pair_num = 2
+    elif 740 <= curr_minutes <= 835: # 12:20 - 13:55
+        current_pair_num = 3
+    elif 845 <= curr_minutes <= 940: # 14:05 - 15:40
+        current_pair_num = 4
+    elif 950 <= curr_minutes <= 1045: # 15:50 - 17:25
+        current_pair_num = 5
+
+    # Ищем занятия сегодня
+    today_lessons = await find_teacher_lessons(query, weekday=weekday, parity=parity_code)
+
+    if not today_lessons:
+        all_lessons = await find_teacher_lessons(query)
+        if not all_lessons:
+            await message.answer(
+                f"🔍 Преподаватель по запросу «<b>{html.escape(query)}</b>» не найден в расписании колледжа.\n"
+                f"Проверьте правильность написания фамилии."
+            )
+            return
+
+        t_name = all_lessons[0]["teacher"]
+        days_found = set(DAYS_RU[l["weekday"]] for l in all_lessons)
+        await message.answer(
+            f"👨‍🏫 <b>{html.escape(t_name)}</b>\n"
+            f"──────────────────────\n"
+            f"⚪ <b>Сегодня ({DAYS_RU[weekday]}) пар нет!</b> Преподаватель свободен.\n\n"
+            f"🗓 <b>Дни занятий в колледже:</b> {', '.join(sorted(days_found))}\n"
+            f"💡 Для подробного расписания откройте Mini App по кнопке ниже.",
+            reply_markup=main_keyboard
+        )
+        return
+
+    t_name = today_lessons[0]["teacher"]
+    active_now = None
+    if current_pair_num:
+        for l in today_lessons:
+            if l["pair_num"] == current_pair_num:
+                active_now = l
+                break
+
+    lines = [
+        f"👨‍🏫 <b>{html.escape(t_name)}</b>",
+        f"🕒 Время: <b>{now_dt.strftime('%H:%M')}</b> · {DAYS_RU[weekday]} ({parity_name})",
+        "──────────────────────"
+    ]
+
+    if active_now:
+        lines.append(
+            f"🟢 <b>ВЕДЕТ ПАРУ СЕЙЧАС!</b>\n"
+            f"<blockquote>"
+            f"🔔 <b>{active_now['pair_num']}-я пара</b>\n"
+            f"📍 Аудитория: <code>каб. {html.escape(active_now['room'])}</code>\n"
+            f"👥 Группа: <b>{html.escape(active_now['group_name'])}</b>\n"
+            f"📚 Предмет: <i>{html.escape(active_now['subject'])}</i>"
+            f"</blockquote>"
+        )
+    else:
+        status_label = "⚪ <b>Сейчас не ведёт пару (перемена или свободен)</b>"
+        if weekday >= 5 or curr_minutes > 1080:
+            status_label = "✨ <b>Учебный день завершён</b>"
+        lines.append(status_label)
+
+    lines.append("\n📋 <b>Все пары преподавателя на сегодня:</b>")
+    for l in sorted(today_lessons, key=lambda x: x["pair_num"]):
+        marker = "🟢 СЕЙЧАС → " if current_pair_num and l["pair_num"] == current_pair_num else "▫️ "
+        lines.append(
+            f"{marker}<b>{l['pair_num']} пара:</b> каб. <code>{html.escape(l['room'])}</code> · "
+            f"гр. <b>{html.escape(l['group_name'])}</b> <i>({html.escape(l['subject'][:25])})</i>"
+        )
+
+    await message.answer("\n".join(lines), reply_markup=main_keyboard)
 
 
 @dp.message(Command("room"))

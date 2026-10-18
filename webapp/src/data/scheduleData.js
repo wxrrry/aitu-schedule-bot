@@ -740,14 +740,22 @@ export function getCurrentPairStatus(now = new Date(), parity = 'chislitel', gro
   // Обед курса
   if (currentMinutes >= lunchInterval.start && currentMinutes < lunchInterval.end) {
     const remaining = lunchInterval.end - currentMinutes;
-    const nextPair = pairs.find(p => p.num === (course === 1 ? 2 : 3));
+    const elapsed = currentMinutes - lunchInterval.start;
+    const total = lunchInterval.end - lunchInterval.start;
+    const progress = Math.min(100, Math.round((elapsed / total) * 100));
+    const nextPairNum = course === 1 ? 2 : 3;
+    const nextPair = pairs.find(p => p.num === nextPairNum);
     return {
       type: "lunch",
       title: "ОБЕДЕННЫЙ ПЕРЕРЫВ",
       remaining,
+      elapsed,
+      total,
+      progress,
       time: lunch.range,
-      message: `Осталось ${remaining} мин (${lunch.desc}) · Далее: ${nextPair?.subject || "Пара"}`,
-      nextPair
+      message: `Осталось ${remaining} мин (${lunch.desc}) · Далее: ${nextPair?.subject || `${nextPairNum}-я пара`}`,
+      nextPair,
+      nextPairNum
     };
   }
 
@@ -804,7 +812,37 @@ export function getCurrentPairStatus(now = new Date(), parity = 'chislitel', gro
     }
   }
 
-  // Перемены
+  // Перемены между парами
+  const breaks = [
+    { fromPair: 1, toPair: 2, start: p1.end, end: p2.start },
+    { fromPair: 2, toPair: 3, start: p2.end, end: p3.start },
+    { fromPair: 3, toPair: 4, start: p3.end, end: p4.start }
+  ];
+
+  for (const b of breaks) {
+    if (currentMinutes >= b.start && currentMinutes < b.end) {
+      const remaining = b.end - currentMinutes;
+      const elapsed = currentMinutes - b.start;
+      const total = b.end - b.start;
+      const progress = Math.min(100, Math.round((elapsed / Math.max(1, total)) * 100));
+      const nextPair = pairs.find(p => p.num === b.toPair);
+
+      return {
+        type: "break",
+        title: `ПЕРЕМЕНА ПЕРЕД ${b.toPair}-Й ПАРОЙ`,
+        remaining,
+        elapsed,
+        total,
+        progress,
+        fromPair: b.fromPair,
+        toPair: b.toPair,
+        nextPair,
+        message: `До звонка на ${b.toPair}-ю пару: ${remaining} мин · Далее: ${nextPair?.subject || `${b.toPair}-я пара`}`
+      };
+    }
+  }
+
+  // Перемены общий фоллбэк
   return {
     type: "break",
     title: "ПЕРЕМЕНА",
