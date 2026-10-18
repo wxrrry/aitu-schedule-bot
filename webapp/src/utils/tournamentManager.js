@@ -4,79 +4,39 @@ import { sendDataToBot } from './telegram';
 
 const TOURNAMENTS_STORAGE_KEY = 'aitu_tournaments_v3';
 const REGISTRATIONS_STORAGE_KEY = 'aitu_tournament_registrations_v3';
+const DELETED_TOURNAMENTS_KEY = 'aitu_deleted_tournaments_v3';
 
 const API_BASE = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
 
+// Список удаленных пользователем турниров (черный список для предотвращения повторного появления)
+export function getDeletedTournamentIds() {
+  try {
+    return JSON.parse(localStorage.getItem(DELETED_TOURNAMENTS_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+export function markTournamentAsDeleted(id) {
+  try {
+    const list = getDeletedTournamentIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(DELETED_TOURNAMENTS_KEY, JSON.stringify(list));
+    }
+  } catch (e) {}
+}
+
+export function unmarkTournamentAsDeleted(id) {
+  try {
+    const list = getDeletedTournamentIds().filter(x => x !== id);
+    localStorage.setItem(DELETED_TOURNAMENTS_KEY, JSON.stringify(list));
+  } catch (e) {}
+}
+
 // Базовый реестр турниров по умолчанию (для первого запуска)
 const DEFAULT_SYSTEM_TOURNAMENTS = [
-  ...TOURNAMENTS_LIST,
-  {
-    id: "winter_major_2026",
-    title: "AITU CS2 Winter Championship 2026",
-    subTitle: "Зимний кубок колледжа AITU · Регистрация открыта",
-    type: "upcoming",
-    status: "ПРИЁМ ЗАЯВОК",
-    statusBadge: "bg-emerald-950/60 border-emerald-500/40 text-emerald-300 font-bold",
-    date: "Ноябрь 2026 (по выходным)",
-    format: "Single Elimination · Best of 3 (5v5)",
-    discipline: "Counter-Strike 2",
-    maxTeams: 8,
-    registeredTeamsCount: 4,
-    prizePool: "Кубок колледжа + Мерч кафедры + Медали",
-    rules: [
-      "К участию допускаются студенты всех курсов колледжа AITU (составы от одной группы или сборные).",
-      "Формат матчей: Best of 3 (до двух побед по картам). Составы строго 5 на 5 (разрешен 1 запасной).",
-      "Пул карт: Mirage, Inferno, Nuke, Anubis, Dust II, Ancient, Vertigo.",
-      "Серверы: выделенный сервер колледжа с тикрейтом 128 / Sub-tick и записью GOTV-демо каждого раунда.",
-      "Обязателен чекин капитанов в Telegram за 30 минут до начала каждого матча."
-    ],
-    initialRegisteredTeams: [
-      {
-        id: "reg_triq",
-        teamName: "TRIQ",
-        tag: "TRIQ",
-        captainNick: "wxrry",
-        captainTg: "@wxrry",
-        group: "9ПО-43к",
-        status: "ПОДТВЕРЖДЕНА",
-        players: ["coldeph", "RAREMO", "Toxichniy", "Kalivan1703"],
-        createdAt: "15.10.2026"
-      },
-      {
-        id: "reg_ll",
-        teamName: "LL TEAM",
-        tag: "LL",
-        captainNick: "shhh_11",
-        captainTg: "@shhh_11",
-        group: "9ПО-41к",
-        status: "ПОДТВЕРЖДЕНА",
-        players: ["t0ma999", "Flake(1337)", "Utopiya-", "MB_kot"],
-        createdAt: "16.10.2026"
-      },
-      {
-        id: "reg_void",
-        teamName: "Team V0id",
-        tag: "V0ID",
-        captainNick: "m1hnessy_1",
-        captainTg: "@m1hnessy",
-        group: "9ПО-32к",
-        status: "ПОДТВЕРЖДЕНА",
-        players: ["senya_kdr", "d1sslove", "N0_NAME", "x_God"],
-        createdAt: "16.10.2026"
-      },
-      {
-        id: "reg_cyber",
-        teamName: "CyberAITU",
-        tag: "CA",
-        captainNick: "f1rst_k1ng",
-        captainTg: "@f1rst_k1ng",
-        group: "9ПО-21к",
-        status: "ПОДТВЕРЖДЕНА",
-        players: ["frosty99", "vortex_q", "shadow_step", "aim_star"],
-        createdAt: "17.10.2026"
-      }
-    ]
-  }
+  ...TOURNAMENTS_LIST
 ];
 
 // Синхронизация турниров и команд напрямую из базы данных
@@ -86,7 +46,10 @@ export async function syncTournamentsFromApi() {
     if (!res.ok) return null;
     const data = await res.json();
     if (data && Array.isArray(data.tournaments)) {
-      const serverTournaments = data.tournaments.map(t => {
+      const deletedIds = getDeletedTournamentIds();
+      const serverTournaments = data.tournaments
+        .filter(t => !deletedIds.includes(t.id))
+        .map(t => {
         let rulesArr = t.rules;
         if (typeof rulesArr === 'string') {
           try { rulesArr = JSON.parse(rulesArr); } catch (e) { rulesArr = []; }
@@ -162,22 +125,23 @@ export async function syncTournamentsFromApi() {
 // Получить все турниры (возвращает актуальный локальный кэш и синхронизирует с БД)
 export function getAllTournaments() {
   let list = [];
+  const deletedIds = getDeletedTournamentIds();
   try {
     const raw = localStorage.getItem(TOURNAMENTS_STORAGE_KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        list = parsed;
+      if (Array.isArray(parsed)) {
+        list = parsed.filter(t => !deletedIds.includes(t.id));
+        return list;
       }
     }
   } catch (e) {
     console.warn("Failed to load custom tournaments", e);
   }
 
-  if (list.length === 0) {
-    list = [...DEFAULT_SYSTEM_TOURNAMENTS];
-    saveAllTournaments(list);
-  }
+  // Первичный запуск на новом клиенте
+  list = DEFAULT_SYSTEM_TOURNAMENTS.filter(t => !deletedIds.includes(t.id));
+  saveAllTournaments(list);
 
   // Фоновая синхронизация с базой данных на сервере
   if (typeof window !== 'undefined') {
@@ -645,6 +609,7 @@ export function updateTournament(tournamentId, patch) {
 
 // Удалить турнир (из БД и локально)
 export function deleteTournament(tournamentId) {
+  markTournamentAsDeleted(tournamentId);
   const tournaments = getAllTournaments();
   const updated = tournaments.filter(t => t.id !== tournamentId);
   saveAllTournaments(updated);

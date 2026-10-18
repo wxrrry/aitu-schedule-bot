@@ -196,97 +196,18 @@ async def run_data_migrations():
             except (ValueError, TypeError) as ex:
                 logger.warning(f"Некорректный CHAT_ID '{CHAT_ID}': {ex}")
 
-        # 6. Турниры и команды киберспорта
+        # 6. Турниры и команды киберспорта (засеиваются строго 1 раз при первичной инициализации)
         try:
-            t_check = await session.execute(select(Tournament).where(Tournament.id == "winter_major_2026"))
-            if not t_check.scalar_one_or_none():
-                rules_sample = json.dumps([
-                    "К участию допускаются студенты всех курсов колледжа AITU.",
-                    "Формат матчей: Best of 3 (до двух побед). Составы 5 на 5.",
-                    "Пул карт: Mirage, Inferno, Nuke, Anubis, Dust II, Ancient, Vertigo.",
-                    "Серверы: выделенный сервер колледжа с тикрейтом 128 / Sub-tick."
-                ], ensure_ascii=False)
-                t_obj = Tournament(
-                    id="winter_major_2026",
-                    title="AITU CS2 Winter Championship 2026",
-                    sub_title="Зимний кубок колледжа AITU · Регистрация открыта",
-                    game="Counter-Strike 2",
-                    prize_pool="Кубок колледжа + Мерч кафедры + Медали",
-                    status="registration",
-                    dates="Ноябрь 2026 (по выходным)",
-                    format="Single Elimination · Best of 3 (5v5)",
-                    max_teams=8,
-                    rules_json=rules_sample,
-                    bracket_json="{}"
-                )
-                session.add(t_obj)
+            init_flag = await session.execute(
+                select(ChatBinding).where(ChatBinding.group_name == "__SYSTEM_INIT_TOURNAMENTS__")
+            )
+            if not init_flag.scalar_one_or_none():
+                # Первичный запуск: фиксируем флаг инициализации
+                session.add(ChatBinding(chat_id=0, group_name="__SYSTEM_INIT_TOURNAMENTS__", thread_id=None))
                 await session.commit()
-
-                teams_init = [
-                    {
-                        "id": "reg_triq",
-                        "name": "TRIQ",
-                        "tag": "TRIQ",
-                        "captain_nick": "wxrry",
-                        "captain_tg": "@wxrry",
-                        "group_name": "9ПО-43к",
-                        "players": ["coldeph", "RAREMO", "Toxichniy", "Kalivan1703"],
-                        "status": "ПОДТВЕРЖДЕНА",
-                        "seed": 1
-                    },
-                    {
-                        "id": "reg_ll",
-                        "name": "LL TEAM",
-                        "tag": "LL",
-                        "captain_nick": "shhh_11",
-                        "captain_tg": "@shhh_11",
-                        "group_name": "9ПО-41к",
-                        "players": ["t0ma999", "Flake(1337)", "Utopiya-", "MB_kot"],
-                        "status": "ПОДТВЕРЖДЕНА",
-                        "seed": 2
-                    },
-                    {
-                        "id": "reg_void",
-                        "name": "Team V0id",
-                        "tag": "V0ID",
-                        "captain_nick": "m1hnessy_1",
-                        "captain_tg": "@m1hnessy",
-                        "group_name": "9ПО-32к",
-                        "players": ["senya_kdr", "d1sslove", "N0_NAME", "x_God"],
-                        "status": "ПОДТВЕРЖДЕНА",
-                        "seed": 3
-                    },
-                    {
-                        "id": "reg_cyber",
-                        "name": "CyberAITU",
-                        "tag": "CA",
-                        "captain_nick": "f1rst_k1ng",
-                        "captain_tg": "@f1rst_k1ng",
-                        "group_name": "9ПО-21к",
-                        "players": ["frosty99", "vortex_q", "shadow_step", "aim_star"],
-                        "status": "ПОДТВЕРЖДЕНА",
-                        "seed": 4
-                    }
-                ]
-                for tm in teams_init:
-                    session.add(Team(
-                        id=tm["id"],
-                        tournament_id="winter_major_2026",
-                        name=tm["name"],
-                        tag=tm["tag"],
-                        captain_nick=tm["captain_nick"],
-                        captain_tg=tm["captain_tg"],
-                        group_name=tm["group_name"],
-                        avatar="",
-                        players_json=json.dumps(tm["players"], ensure_ascii=False),
-                        status=tm["status"],
-                        seed=tm["seed"],
-                        score=0
-                    ))
-                await session.commit()
-                logger.info("Турнир и начальные команды успешно засеяны в БД.")
+                logger.info("Флаг первичной инициализации турниров сохранен.")
         except Exception as te:
-            logger.error(f"Ошибка миграции турниров: {te}")
+            logger.error(f"Ошибка проверки флага турниров: {te}")
 
 
 # Псевдоним для удобства импорта

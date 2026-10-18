@@ -24,7 +24,7 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
 
   const [activeTab, setActiveTab] = useState('manage'); // 'manage' or 'create'
   const [tournaments, setTournaments] = useState(() => getAllTournaments());
-  const [selectedTournId, setSelectedTournId] = useState(() => tournaments[0]?.id || 'winter_major_2026');
+  const [selectedTournId, setSelectedTournId] = useState(() => tournaments[0]?.id || '');
 
   // New Tournament Form State
   const [newTitle, setNewTitle] = useState('');

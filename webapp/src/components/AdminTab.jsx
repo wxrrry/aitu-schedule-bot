@@ -56,7 +56,7 @@ export default function AdminTab({ profile }) {
 
   // Tournaments state
   const [tournaments, setTournaments] = useState(() => getAllTournaments());
-  const [selectedTournId, setSelectedTournId] = useState(() => tournaments[0]?.id || 'winter_major_2026');
+  const [selectedTournId, setSelectedTournId] = useState(() => tournaments[0]?.id || '');
 
   // Notification message
   const [alertMsg, setAlertMsg] = useState(null);
