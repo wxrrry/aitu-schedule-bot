@@ -23,6 +23,7 @@ import { TEACHERS_LIST } from '../data/teachersData';
 import { DAYS_RU, getBellSchedule } from '../data/scheduleData';
 import { getRoomOccupancy, findTeacherLiveStatus, getAllTeachersFromSchedule } from '../utils/classroomFinder';
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
+import FloorMapSvg from './FloorMapSvg';
 
 const FLOOR_CONFIG = {
   1: {
@@ -406,11 +407,11 @@ export default function AuditoriumFinderModal({
               <div className="p-3 bg-neutral-900/70 border border-white/10 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-white uppercase flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5 text-zinc-400" />
+                    <Building className="w-3.5 h-3.5 text-cyan-400" />
                     {currentConfig.title}
                   </span>
-                  <span className="font-mono text-[9px] px-1.5 py-0.2 bg-white/10 text-zinc-300">
-                    КОРПУС AITU
+                  <span className="font-mono text-[9px] px-1.5 py-0.2 bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-bold">
+                    ИНТЕРАКТИВНАЯ 2D СХЕМА
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
@@ -418,174 +419,142 @@ export default function AuditoriumFinderModal({
                 </p>
               </div>
 
-              {/* Floor 1 Specific Blueprint: Amenities & Services */}
-              {selectedFloor === 1 ? (
-                <div className="space-y-2">
-                  <div className="font-mono text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                    <Compass className="w-3 h-3 text-zinc-400" />
-                    <span>ИНФРАСТРУКТУРА ПЕРВОГО ЭТАЖА:</span>
-                  </div>
+              {/* 2D Architectural Blueprint Map */}
+              <FloorMapSvg
+                floor={selectedFloor}
+                occupancy={occupancy}
+                activeRoom={activeRoomDetail?.room}
+                onSelectRoom={(detail) => {
+                  setActiveRoomDetail(detail);
+                  triggerHaptic('light');
+                }}
+              />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {currentConfig.amenities.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-3 border transition-colors ${
-                          item.highlight 
-                            ? 'bg-amber-950/20 border-amber-500/40' 
-                            : 'bg-black/40 border-white/10'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className={`font-mono text-xs font-bold ${item.highlight ? 'text-amber-300' : 'text-white'}`}>
-                            {item.name}
-                          </span>
-                          <span className="font-mono text-[9px] px-1.5 py-0.2 bg-white/5 border border-white/10 text-zinc-400 uppercase">
-                            {item.zone}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-zinc-400 font-sans mt-1">
-                          {item.desc}
-                        </p>
+              {/* Room or Amenity Detailed Popover */}
+              {activeRoomDetail && (
+                <div className="p-3 bg-black border border-cyan-500/40 space-y-2 animate-fadeIn font-mono">
+                  <div className="flex items-start justify-between border-b border-white/10 pb-2">
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                        {activeRoomDetail.room} · {selectedFloor}-Й ЭТАЖ
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="p-2.5 bg-blue-950/20 border border-blue-500/30 flex items-start gap-2 text-[11px] font-mono text-blue-300">
-                    <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span>Для перехода на учебные этажи (2–9) воспользуйтесь лестничными пролетами по обе стороны холла либо лифтовой группой.</span>
-                  </div>
-                </div>
-              ) : (
-                /* Floors 2..9 Corridor Blueprint & Live Rooms */
-                <div className="space-y-3 font-mono">
-                  {/* Corridor Layout Bar */}
-                  <div className="p-2 bg-black/60 border border-white/10 flex items-center justify-between text-[9px] text-zinc-400 uppercase font-bold">
-                    <span>[ лестница а ]</span>
-                    <span className="text-zinc-500 flex items-center gap-1">
-                      <Footprints className="w-3 h-3 text-zinc-500" />
-                      ЦЕНТРАЛЬНЫЙ КОРИДОР · ЭТАЖ {selectedFloor}
-                    </span>
-                    <span>[ лестница б ]</span>
-                  </div>
-
-                  {/* Interactive Rooms Matrix */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase font-bold">
-                      <span>АУДИТОРИИ ЭТАЖА (НАЖМИТЕ ДЛЯ ДЕТАЛЕЙ):</span>
-                      <span className="text-emerald-400">
-                        {roomsForFloor.filter(r => occupancy.freeRooms.includes(r)).length} свободно
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {roomsForFloor.map(rm => {
-                        const isFree = occupancy.freeRooms.includes(rm);
-                        const occInfo = occupancy.occupiedRooms.find(o => o.room === rm);
-                        const isSelected = activeRoomDetail?.room === rm;
-
-                        return (
-                          <div
-                            key={rm}
-                            onClick={() => {
-                              setActiveRoomDetail({
-                                room: rm,
-                                isFree,
-                                occInfo
-                              });
-                              triggerHaptic('light');
-                            }}
-                            className={`p-2.5 border cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-white text-black border-white ring-2 ring-white/50'
-                                : isFree
-                                  ? 'bg-emerald-950/20 border-emerald-500/40 hover:border-emerald-400'
-                                  : 'bg-black/60 border-white/10 hover:border-white/30'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className={`text-xs font-bold font-mono ${isSelected ? 'text-black' : 'text-white'}`}>
-                                {rm}
-                              </span>
-                              <span className={`text-[8px] font-bold px-1.5 py-0.2 uppercase ${
-                                isSelected
-                                  ? 'bg-black text-white'
-                                  : isFree
-                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              }`}>
-                                {isFree ? 'СВОБОДЕН' : 'ЗАНЯТ'}
-                              </span>
-                            </div>
-
-                            <div className={`text-[10px] truncate mt-1 ${isSelected ? 'text-zinc-800' : 'text-zinc-400'}`}>
-                              {isFree ? 'Окно для занятий' : (occInfo?.group || 'Занятие')}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Room Detailed Popover */}
-                  {activeRoomDetail && (
-                    <div className="p-3 bg-black border border-white/20 space-y-2 animate-fadeIn font-mono">
-                      <div className="flex items-start justify-between border-b border-white/10 pb-2">
-                        <div>
-                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                            {activeRoomDetail.room} · {selectedFloor}-Й ЭТАЖ
-                          </div>
-                          <div className="text-[10px] text-zinc-400 mt-0.5">
-                            {activeRoomDetail.isFree 
+                      <div className="text-[10px] text-zinc-400 mt-0.5">
+                        {activeRoomDetail.isAmenity 
+                          ? (activeRoomDetail.zone ? `📍 ${activeRoomDetail.zone}` : 'Инфраструктура колледжа')
+                          : (activeRoomDetail.isFree 
                               ? '🟢 Аудитория свободна на эту пару' 
-                              : `🔴 Занято группой ${activeRoomDetail.occInfo?.group || '—'}`}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setActiveRoomDetail(null)}
-                          className="text-zinc-500 hover:text-white text-xs p-1"
-                        >
-                          ✕
-                        </button>
+                              : `🔴 Занято группой ${activeRoomDetail.occInfo?.group || '—'}`)}
                       </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveRoomDetail(null)}
+                      className="text-zinc-500 hover:text-white text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-                      {!activeRoomDetail.isFree && activeRoomDetail.occInfo && (
-                        <div className="grid grid-cols-2 gap-2 text-[10px] bg-neutral-900/60 p-2 border border-white/5">
-                          <div>
-                            <span className="text-zinc-500 block">ПРЕДМЕТ:</span>
-                            <span className="text-white font-bold truncate block">{activeRoomDetail.occInfo.subject}</span>
-                          </div>
-                          <div>
-                            <span className="text-zinc-500 block">ПРЕПОДАВАТЕЛЬ:</span>
-                            <span className="text-amber-400 truncate block">{activeRoomDetail.occInfo.teacher}</span>
-                          </div>
-                        </div>
-                      )}
+                  {activeRoomDetail.isAmenity && activeRoomDetail.desc && (
+                    <div className="p-2 bg-neutral-900/60 border border-white/5 text-[11px] text-zinc-300 font-sans leading-relaxed">
+                      {activeRoomDetail.desc}
+                    </div>
+                  )}
 
-                      <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 pt-1">
-                        <Navigation className="w-3 h-3 text-zinc-500" />
-                        <span>Навигация: выход из лестницы {selectedFloor}-го этажа, по указателям в коридоре.</span>
+                  {!activeRoomDetail.isAmenity && !activeRoomDetail.isFree && activeRoomDetail.occInfo && (
+                    <div className="grid grid-cols-2 gap-2 text-[10px] bg-neutral-900/60 p-2 border border-white/5">
+                      <div>
+                        <span className="text-zinc-500 block">ПРЕДМЕТ:</span>
+                        <span className="text-white font-bold truncate block">{activeRoomDetail.occInfo.subject}</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block">ПРЕПОДАВАТЕЛЬ:</span>
+                        <span className="text-amber-400 truncate block">{activeRoomDetail.occInfo.teacher}</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Floor Amenities */}
-                  <div className="p-2.5 bg-black/40 border border-white/10 space-y-1.5 text-[10px]">
-                    <div className="text-zinc-500 uppercase font-bold flex items-center gap-1">
-                      <Layers className="w-3 h-3 text-zinc-400" />
-                      <span>ЗОНЫ И СЕРВИСЫ {selectedFloor}-ГО ЭТАЖА:</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-zinc-300">
-                      {currentConfig.amenities.map((a, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 text-[9px]">
-                          {a.name} ({a.zone})
-                        </span>
-                      ))}
-                    </div>
+                  <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 pt-1">
+                    <Navigation className="w-3 h-3 text-cyan-400" />
+                    <span>Навигация: выход из лестницы {selectedFloor}-го этажа, следуйте по указателям в коридоре.</span>
                   </div>
                 </div>
               )}
+
+              {/* Floor Amenities and Infrastructure List */}
+              <div className="p-2.5 bg-black/40 border border-white/10 space-y-2 text-[10px] font-mono">
+                <div className="text-zinc-400 uppercase font-bold flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3 h-3 text-cyan-400" />
+                    <span>ИНФРАСТРУКТУРА И АУДИТОРИИ ({selectedFloor}-Й ЭТАЖ):</span>
+                  </span>
+                  <span className="text-zinc-500">
+                    {selectedFloor === 1 ? '6 зон' : `${roomsForFloor.length} каб.`}
+                  </span>
+                </div>
+
+                {selectedFloor === 1 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-sans">
+                    {currentConfig.amenities.map((item, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setActiveRoomDetail({
+                            room: item.name,
+                            isAmenity: true,
+                            zone: item.zone,
+                            desc: item.desc
+                          });
+                          triggerHaptic('light');
+                        }}
+                        className={`p-2 border cursor-pointer transition-all ${
+                          item.highlight 
+                            ? 'bg-amber-950/20 border-amber-500/40 hover:border-amber-400' 
+                            : 'bg-black/50 border-white/10 hover:border-white/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${item.highlight ? 'text-amber-300' : 'text-white'}`}>
+                            {item.name}
+                          </span>
+                          <span className="text-[9px] font-mono text-zinc-400">{item.zone}</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {roomsForFloor.map(rm => {
+                      const isFree = occupancy.freeRooms.includes(rm);
+                      const occInfo = occupancy.occupiedRooms.find(o => o.room === rm);
+                      const isSelected = activeRoomDetail?.room === rm;
+
+                      return (
+                        <div
+                          key={rm}
+                          onClick={() => {
+                            setActiveRoomDetail({ room: rm, isFree, occInfo });
+                            triggerHaptic('light');
+                          }}
+                          className={`p-1.5 border cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-white text-black font-bold border-white'
+                              : isFree
+                                ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-300'
+                                : 'bg-black/60 border-white/10 text-zinc-400'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span>{rm}</span>
+                            <span className="text-[8px] uppercase font-bold">{isFree ? '● СВОБ.' : '○ ЗАН.'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })()}
