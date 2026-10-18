@@ -323,17 +323,38 @@ async def send_midnight_schedule():
     now = datetime.now(BOT_TZ)
     target_date = now.date()
     
+    # В воскресенье занятий в колледже нет — пропускаем полночную рассылку
+    if target_date.weekday() == 6:
+        logger.info("Полночная рассылка пропущена: воскресенье (выходной день).")
+        return
+
+    parity_code, _ = get_week_parity(target_date)
     bindings = await get_all_chat_bindings()
+    
     # Если бесед в базе нет, используем legacy CHAT_ID
     if not bindings and CHAT_ID:
         try:
-            text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name="9ПО-43к")
-            await bot.send_message(chat_id=CHAT_ID, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
+            should_send = True
+            if target_date.weekday() == 5:
+                pairs = await get_lessons_for_day("9ПО-43к", 5, parity_code)
+                reps = await get_replacements_for_date_and_group(target_date, "9ПО-43к")
+                if not pairs and not reps:
+                    should_send = False
+
+            if should_send:
+                text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name="9ПО-43к")
+                await bot.send_message(chat_id=CHAT_ID, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
         except Exception as e:
             logger.error(f"Ошибка полночной рассылки в legacy чат {CHAT_ID}: {e}")
 
     for b in bindings:
         try:
+            if target_date.weekday() == 5:
+                pairs = await get_lessons_for_day(b.group_name, 5, parity_code)
+                reps = await get_replacements_for_date_and_group(target_date, b.group_name)
+                if not pairs and not reps:
+                    continue  # В субботу у группы выходной — не отправляем
+            
             text = await get_formatted_day_schedule(target_date, title_prefix="Расписание на сегодня", group_name=b.group_name)
             await bot.send_message(chat_id=b.chat_id, text=text, reply_markup=main_keyboard, link_preview_options=types.LinkPreviewOptions(is_disabled=True))
             await asyncio.sleep(0.05)
