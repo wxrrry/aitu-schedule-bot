@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { 
   DEFAULT_GROUP,
   POPULAR_GROUPS,
@@ -23,8 +23,8 @@ import {
 } from '../data/replacementsData';
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
 import AllCoursesBellTable from './AllCoursesBellTable';
-import AuditoriumFinderModal from './AuditoriumFinderModal';
-import DeadlinesModal from './DeadlinesModal';
+const AuditoriumFinderModal = lazy(() => import('./AuditoriumFinderModal'));
+const DeadlinesModal = lazy(() => import('./DeadlinesModal'));
 import { 
   Clock, 
   MapPin, 
@@ -200,11 +200,22 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
     return () => clearInterval(timer);
   }, [selectedGroup]);
 
-  // Загрузка активных замен из базы данных при смене группы
+  // Загрузка активных замен из базы данных при смене группы (с офлайн-кэшированием)
   useEffect(() => {
     fetchReplacementsFromApi(selectedGroup).then(data => {
-      if (data) setReplacements(data);
-    }).catch(err => console.warn('Could not load replacements for group', err));
+      if (data) {
+        setReplacements(data);
+        try {
+          localStorage.setItem(`aitu_cached_reps_${selectedGroup}`, JSON.stringify(data));
+        } catch (e) {}
+      }
+    }).catch(err => {
+      console.warn('Could not load replacements for group, falling back to cache', err);
+      try {
+        const cached = localStorage.getItem(`aitu_cached_reps_${selectedGroup}`);
+        if (cached) setReplacements(JSON.parse(cached));
+      } catch (e) {}
+    });
   }, [selectedGroup]);
 
   // Синхронизация задач пользователя с PostgreSQL
@@ -1484,28 +1495,34 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
       )}
 
       {/* Интерактивный навигатор свободных кабинетов и преподавателей */}
-      <AuditoriumFinderModal
-        isOpen={isAuditoriumModalOpen}
-        onClose={() => setIsAuditoriumModalOpen(false)}
-        initialTab={auditoriumInitialTab}
-        currentParity={parity}
-        currentDayIndex={todayIndex}
-        currentPairNum={currentStatus?.currentPair?.pair || 1}
-      />
+      <Suspense fallback={null}>
+        {isAuditoriumModalOpen && (
+          <AuditoriumFinderModal
+            isOpen={isAuditoriumModalOpen}
+            onClose={() => setIsAuditoriumModalOpen(false)}
+            initialTab={auditoriumInitialTab}
+            currentParity={parity}
+            currentDayIndex={todayIndex}
+            currentPairNum={currentStatus?.currentPair?.pair || 1}
+          />
+        )}
 
-      {/* Единый чек-лист лабораторных работ и дедлайнов студента */}
-      <DeadlinesModal
-        isOpen={isDeadlinesModalOpen}
-        onClose={() => setIsDeadlinesModalOpen(false)}
-        tasks={tasks}
-        onAddTask={(subj, text) => {
-          setNewTaskInput(text);
-          handleAddTask(subj);
-        }}
-        onToggleTask={handleToggleTask}
-        onDeleteTask={handleDeleteTask}
-        availableSubjects={allGroupSubjects}
-      />
+        {/* Единый чек-лист лабораторных работ и дедлайнов студента */}
+        {isDeadlinesModalOpen && (
+          <DeadlinesModal
+            isOpen={isDeadlinesModalOpen}
+            onClose={() => setIsDeadlinesModalOpen(false)}
+            tasks={tasks}
+            onAddTask={(subj, text) => {
+              setNewTaskInput(text);
+              handleAddTask(subj);
+            }}
+            onToggleTask={handleToggleTask}
+            onDeleteTask={handleDeleteTask}
+            availableSubjects={allGroupSubjects}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

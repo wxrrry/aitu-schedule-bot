@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import time
 import re
 import logging
 from sqlalchemy import select, update, delete, or_, and_, func
@@ -8,6 +9,15 @@ from .database import async_session
 from .models import User, Group, Lesson, Replacement, ChatBinding, UserRole, Tournament, Team, UserTask
 
 logger = logging.getLogger(__name__)
+
+# Высокопроизводительный TTL-кэш для снижения нагрузки на БД (60 секунд)
+_LESSONS_CACHE: dict[tuple, tuple[float, dict]] = {}
+_REPLACEMENTS_CACHE: dict[tuple, tuple[float, dict]] = {}
+
+def clear_schedule_cache():
+    """Сбрасывает локальный кэш расписания при добавлении замен или правке аудиторий."""
+    _LESSONS_CACHE.clear()
+    _REPLACEMENTS_CACHE.clear()
 
 
 def canonical_group_name(group_name: str | None) -> str:
@@ -310,9 +320,17 @@ async def get_all_courses() -> list[int]:
 # =============================================================
 async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str = "both") -> dict[int, dict]:
     """
-    Возвращает пары группы на указанный день недели с учётом чётности.
+    Возвращает пары группы на указанный день недели с учётом чётности (с TTL-кэшированием 60 секунд).
     Формат словаря: {1: {'subject': '...', 'room': '...', 'teacher': '...'}, ...}
     """
+    canon = canonical_group_name(group_name) or group_name.strip()
+    cache_key = (canon, weekday, parity_code)
+    now_ts = time.time()
+    if cache_key in _LESSONS_CACHE:
+        ts, cached_val = _LESSONS_CACHE[cache_key]
+        if now_ts - ts < 60:
+            return cached_val
+
     variants = get_group_variants(group_name)
     async with async_session() as session:
         stmt = select(Lesson).where(
@@ -333,6 +351,7 @@ async def get_lessons_for_day(group_name: str, weekday: int, parity_code: str = 
                 "teacher": l.teacher,
                 "parity": l.parity
             }
+        _LESSONS_CACHE[cache_key] = (now_ts, pairs_dict)
         return pairs_dict
 
 
@@ -386,6 +405,7 @@ async def add_or_update_lesson(
             session.add(lesson)
         await session.commit()
         await session.refresh(lesson)
+        clear_schedule_cache()
         return lesson
 
 
@@ -402,6 +422,8 @@ async def update_lesson_room(group_name: str, weekday: int, pair_num: int, new_r
         ).values(room=new_room)
         res = await session.execute(stmt)
         await session.commit()
+        if res.rowcount > 0:
+            clear_schedule_cache()
         return res.rowcount > 0
 
 
@@ -442,7 +464,7 @@ async def find_teacher_lessons(teacher_query: str, weekday: int | None = None, p
 # =============================================================
 async def get_replacements_for_date_and_group(target_date: date, group_name: str | None = None) -> dict[int, dict]:
     """
-    Возвращает замены на дату для конкретной группы (включая общеколледжные замены group_name is NULL).
+    Возвращает замены на дату для конкретной группы (включая общеколледжные замены group_name is NULL) с TTL-кэшированием 60 секунд.
     Поддерживает кириллические названия групп и разные форматы хранения дат в SQLite.
     """
     if isinstance(target_date, datetime):
@@ -454,6 +476,15 @@ async def get_replacements_for_date_and_group(target_date: date, group_name: str
             d_obj = date.today()
     else:
         d_obj = target_date
+
+    d_str = d_obj.isoformat()
+    canon_grp = canonical_group_name(group_name) if group_name else None
+    cache_key = (d_str, canon_grp)
+    now_ts = time.time()
+    if cache_key in _REPLACEMENTS_CACHE:
+        ts, cached_val = _REPLACEMENTS_CACHE[cache_key]
+        if now_ts - ts < 60:
+            return cached_val
 
     async with async_session() as session:
         conditions = [Replacement.date == d_obj]
@@ -481,6 +512,7 @@ async def get_replacements_for_date_and_group(target_date: date, group_name: str
                 "text": r.raw_text,
                 "group_name": r.group_name
             }
+        _REPLACEMENTS_CACHE[cache_key] = (now_ts, reps_dict)
         return reps_dict
 
 
@@ -557,6 +589,7 @@ async def add_replacement_record(
             session.add(rep)
         await session.commit()
         await session.refresh(rep)
+        clear_schedule_cache()
         return rep
 
 
@@ -580,6 +613,8 @@ async def delete_replacement_record(target_date: date, pair_num: int, group_name
         stmt = delete(Replacement).where(and_(*conditions))
         res = await session.execute(stmt)
         await session.commit()
+        if res.rowcount > 0:
+            clear_schedule_cache()
         return res.rowcount > 0
 
 

@@ -104,10 +104,15 @@ export function getRoomOccupancy(dayIndex = 0, pairNum = 1, parity = 'chislitel'
   };
 }
 
+// Кэшированный список преподавателей в памяти для мгновенного поиска
+let _cachedTeachersList = null;
+
 /**
  * Извлекает полный список всех преподавателей колледжа из расписания всех групп
  */
 export function getAllTeachersFromSchedule() {
+  if (_cachedTeachersList) return _cachedTeachersList;
+
   const teacherMap = new Map();
 
   Object.entries(allGroupsSchedule).forEach(([groupName, groupData]) => {
@@ -141,12 +146,14 @@ export function getAllTeachersFromSchedule() {
     });
   });
 
-  return Array.from(teacherMap.values()).map(t => ({
+  _cachedTeachersList = Array.from(teacherMap.values()).map(t => ({
     name: t.name,
     subjects: Array.from(t.subjects),
     rooms: Array.from(t.rooms),
     groups: Array.from(t.groups)
   })).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+  return _cachedTeachersList;
 }
 
 /**

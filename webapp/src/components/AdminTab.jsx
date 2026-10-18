@@ -1510,6 +1510,38 @@ export default function AdminTab({ profile }) {
             </div>
           </div>
 
+          {/* Watchdog Alert Status Banner */}
+          {systemMetrics?.alerts && systemMetrics.alerts.length > 0 ? (
+            <div className="space-y-1.5">
+              {systemMetrics.alerts.map((al, idx) => (
+                <div
+                  key={idx}
+                  className={`p-3 border flex items-start gap-2.5 text-xs font-mono ${
+                    al.level === 'critical'
+                      ? 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                      : 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+                  }`}
+                >
+                  <AlertCircle className={`w-4 h-4 shrink-0 mt-0.5 ${al.level === 'critical' ? 'text-rose-400' : 'text-amber-400'}`} />
+                  <div>
+                    <span className="font-bold uppercase tracking-wider text-[10px] block opacity-80">
+                      ВНИМАНИЕ: [{al.source}]
+                    </span>
+                    <span>{al.message}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-2.5 bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-400 font-mono">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>СТОРОЖЕВОЙ МОНИТОРИНГ: ВСЕ ПОКАЗАТЕЛИ В НОРМЕ (0 АЛЕРТОВ)</span>
+              </span>
+              <span className="text-[10px] text-emerald-500/80 font-bold">WATCHDOG OK</span>
+            </div>
+          )}
+
           {/* Hardware & Resources Gauges */}
           <div className="p-4 bg-[#0a0a0c] border border-white/10 space-y-3">
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5 text-[10px]">

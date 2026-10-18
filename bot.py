@@ -3287,6 +3287,87 @@ async def handle_inline_query(inline_query: types.InlineQuery):
                 )
                 break
 
+        # 4. Поиск по преподавателю
+        if len(query) >= 3 and not (query.isdigit() or "зал" in query or "с/з" in query):
+            try:
+                from db.crud import find_teacher_lessons
+                t_lessons = await find_teacher_lessons(query)
+                if t_lessons:
+                    teachers_matched = {}
+                    for l in t_lessons:
+                        t_name = l.get("teacher", "").strip()
+                        if t_name and t_name not in teachers_matched:
+                            teachers_matched[t_name] = []
+                        if t_name:
+                            teachers_matched[t_name].append(l)
+
+                    for t_name, lessons_list in list(teachers_matched.items())[:3]:
+                        t_today = [l for l in lessons_list if l["weekday"] == today.weekday() and (l.get("parity") in (parity_code, 'all', None))]
+                        today_lines = []
+                        if t_today:
+                            for l in sorted(t_today, key=lambda x: x["pair_num"]):
+                                today_lines.append(f"• <b>{l['pair_num']}-я пара:</b> {html.escape(l['subject'])} — каб. <b>{html.escape(l.get('room') or '—')}</b> ({l['group_name']})")
+                        else:
+                            today_lines.append("• <i>Сегодня пар в расписании нет (свободен)</i>")
+
+                        days_active = sorted(list(set(DAYS_RU[l["weekday"]] for l in lessons_list if 0 <= l["weekday"] < len(DAYS_RU))))
+                        
+                        card_text = (
+                            f"👨‍🏫 <b>{html.escape(t_name)}</b>\n"
+                            f"──────────────────────\n"
+                            f"📅 <b>Расписание на сегодня ({DAYS_RU[today.weekday()]}):</b>\n" +
+                            "\n".join(today_lines) + "\n\n"
+                            f"🗓 <b>Дни занятий в колледже:</b> {', '.join(days_active)}\n"
+                            f"💡 <i>Отправлено через инлайн-режим @aituraspisaniebot</i>"
+                        )
+                        search_results.append(
+                            types.InlineQueryResultArticle(
+                                id=f"inline_teacher_{abs(hash(t_name)) % 10000000}",
+                                title=f"👨‍🏫 {t_name}",
+                                description=f"Расписание занятий и аудитории на сегодня ({DAYS_RU[today.weekday()]})",
+                                input_message_content=types.InputTextMessageContent(
+                                    message_text=card_text,
+                                    parse_mode=ParseMode.HTML
+                                )
+                            )
+                        )
+            except Exception as e:
+                logger.error(f"Ошибка инлайн-поиска преподавателя: {e}")
+
+        # 5. Поиск по учебной группе (например "9ПО-43к", "3ис-21", "1э-11")
+        from db.crud import canonical_group_name
+        canon_grp = canonical_group_name(query)
+        if canon_grp and any(ch.isalpha() for ch in canon_grp) and any(ch.isdigit() for ch in canon_grp):
+            try:
+                from formatter import get_formatted_day_schedule
+                grp_today_text = await get_formatted_day_schedule(today, title_prefix=f"Расписание {canon_grp} на сегодня", group_name=canon_grp)
+                grp_tomorrow_text = await get_formatted_day_schedule(tomorrow, title_prefix=f"Расписание {canon_grp} на завтра", group_name=canon_grp)
+                
+                search_results.append(
+                    types.InlineQueryResultArticle(
+                        id=f"inline_group_today_{canon_grp}",
+                        title=f"👥 Группа {canon_grp} — Сегодня",
+                        description=f"Расписание на {DAYS_RU[today.weekday()]} ({parity_name})",
+                        input_message_content=types.InputTextMessageContent(
+                            message_text=grp_today_text,
+                            parse_mode=ParseMode.HTML
+                        )
+                    )
+                )
+                search_results.append(
+                    types.InlineQueryResultArticle(
+                        id=f"inline_group_tomorrow_{canon_grp}",
+                        title=f"👥 Группа {canon_grp} — Завтра",
+                        description=f"Расписание на {DAYS_RU[tomorrow.weekday()]}",
+                        input_message_content=types.InputTextMessageContent(
+                            message_text=grp_tomorrow_text,
+                            parse_mode=ParseMode.HTML
+                        )
+                    )
+                )
+            except Exception as e:
+                logger.error(f"Ошибка инлайн-поиска группы: {e}")
+
         if search_results:
             results = search_results + results
 

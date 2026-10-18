@@ -8,7 +8,7 @@ import { getInitialUserProfile, saveUserProfile, syncProfileFromCloud, isSuperAd
 import { isInsideTelegram } from './utils/telegram';
 
 // Динамический импорт (Code Splitting) для ускорения первичной загрузки в Telegram WebView
-import ChangelogModal from './components/ChangelogModal';
+const ChangelogModal = lazy(() => import('./components/ChangelogModal'));
 const LecturesTab = lazy(() => import('./components/LecturesTab'));
 const ServicesTab = lazy(() => import('./components/ServicesTab'));
 const EsportsTab = lazy(() => import('./components/EsportsTab'));

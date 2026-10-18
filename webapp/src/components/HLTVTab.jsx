@@ -157,15 +157,55 @@ export default function HLTVTab() {
     setTimeout(() => setCopiedMatchId(null), 2500);
   };
 
-  const handleScreenshotFile = (e) => {
+// Клиентское сжатие скриншотов через Canvas для оптимизации localStorage (снижает размер с 5-10 МБ до ~120 КБ)
+const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) {
+      resolve(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target.result);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+};
+
+  const handleScreenshotFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setScoreScreenshot(reader.result);
-      triggerHaptic('light');
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImageFile(file, 1280, 0.82);
+      if (compressedDataUrl) {
+        setScoreScreenshot(compressedDataUrl);
+        triggerHaptic('light');
+      }
+    } catch (err) {
+      console.warn('Screenshot compression error:', err);
+    }
   };
 
   const handleConfirmMatchScore = (matchId) => {

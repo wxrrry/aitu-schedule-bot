@@ -468,9 +468,38 @@ async def handle_admin_system(request: web.Request):
     stats = await get_system_stats()
     db_status = "connected"
 
+    # 4. Сторожевой аудит и расчет алертов (Watchdog Alerts)
+    alerts = []
+    if ram_percent > 85.0:
+        alerts.append({
+            "level": "warning",
+            "source": "RAM",
+            "message": f"Повышенная загрузка памяти: {ram_percent}% ({ram_used} из {ram_total} ГБ)"
+        })
+    if disk_percent > 90.0:
+        alerts.append({
+            "level": "critical",
+            "source": "SSD",
+            "message": f"Критическое заполнение дискового пространства: {disk_percent}%"
+        })
+    if cpu_usage > 90.0:
+        alerts.append({
+            "level": "warning",
+            "source": "CPU",
+            "message": f"Пиковая загрузка процессора: {cpu_usage}%"
+        })
+    for srv_name, srv_st in [("Telegram Bot", bot_status), ("Caddy Proxy", caddy_status), ("Supervisor Controller", controller_status)]:
+        if srv_st not in ("active", "running"):
+            alerts.append({
+                "level": "critical",
+                "source": srv_name,
+                "message": f"Служба {srv_name} не в статусе active (текущий: {srv_st})"
+            })
+
     return web.json_response({
         "status": "ok",
         "timestamp": datetime.utcnow().isoformat(),
+        "alerts": alerts,
         "metrics": {
             "os": f"{platform.system()} {platform.release()}",
             "python": platform.python_version(),
