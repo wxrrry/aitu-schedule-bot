@@ -203,10 +203,10 @@ export default function ServicesTab({ profile, onOpenProfile, onOpenChangelog, o
               КОРПУС // НАВИГАЦИЯ
             </div>
             <div className="font-bold text-white text-xs tracking-tight group-hover:text-blue-300 transition-colors">
-              ИНТЕРАКТИВНАЯ СХЕМА ЭТАЖЕЙ
+              СХЕМА ЗДАНИЯ // КОНДРАТЬЕВСКИЙ, 46
             </div>
             <div className="text-[10px] font-mono text-zinc-400">
-              1–7 этажи, столовая, гардероб, спортзал и свободные кабинеты
+              Архитектурный 2D план: столовая, гардероб, спортзал, лифты и кабинеты
             </div>
           </div>
           <div className="px-2 py-1 bg-zinc-900 border border-blue-500/30 group-hover:bg-blue-500 group-hover:text-black font-mono text-[10px] tracking-wider text-blue-300 flex items-center gap-1 transition-all">
