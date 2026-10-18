@@ -79,6 +79,15 @@ export default function TelegramOnlyGuard() {
               <li>Нажмите синюю кнопку <span className="font-semibold text-white">«Открыть приложение»</span> слева от поля ввода</li>
             </ol>
           </div>
+
+          <div className="pt-2 text-center">
+            <a 
+              href="?preview=1" 
+              className="text-[11px] text-zinc-500 hover:text-zinc-300 underline font-mono transition-colors"
+            >
+              Продолжить в браузере (демо-режим)
+            </a>
+          </div>
         </div>
 
       </main>

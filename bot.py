@@ -206,6 +206,7 @@ async def register_bot_commands(bot_instance: Bot):
     """Регистрирует команды в меню Telegram."""
     try:
         await bot_instance.set_my_commands([
+            types.BotCommand(command="app", description="📱 Открыть Mini App"),
             types.BotCommand(command="now", description="⚡️ Какая пара идёт сейчас"),
             types.BotCommand(command="today", description="📅 Расписание на сегодня"),
             types.BotCommand(command="tomorrow", description="🔜 Расписание на завтра"),
@@ -764,6 +765,27 @@ async def handle_manual_group_input(message: types.Message, state: FSMContext):
         f"✅ <b>Группа успешно сохранена: <code>{grp_input}</code>!</b>\n\n"
         f"Все расписания и звонки настроены под вашу группу.",
         reply_markup=main_keyboard
+    )
+
+
+@dp.message(Command("app", "webapp", "mini"))
+async def handle_webapp_command(message: types.Message):
+    url = WEBAPP_URL or "https://72-4-67-12.sslip.io/?tg=1"
+    kb = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="📱 Открыть Mini App",
+                    web_app=types.WebAppInfo(url=url)
+                )
+            ]
+        ]
+    )
+    await message.answer(
+        "📱 <b>Цифровой хаб колледжа AITU (Mini App)</b>\n\n"
+        "Интерактивное расписание, звонки, конспекты лекций, замены и киберспорт.\n\n"
+        "👇 <i>Нажмите кнопку ниже для запуска:</i>",
+        reply_markup=kb
     )
 
 

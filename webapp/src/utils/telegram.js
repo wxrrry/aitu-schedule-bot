@@ -157,11 +157,16 @@ export const cloudStorage = {
 export function isInsideTelegram() {
   if (typeof window === 'undefined') return true;
 
-  // 1. Проверяем URL параметры (query и hash), которые Telegram всегда добавляет
+  // 1. Проверяем URL параметры (query и hash)
   try {
     const searchParams = new URLSearchParams(window.location.search);
-    // Возможность предпросмотра для администратора/разработчика через ?preview=1 или ?dev=1
-    if (searchParams.get('preview') === '1' || searchParams.get('dev') === '1') {
+    // Возможность предпросмотра или запуск из бота через tg=1 / from=bot
+    if (
+      searchParams.get('preview') === '1' ||
+      searchParams.get('dev') === '1' ||
+      searchParams.get('tg') === '1' ||
+      searchParams.get('from') === 'bot'
+    ) {
       return true;
     }
     if (
@@ -184,7 +189,29 @@ export function isInsideTelegram() {
     // ignore
   }
 
-  // 2. Telegram WebApp SDK объект
+  // 2. Нативные мосты Telegram WebView (Android, Desktop, iOS)
+  try {
+    if (
+      typeof window.TelegramWebviewProxy !== 'undefined' ||
+      typeof window.TelegramGameProxy !== 'undefined' ||
+      (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('Telegram'))
+    ) {
+      return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 3. Если WebApp запущен во фрейме Telegram Web
+  try {
+    if (window.parent && window.parent !== window) {
+      return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 4. Telegram WebApp SDK объект
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return false;
 

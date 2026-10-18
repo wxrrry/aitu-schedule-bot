@@ -10,10 +10,17 @@
     <title>AITU // СЕТЬ КОЛЛЕДЖА</title>
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Telegram WebApp SDK: локальный файл для предотвращения блокировок РКН и мгновенной загрузки -->
+    <script src="/telegram-web-app.js"></script>
     <script>
       try {
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) {
+              if (k === 'aitu-hub-v1') caches.delete(k);
+            });
+          });
+        }
         if (window.Telegram && window.Telegram.WebApp) {
           window.Telegram.WebApp.ready();
           window.Telegram.WebApp.expand();

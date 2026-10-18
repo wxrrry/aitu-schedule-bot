@@ -1,9 +1,10 @@
 // AITU Network Service Worker (Офлайн-кэш для колледжа)
-const CACHE_NAME = 'aitu-hub-v2.1';
+const CACHE_NAME = 'aitu-hub-v2.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/telegram-web-app.js',
   '/bells.jpg',
   '/maket_titul_pz_lr.docx',
   '/aitu_schedule_9po43k.ics'
