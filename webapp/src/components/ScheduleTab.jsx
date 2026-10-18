@@ -624,13 +624,13 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => {
-              setAuditoriumInitialTab('teachers');
+              setAuditoriumInitialTab('floorplan');
               setIsAuditoriumModalOpen(true);
               triggerHaptic('light');
             }}
-            className="flex items-center gap-1 px-2 py-1 bg-black border border-white/15 hover:border-white/40 text-zinc-300 hover:text-white uppercase font-bold transition-colors"
+            className="flex items-center gap-1 px-2 py-1 bg-black border border-blue-500/40 hover:border-blue-400 text-blue-300 uppercase font-bold transition-colors"
           >
-            <span>👨‍🏫 ПРЕПОДАВАТЕЛИ</span>
+            <span>🗺 СХЕМА ЭТАЖЕЙ</span>
           </button>
 
           <button
@@ -642,6 +642,17 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
             className="flex items-center gap-1 px-2 py-1 bg-black border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 uppercase font-bold transition-colors"
           >
             <span>🏛 КАБИНЕТЫ</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setAuditoriumInitialTab('teachers');
+              setIsAuditoriumModalOpen(true);
+              triggerHaptic('light');
+            }}
+            className="flex items-center gap-1 px-2 py-1 bg-black border border-white/15 hover:border-white/40 text-zinc-300 hover:text-white uppercase font-bold transition-colors"
+          >
+            <span>👨‍🏫 ПРЕПОДАВАТЕЛИ</span>
           </button>
 
           <button

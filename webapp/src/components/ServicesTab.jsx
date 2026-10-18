@@ -24,6 +24,7 @@ import AuditoriumFinderModal from './AuditoriumFinderModal';
 export default function ServicesTab({ profile, onOpenProfile, onOpenChangelog, onOpenStarosta }) {
   const [quickSyncStatus, setQuickSyncStatus] = useState(null);
   const [isAuditoriumOpen, setIsAuditoriumOpen] = useState(false);
+  const [auditoriumTab, setAuditoriumTab] = useState('floorplan');
 
   const studentCourse = profile?.course || 4;
   const studentGroup = profile?.group || '9ПО-43к';
@@ -182,6 +183,33 @@ export default function ServicesTab({ profile, onOpenProfile, onOpenChangelog, o
             </div>
           </div>
           <div className="px-2 py-1 bg-zinc-900 border border-amber-500/30 group-hover:bg-amber-400 group-hover:text-black font-mono text-[10px] tracking-wider text-amber-300 flex items-center gap-1 transition-all">
+            <span>ОТКРЫТЬ</span>
+            <ChevronRight className="w-3 h-3" />
+          </div>
+        </div>
+
+        {/* Floorplan & Navigation Card */}
+        <div 
+          onClick={() => {
+            setAuditoriumTab('floorplan');
+            setIsAuditoriumOpen(true);
+            triggerHaptic('light');
+          }}
+          className="p-3 bg-[#0a0a0c] border border-blue-500/20 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition-all group"
+        >
+          <div className="space-y-0.5">
+            <div className="font-mono text-[9px] text-blue-400 tracking-wider uppercase flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              КОРПУС // НАВИГАЦИЯ
+            </div>
+            <div className="font-bold text-white text-xs tracking-tight group-hover:text-blue-300 transition-colors">
+              ИНТЕРАКТИВНАЯ СХЕМА ЭТАЖЕЙ
+            </div>
+            <div className="text-[10px] font-mono text-zinc-400">
+              1–7 этажи, столовая, гардероб, спортзал и свободные кабинеты
+            </div>
+          </div>
+          <div className="px-2 py-1 bg-zinc-900 border border-blue-500/30 group-hover:bg-blue-500 group-hover:text-black font-mono text-[10px] tracking-wider text-blue-300 flex items-center gap-1 transition-all">
             <span>ОТКРЫТЬ</span>
             <ChevronRight className="w-3 h-3" />
           </div>
@@ -395,7 +423,7 @@ export default function ServicesTab({ profile, onOpenProfile, onOpenChangelog, o
       <AuditoriumFinderModal
         isOpen={isAuditoriumOpen}
         onClose={() => setIsAuditoriumOpen(false)}
-        initialTab="rooms"
+        initialTab={auditoriumTab}
       />
     </div>
   );
