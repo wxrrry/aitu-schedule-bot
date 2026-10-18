@@ -403,6 +403,80 @@ async def send_morning_alert():
                 pass
 
 
+async def broadcast_replacement_alert(rep):
+    """
+    Моментально рассылает экстренное уведомление о замене студентам группы и в привязанные чаты.
+    """
+    if not bot:
+        return
+
+    from services.broadcaster import execute_broadcast
+    from db.crud import is_same_group, get_group_variants
+    from db.database import async_session
+    from db.models import User
+    from sqlalchemy import select
+
+    grp = getattr(rep, "group_name", None) or ""
+    action_type = getattr(rep, "action_type", "replace")
+    pair_num = getattr(rep, "pair_num", 1)
+    subj = getattr(rep, "subject", "") or "Занятие"
+    room = getattr(rep, "room", "—") or "—"
+    teacher = getattr(rep, "teacher", "—") or "—"
+    d_obj = getattr(rep, "date", None)
+    d_str = d_obj.strftime("%d.%m.%Y") if hasattr(d_obj, "strftime") else str(d_obj or "")
+
+    action_emoji = "⚠️"
+    action_badge = "ЗАМЕНА ПАРЫ"
+    if action_type == "cancel":
+        action_emoji = "🚫"
+        action_badge = "ОТМЕНА ПАРЫ"
+    elif action_type == "room":
+        action_emoji = "📍"
+        action_badge = "ПЕРЕНОС КАБИНЕТА"
+
+    msg = (
+        f"{action_emoji} <b>СРОЧНОЕ ИЗМЕНЕНИЕ В РАСПИСАНИИ!</b>\n"
+        f"──────────────────────\n"
+        f"👥 <b>Группа:</b> {grp or 'Все группы колледжа'}\n"
+        f"📅 <b>Дата:</b> {d_str}\n"
+        f"🔔 <b>{pair_num}-я пара:</b> <b>{html.escape(subj)}</b>\n"
+        f"📌 <b>Статус:</b> <code>{action_badge}</code>\n"
+        f"🚪 <b>Кабинет:</b> <code>{html.escape(room)}</code>\n"
+        f"👨‍🏫 <b>Преподаватель:</b> {html.escape(teacher)}\n"
+        f"──────────────────────\n"
+        f"💡 <i>Откройте Mini App для просмотра актуального расписания.</i>"
+    )
+
+    recipient_ids = set()
+
+    # 1. Привязанные чаты
+    try:
+        bindings = await get_all_chat_bindings()
+        for b in bindings:
+            if not grp or is_same_group(b.group_name, grp):
+                recipient_ids.add(b.chat_id)
+    except Exception as e:
+        logger.warning(f"Ошибка получения чатов для оповещения о замене: {e}")
+
+    # 2. Персональные подписчики группы
+    try:
+        async with async_session() as session:
+            stmt = select(User.user_id)
+            if grp:
+                variants = get_group_variants(grp)
+                stmt = stmt.where(User.group_name.in_(variants))
+            res = await session.execute(stmt)
+            for uid in res.scalars().all():
+                if uid:
+                    recipient_ids.add(uid)
+    except Exception as e:
+        logger.warning(f"Ошибка получения пользователей для оповещения о замене: {e}")
+
+    if recipient_ids:
+        logger.info(f"Рассылка оповещения о замене ({grp}) на {len(recipient_ids)} получателей")
+        await execute_broadcast(bot, list(recipient_ids), msg, reply_markup=main_keyboard)
+
+
 COURSE_FIVE_MIN_BREAKS = {
     1: {
         1: {
@@ -3576,13 +3650,13 @@ async def main():
             replace_existing=True
         )
         
-        # Расписание 2: по будням в 08:00:00 (утреннее напоминание о 1-й паре)
+        # Расписание 2: по будням в 07:30:00 (утреннее напоминание о 1-й паре и сводка)
         scheduler.add_job(
             send_morning_alert,
             trigger="cron",
             day_of_week="mon-fri",
-            hour=8,
-            minute=0,
+            hour=7,
+            minute=30,
             second=0,
             id="morning_alert_job",
             replace_existing=True

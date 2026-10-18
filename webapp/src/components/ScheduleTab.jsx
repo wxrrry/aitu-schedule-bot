@@ -221,16 +221,18 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
   // Синхронизация задач пользователя с PostgreSQL
   useEffect(() => {
     const userId = profile?.telegramId || profile?.id;
-    if (userId) {
-      fetch(`/api/tasks?user_id=${userId}`)
+    if (userId || selectedGroup) {
+      const uParam = userId ? `user_id=${userId}` : 'user_id=0';
+      const gParam = selectedGroup ? `&group=${encodeURIComponent(selectedGroup)}` : '';
+      fetch(`/api/tasks?${uParam}${gParam}`)
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data?.tasks && Array.isArray(data.tasks)) {
             const grouped = {};
             for (const t of data.tasks) {
-              const k = t.task_key || 'general';
+              const k = t.is_group ? 'Дедлайны группы (от старосты)' : (t.task_key || 'general');
               if (!grouped[k]) grouped[k] = [];
-              grouped[k].push({ id: String(t.id), text: t.text, done: t.is_done });
+              grouped[k].push({ id: String(t.id), text: t.text, done: t.is_done, isGroup: !!t.is_group });
             }
             setTasks(prev => {
               const merged = { ...prev };
@@ -244,7 +246,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         })
         .catch(err => console.warn('Could not sync user tasks with database', err));
     }
-  }, [profile?.telegramId, profile?.id]);
+  }, [profile?.telegramId, profile?.id, selectedGroup]);
 
   const toggleDayAccordion = (dayId) => {
     setExpandedDays(prev => ({

@@ -191,6 +191,13 @@ async def handle_replacement_create(request: web.Request):
         created_by=created_by
     )
 
+    # Моментальное персональное оповещение студентов группы и привязанных бесед в Telegram
+    try:
+        from bot import broadcast_replacement_alert
+        asyncio.create_task(broadcast_replacement_alert(rep))
+    except Exception as be:
+        logger.warning(f"Ошибка вызова broadcast_replacement_alert: {be}")
+
     d_val = rep.date.strftime("%Y-%m-%d") if hasattr(rep.date, "strftime") else str(rep.date)
     return web.json_response({
         "status": "saved",
@@ -220,10 +227,19 @@ async def handle_replacement_delete(request: web.Request):
 
 async def handle_tasks_get(request: web.Request):
     user_id_str = request.query.get("user_id", "")
-    if not user_id_str.isdigit():
-        return web.json_response({"error": "Valid user_id required"}, status=400)
+    group_str = request.query.get("group", "").strip()
+    
+    tasks = []
+    if user_id_str.isdigit():
+        tasks = await get_user_tasks(int(user_id_str))
 
-    tasks = await get_user_tasks(int(user_id_str))
+    # Общие дедлайны группы, назначенные старостой
+    group_tasks = []
+    if group_str:
+        from db.crud import get_group_deadlines
+        group_tasks = await get_group_deadlines(group_str)
+
+    all_tasks = tasks + group_tasks
     return web.json_response({
         "tasks": [
             {
@@ -231,9 +247,10 @@ async def handle_tasks_get(request: web.Request):
                 "task_key": t.task_key,
                 "text": t.text,
                 "is_done": t.is_done,
+                "is_group": t.user_id == 0 or str(t.task_key).startswith("group:"),
                 "created_at": t.created_at.isoformat() if t.created_at else ""
             }
-            for t in tasks
+            for t in all_tasks
         ]
     })
 
@@ -244,14 +261,14 @@ async def handle_task_save(request: web.Request):
     except Exception:
         return web.json_response({"error": "Invalid JSON"}, status=400)
 
-    user_id = data.get("user_id")
+    user_id = data.get("user_id", 0)
     task_key = data.get("task_key", "general")
     text = data.get("text", "")
     is_done = bool(data.get("is_done", False))
     task_id = data.get("id")
 
-    if not user_id or not text.strip():
-        return web.json_response({"error": "user_id and text required"}, status=400)
+    if not text.strip():
+        return web.json_response({"error": "text required"}, status=400)
 
     t = await add_or_update_user_task(
         user_id=int(user_id),
@@ -267,18 +284,25 @@ async def handle_task_save(request: web.Request):
             "id": t.id,
             "task_key": t.task_key,
             "text": t.text,
-            "is_done": t.is_done
+            "is_done": t.is_done,
+            "is_group": t.user_id == 0 or str(t.task_key).startswith("group:")
         }
     })
 
 
 async def handle_task_delete(request: web.Request):
     task_id = request.match_info.get("id", "").strip()
-    user_id_str = request.query.get("user_id", "")
-    if not task_id.isdigit() or not user_id_str.isdigit():
-        return web.json_response({"error": "Valid integer task_id and user_id required"}, status=400)
+    user_id_str = request.query.get("user_id", "0")
+    if not task_id.isdigit():
+        return web.json_response({"error": "Valid integer task_id required"}, status=400)
 
-    success = await delete_user_task(int(user_id_str), int(task_id))
+    u_id = int(user_id_str) if user_id_str.isdigit() else 0
+    if u_id == 0:
+        from db.crud import delete_group_deadline
+        success = await delete_group_deadline(int(task_id))
+    else:
+        success = await delete_user_task(u_id, int(task_id))
+
     if success:
         return web.json_response({"status": "deleted", "id": int(task_id)})
     return web.json_response({"error": "Task not found"}, status=404)

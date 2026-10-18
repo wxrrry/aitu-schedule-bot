@@ -1085,3 +1085,29 @@ async def delete_user_task(user_id: int | str, task_id: int) -> bool:
         return res.rowcount > 0
 
 
+async def get_group_deadlines(group_name: str) -> list[UserTask]:
+    """Возвращает общие дедлайны группы, назначенные старостой (user_id=0, task_key='group:<group>')."""
+    clean_grp = canonical_group_name(group_name)
+    async with async_session() as session:
+        stmt = select(UserTask).where(
+            and_(
+                UserTask.user_id == 0,
+                or_(
+                    UserTask.task_key == f"group:{clean_grp}",
+                    UserTask.task_key == f"group:{group_name.strip()}"
+                )
+            )
+        ).order_by(UserTask.created_at.desc())
+        res = await session.execute(stmt)
+        return list(res.scalars().all())
+
+
+async def delete_group_deadline(task_id: int) -> bool:
+    """Удаляет общий дедлайн группы по ID."""
+    async with async_session() as session:
+        stmt = delete(UserTask).where(and_(UserTask.id == task_id, UserTask.user_id == 0))
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+

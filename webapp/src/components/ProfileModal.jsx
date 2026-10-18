@@ -582,8 +582,8 @@ export default function ProfileModal({
                   {/* Morning Alert */}
                   <div className="flex items-center justify-between p-2 bg-black/40 border border-white/5 font-sans">
                     <div>
-                      <div className="font-medium text-white text-[11px]">Утренний дайджест в 08:00</div>
-                      <div className="text-[9px] text-zinc-500 font-mono">Сводка пар на сегодня</div>
+                      <div className="font-medium text-white text-[11px]">Утренняя сводка в 07:30</div>
+                      <div className="text-[9px] text-zinc-500 font-mono">Расписание на сегодня и статус 1-й пары</div>
                     </div>
                     <button
                       onClick={() => handleToggleSetting('morningAlert')}
@@ -593,6 +593,24 @@ export default function ProfileModal({
                     >
                       <div className={`w-3.5 h-3.5 rounded-full transition-transform ${
                         profile.morningAlert ? 'translate-x-3.5 bg-black' : 'translate-x-0 bg-zinc-400'
+                      }`} />
+                    </button>
+                  </div>
+
+                  {/* Replacements Instant Alert */}
+                  <div className="flex items-center justify-between p-2 bg-black/40 border border-white/5 font-sans">
+                    <div>
+                      <div className="font-medium text-white text-[11px]">Моментальные алерты о заменах</div>
+                      <div className="text-[9px] text-zinc-500 font-mono">Срочные пуши об отменах и переносах кабинетов</div>
+                    </div>
+                    <button
+                      onClick={() => handleToggleSetting('replacementsAlert')}
+                      className={`w-8 h-4.5 rounded-full transition-colors relative flex items-center p-0.5 ${
+                        profile.replacementsAlert !== false ? 'bg-white' : 'bg-zinc-800'
+                      }`}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-full transition-transform ${
+                        profile.replacementsAlert !== false ? 'translate-x-3.5 bg-black' : 'translate-x-0 bg-zinc-400'
                       }`} />
                     </button>
                   </div>

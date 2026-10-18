@@ -10,17 +10,115 @@ import {
   Calendar,
   Sparkles,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Building,
+  Coffee,
+  Utensils,
+  Navigation,
+  Compass,
+  Footprints,
+  Info
 } from 'lucide-react';
 import { TEACHERS_LIST } from '../data/teachersData';
 import { DAYS_RU, getBellSchedule } from '../data/scheduleData';
 import { getRoomOccupancy, findTeacherLiveStatus, getAllTeachersFromSchedule } from '../utils/classroomFinder';
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
 
+const FLOOR_CONFIG = {
+  1: {
+    title: "1-Й ЭТАЖ // ВХОД, СТОЛОВАЯ И ГАРДЕРОБ",
+    description: "Входная группа с турникетами, гардеробные зоны, студенческая столовая и спортзал",
+    amenities: [
+      { name: "Главный вход & Турникеты", zone: "Центральный вестибюль", desc: "Пропускная система по картам/Face ID" },
+      { name: "Студенческий гардероб", zone: "Левое крыло", desc: "Прием и выдача верхней одежды" },
+      { name: "Столовая и буфет AITU", zone: "Правое крыло", desc: "Горячие обеды, выпечка и кофейный автомат", highlight: true },
+      { name: "Спортивный зал (С/з)", zone: "Северный переход", desc: "Игровой зал и раздевалки для физкультуры" },
+      { name: "Медицинский пункт", zone: "Около турникетов", desc: "Первая медицинская помощь" },
+      { name: "Лестничные марши А, Б и Лифты", zone: "Вестибюль", desc: "Подъем на 2–9 этажи колледжа" }
+    ],
+    rooms: []
+  },
+  2: {
+    title: "2-Й ЭТАЖ // АДМИНИСТРАЦИЯ И АКТОГВЫЙ ЗАЛ",
+    description: "Деканат, учебная часть, приёмная директора и большой актовый зал",
+    amenities: [
+      { name: "Большой актовый зал", zone: "Центральное фойе" },
+      { name: "Деканат и учебная часть", zone: "Западное крыло" },
+      { name: "Лестничный марш и санузлы", zone: "По торцам" }
+    ],
+    rooms: ["каб. 205", "каб. 216", "каб. 217"]
+  },
+  3: {
+    title: "3-Й ЭТАЖ // IT-ЛАБОРАТОРИИ И ПРОГРАММИРОВАНИЕ",
+    description: "Компьютерные классы кафедры разработки ПО, серверные и сетевые аудитории",
+    amenities: [
+      { name: "Серверный узел колледжа", zone: "каб. 305" },
+      { name: "IT-коворкинг", zone: "Центральный холл" },
+      { name: "Лестницы А/Б и санузлы", zone: "По торцам" }
+    ],
+    rooms: ["каб. 301", "каб. 304", "каб. 305", "каб. 308", "каб. 309"]
+  },
+  4: {
+    title: "4-Й ЭТАЖ // СЕТЕВОЕ АДМИНИСТРИРОВАНИЕ И ФИЗИКА",
+    description: "Лаборатории монтажа сетей, схемотехники и аудитории точных наук",
+    amenities: [
+      { name: "Сетевой полигон", zone: "каб. 422" },
+      { name: "Зона отдыха", zone: "Холл" },
+      { name: "Лестницы и санузлы", zone: "По торцам" }
+    ],
+    rooms: ["каб. 404", "каб. 409", "каб. 422", "каб. 424", "каб. 431", "каб. 434"]
+  },
+  5: {
+    title: "5-Й ЭТАЖ // ОБЩЕОБРАЗОВАТЕЛЬНЫЕ ДИСЦИПЛИНЫ",
+    description: "Аудитории общеобразовательных предметов, гуманитарных дисциплин и истории",
+    amenities: [
+      { name: "Преподавательская", zone: "каб. 510" },
+      { name: "Лестницы и санузлы", zone: "По торцам" }
+    ],
+    rooms: [
+      "каб. 505", "каб. 506", "каб. 507", "каб. 510", "каб. 512", "каб. 513", 
+      "каб. 514", "каб. 515", "каб. 516", "каб. 517", "каб. 520", "каб. 521"
+    ]
+  },
+  6: {
+    title: "6-Й ЭТАЖ // МАТЕМАТИКА И СПЕЦИАЛЬНЫЕ ДИСЦИПЛИНЫ",
+    description: "Аудитории математического анализа, алгоритмов и иностранных языков",
+    amenities: [
+      { name: "Языковой медиа-класс", zone: "каб. 614" },
+      { name: "Лестницы и санузлы", zone: "По торцам" }
+    ],
+    rooms: [
+      "каб. 601", "каб. 605", "каб. 606", "каб. 607", "каб. 608", "каб. 609", 
+      "каб. 610", "каб. 611", "каб. 612", "каб. 613", "каб. 614", "каб. 615", 
+      "каб. 616", "каб. 618", "каб. 622"
+    ]
+  },
+  7: {
+    title: "7-Й ЭТАЖ // ПОТОЧНЫЕ АУДИТОРИИ СТАРШИХ КУРСОВ",
+    description: "Большие лекционные аудитории, курсовое проектирование и дипломные группы",
+    amenities: [
+      { name: "Поточная лекционная", zone: "каб. 701" },
+      { name: "Лестницы и санузлы", zone: "По торцам" }
+    ],
+    rooms: [
+      "каб. 701", "каб. 706", "каб. 710", "каб. 711", "каб. 712", "каб. 713", 
+      "каб. 714", "каб. 715", "каб. 716", "каб. 718", "каб. 722"
+    ]
+  },
+  9: {
+    title: "9-Й ЭТАЖ // ПРОЕКТНЫЕ ЛАБОРАТОРИИ",
+    description: "Кабинеты проектной деятельности, хакатон-зоны и дипломного наставничества",
+    amenities: [
+      { name: "Проектные офисы", zone: "Центральное крыло" }
+    ],
+    rooms: ["каб. 906", "каб. 907", "каб. 908"]
+  }
+};
+
 export default function AuditoriumFinderModal({ 
   isOpen, 
   onClose, 
-  initialTab = 'rooms', // 'rooms' or 'teachers'
+  initialTab = 'rooms', // 'rooms', 'floorplan' or 'teachers'
   currentParity = 'chislitel',
   currentDayIndex = 0,
   currentPairNum = 1
@@ -32,6 +130,8 @@ export default function AuditoriumFinderModal({
   const [selectedPair, setSelectedPair] = useState(currentPairNum >= 1 && currentPairNum <= 4 ? currentPairNum : 1);
   const [teacherSearch, setTeacherSearch] = useState('');
   const [showOccupiedList, setShowOccupiedList] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState(3);
+  const [activeRoomDetail, setActiveRoomDetail] = useState(null);
 
   if (!isOpen) return null;
 
@@ -88,20 +188,35 @@ export default function AuditoriumFinderModal({
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 p-1.5 bg-black/60 border-b border-white/10 font-mono text-[11px] gap-1">
+        <div className="grid grid-cols-3 p-1.5 bg-black/60 border-b border-white/10 font-mono text-[10px] gap-1">
           <button
             onClick={() => {
               setActiveTab('rooms');
               triggerHaptic('selection');
             }}
-            className={`py-1.5 uppercase font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 uppercase font-bold transition-all text-center flex items-center justify-center gap-1 ${
               activeTab === 'rooms' 
                 ? 'bg-white text-black' 
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>СВОБОДНЫЕ КАБИНЕТЫ</span>
+            <MapPin className="w-3 h-3" />
+            <span className="truncate">Кабинеты</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('floorplan');
+              triggerHaptic('selection');
+            }}
+            className={`py-1.5 uppercase font-bold transition-all text-center flex items-center justify-center gap-1 ${
+              activeTab === 'floorplan' 
+                ? 'bg-white text-black' 
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Building className="w-3 h-3" />
+            <span className="truncate">Схема этажей</span>
           </button>
 
           <button
@@ -109,14 +224,14 @@ export default function AuditoriumFinderModal({
               setActiveTab('teachers');
               triggerHaptic('selection');
             }}
-            className={`py-1.5 uppercase font-bold transition-all text-center flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 uppercase font-bold transition-all text-center flex items-center justify-center gap-1 ${
               activeTab === 'teachers' 
                 ? 'bg-white text-black' 
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5" />
-            <span>ПРЕПОДАВАТЕЛИ ({TEACHERS_LIST.length})</span>
+            <User className="w-3 h-3" />
+            <span className="truncate">Преподаватели</span>
           </button>
         </div>
 
@@ -253,7 +368,229 @@ export default function AuditoriumFinderModal({
           </div>
         )}
 
-        {/* TAB 2: ПРЕПОДАВАТЕЛИ (ОНЛАЙН-СТАТУС И ПОИСК ПО 57 ГРУППАМ) */}
+        {/* TAB 2: ИНТЕРАКТИВНАЯ СХЕМА ЭТАЖЕЙ И НАВИГАЦИЯ */}
+        {activeTab === 'floorplan' && (() => {
+          const currentConfig = FLOOR_CONFIG[selectedFloor] || FLOOR_CONFIG[3];
+          const roomsForFloor = currentConfig.rooms || [];
+          
+          return (
+            <div className="p-3 sm:p-4 overflow-y-auto space-y-3.5 font-sans">
+              {/* Floor Selector Bar */}
+              <div className="space-y-1.5 font-mono">
+                <div className="flex items-center justify-between text-[10px] text-zinc-400 font-bold uppercase">
+                  <span>ВЫБЕРИТЕ ЭТАЖ:</span>
+                  <span className="text-zinc-500">{DAYS_RU[selectedDay].short} · {selectedPair} пара</span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 text-[11px]">
+                  {[1, 2, 3, 4, 5, 6, 7, 9].map(fl => (
+                    <button
+                      key={fl}
+                      onClick={() => {
+                        setSelectedFloor(fl);
+                        setActiveRoomDetail(null);
+                        triggerHaptic('selection');
+                      }}
+                      className={`py-1.5 border text-center font-bold transition-all ${
+                        selectedFloor === fl
+                          ? 'bg-white text-black border-white shadow-sm'
+                          : 'bg-black/50 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white'
+                      }`}
+                    >
+                      {fl} ЭТ.
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Floor Header Badge */}
+              <div className="p-3 bg-neutral-900/70 border border-white/10 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-white uppercase flex items-center gap-1.5">
+                    <Building className="w-3.5 h-3.5 text-zinc-400" />
+                    {currentConfig.title}
+                  </span>
+                  <span className="font-mono text-[9px] px-1.5 py-0.2 bg-white/10 text-zinc-300">
+                    КОРПУС AITU
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
+                  {currentConfig.description}
+                </p>
+              </div>
+
+              {/* Floor 1 Specific Blueprint: Amenities & Services */}
+              {selectedFloor === 1 ? (
+                <div className="space-y-2">
+                  <div className="font-mono text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                    <Compass className="w-3 h-3 text-zinc-400" />
+                    <span>ИНФРАСТРУКТУРА ПЕРВОГО ЭТАЖА:</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {currentConfig.amenities.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-3 border transition-colors ${
+                          item.highlight 
+                            ? 'bg-amber-950/20 border-amber-500/40' 
+                            : 'bg-black/40 border-white/10'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={`font-mono text-xs font-bold ${item.highlight ? 'text-amber-300' : 'text-white'}`}>
+                            {item.name}
+                          </span>
+                          <span className="font-mono text-[9px] px-1.5 py-0.2 bg-white/5 border border-white/10 text-zinc-400 uppercase">
+                            {item.zone}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 font-sans mt-1">
+                          {item.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-2.5 bg-blue-950/20 border border-blue-500/30 flex items-start gap-2 text-[11px] font-mono text-blue-300">
+                    <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span>Для перехода на учебные этажи (2–9) воспользуйтесь лестничными пролетами по обе стороны холла либо лифтовой группой.</span>
+                  </div>
+                </div>
+              ) : (
+                /* Floors 2..9 Corridor Blueprint & Live Rooms */
+                <div className="space-y-3 font-mono">
+                  {/* Corridor Layout Bar */}
+                  <div className="p-2 bg-black/60 border border-white/10 flex items-center justify-between text-[9px] text-zinc-400 uppercase font-bold">
+                    <span>[ лестница а ]</span>
+                    <span className="text-zinc-500 flex items-center gap-1">
+                      <Footprints className="w-3 h-3 text-zinc-500" />
+                      ЦЕНТРАЛЬНЫЙ КОРИДОР · ЭТАЖ {selectedFloor}
+                    </span>
+                    <span>[ лестница б ]</span>
+                  </div>
+
+                  {/* Interactive Rooms Matrix */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase font-bold">
+                      <span>АУДИТОРИИ ЭТАЖА (НАЖМИТЕ ДЛЯ ДЕТАЛЕЙ):</span>
+                      <span className="text-emerald-400">
+                        {roomsForFloor.filter(r => occupancy.freeRooms.includes(r)).length} свободно
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {roomsForFloor.map(rm => {
+                        const isFree = occupancy.freeRooms.includes(rm);
+                        const occInfo = occupancy.occupiedRooms.find(o => o.room === rm);
+                        const isSelected = activeRoomDetail?.room === rm;
+
+                        return (
+                          <div
+                            key={rm}
+                            onClick={() => {
+                              setActiveRoomDetail({
+                                room: rm,
+                                isFree,
+                                occInfo
+                              });
+                              triggerHaptic('light');
+                            }}
+                            className={`p-2.5 border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-white text-black border-white ring-2 ring-white/50'
+                                : isFree
+                                  ? 'bg-emerald-950/20 border-emerald-500/40 hover:border-emerald-400'
+                                  : 'bg-black/60 border-white/10 hover:border-white/30'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className={`text-xs font-bold font-mono ${isSelected ? 'text-black' : 'text-white'}`}>
+                                {rm}
+                              </span>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.2 uppercase ${
+                                isSelected
+                                  ? 'bg-black text-white'
+                                  : isFree
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              }`}>
+                                {isFree ? 'СВОБОДЕН' : 'ЗАНЯТ'}
+                              </span>
+                            </div>
+
+                            <div className={`text-[10px] truncate mt-1 ${isSelected ? 'text-zinc-800' : 'text-zinc-400'}`}>
+                              {isFree ? 'Окно для занятий' : (occInfo?.group || 'Занятие')}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Room Detailed Popover */}
+                  {activeRoomDetail && (
+                    <div className="p-3 bg-black border border-white/20 space-y-2 animate-fadeIn font-mono">
+                      <div className="flex items-start justify-between border-b border-white/10 pb-2">
+                        <div>
+                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                            {activeRoomDetail.room} · {selectedFloor}-Й ЭТАЖ
+                          </div>
+                          <div className="text-[10px] text-zinc-400 mt-0.5">
+                            {activeRoomDetail.isFree 
+                              ? '🟢 Аудитория свободна на эту пару' 
+                              : `🔴 Занято группой ${activeRoomDetail.occInfo?.group || '—'}`}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setActiveRoomDetail(null)}
+                          className="text-zinc-500 hover:text-white text-xs p-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {!activeRoomDetail.isFree && activeRoomDetail.occInfo && (
+                        <div className="grid grid-cols-2 gap-2 text-[10px] bg-neutral-900/60 p-2 border border-white/5">
+                          <div>
+                            <span className="text-zinc-500 block">ПРЕДМЕТ:</span>
+                            <span className="text-white font-bold truncate block">{activeRoomDetail.occInfo.subject}</span>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500 block">ПРЕПОДАВАТЕЛЬ:</span>
+                            <span className="text-amber-400 truncate block">{activeRoomDetail.occInfo.teacher}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 pt-1">
+                        <Navigation className="w-3 h-3 text-zinc-500" />
+                        <span>Навигация: выход из лестницы {selectedFloor}-го этажа, по указателям в коридоре.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Floor Amenities */}
+                  <div className="p-2.5 bg-black/40 border border-white/10 space-y-1.5 text-[10px]">
+                    <div className="text-zinc-500 uppercase font-bold flex items-center gap-1">
+                      <Layers className="w-3 h-3 text-zinc-400" />
+                      <span>ЗОНЫ И СЕРВИСЫ {selectedFloor}-ГО ЭТАЖА:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-zinc-300">
+                      {currentConfig.amenities.map((a, i) => (
+                        <span key={i} className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 text-[9px]">
+                          {a.name} ({a.zone})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* TAB 3: ПРЕПОДАВАТЕЛИ (ОНЛАЙН-СТАТУС И ПОИСК ПО 57 ГРУППАМ) */}
         {activeTab === 'teachers' && (() => {
           const liveStatus = teacherSearch.trim().length >= 2
             ? findTeacherLiveStatus(teacherSearch, selectedDay, selectedPair, currentParity)

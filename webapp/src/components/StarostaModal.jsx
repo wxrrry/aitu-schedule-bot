@@ -17,7 +17,8 @@ import {
   FileText, 
   ExternalLink,
   ChevronRight,
-  Info
+  Info,
+  BookmarkCheck
 } from 'lucide-react';
 import { useTelegramBackButton, triggerHaptic, openBotCommand, tg } from '../utils/telegram';
 import { getRoleDisplay } from '../utils/userProfile';
@@ -114,6 +115,88 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
     return initial;
   });
   const [attendanceCopied, setAttendanceCopied] = useState(false);
+
+  // --- 4. ДЕДЛАЙНЫ ГРУППЫ ---
+  const [groupDeadlines, setGroupDeadlines] = useState([]);
+  const [deadlineSubject, setDeadlineSubject] = useState('');
+  const [deadlineText, setDeadlineText] = useState('');
+  const [deadlineDue, setDeadlineDue] = useState('');
+  const [deadlinesLoading, setDeadlinesLoading] = useState(false);
+
+  const fetchGroupDeadlines = async () => {
+    if (!currentGroup) return;
+    try {
+      setDeadlinesLoading(true);
+      const res = await fetch(`/api/tasks?group=${encodeURIComponent(currentGroup)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const grp = (data.tasks || []).filter(t => t.is_group);
+        setGroupDeadlines(grp);
+      }
+    } catch (e) {
+      console.warn('Could not fetch group deadlines', e);
+    } finally {
+      setDeadlinesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && currentGroup) {
+      fetchGroupDeadlines();
+    }
+  }, [isOpen, currentGroup]);
+
+  const handleAddGroupDeadline = async (e) => {
+    e?.preventDefault();
+    if (!deadlineText.trim()) return;
+    try {
+      const full = deadlineDue.trim() 
+        ? `${deadlineText.trim()} (до ${deadlineDue.trim()})`
+        : deadlineText.trim();
+      const payload = {
+        user_id: 0,
+        task_key: `group:${currentGroup}`,
+        text: deadlineSubject.trim() ? `[${deadlineSubject.trim()}] ${full}` : full,
+        is_done: false
+      };
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        triggerHaptic('success');
+        setDeadlineText('');
+        setDeadlineDue('');
+        fetchGroupDeadlines();
+      }
+    } catch (e) {
+      console.error('Error adding group deadline', e);
+    }
+  };
+
+  const handleDeleteGroupDeadline = async (id) => {
+    try {
+      const res = await fetch(`/api/tasks/${id}?user_id=0`, { method: 'DELETE' });
+      if (res.ok) {
+        triggerHaptic('light');
+        setGroupDeadlines(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (e) {
+      console.error('Error deleting group deadline', e);
+    }
+  };
+
+  const handleShareGroupDeadline = (task) => {
+    const text = `📌 ОБЩИЙ ДЕДЛАЙН // ${currentGroup}\n\n📝 ${task.text}\n\n— Назначено старостой группы`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(text)}`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+    triggerHaptic('medium');
+  };
 
   if (!isOpen) return null;
 
@@ -275,6 +358,36 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
     setTimeout(() => setAttendanceCopied(false), 2500);
   };
 
+  const handleShareReport = () => {
+    const d = new Date().toLocaleDateString('ru-RU');
+    const absentList = roster.filter(s => attendance[s] === 'absent');
+    const excusedList = roster.filter(s => attendance[s] === 'excused');
+    const lateList = roster.filter(s => attendance[s] === 'late');
+
+    let report = `📋 РАПОРТИЧКА // ${currentGroup}\n`;
+    report += `📅 Дата: ${d} · Пара: №${attendancePair}\n`;
+    report += `👥 Всего: ${roster.length} | Присутствуют: ${presentCount + lateCount} | Отсутствуют: ${absentCount + excusedCount}\n`;
+    
+    if (absentList.length > 0) {
+      report += `\n❌ Не были (${absentList.length}):\n${absentList.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n`;
+    }
+    if (excusedList.length > 0) {
+      report += `\n🟡 Уважительная (${excusedList.length}):\n${excusedList.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n`;
+    }
+    if (lateList.length > 0) {
+      report += `\n⏱ Опоздали (${lateList.length}):\n${lateList.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n`;
+    }
+    report += `\n— Староста: ${profile?.fullName || 'Староста группы'}`;
+
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(report)}`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+    triggerHaptic('medium');
+  };
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn font-sans"
@@ -320,39 +433,50 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
         )}
 
         {/* Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-black/50 p-1 border border-white/10 font-mono text-[10px]">
+        <div className="grid grid-cols-4 gap-1 bg-black/50 p-1 border border-white/10 font-mono text-[10px]">
           <button
             onClick={() => { setActiveTab('replacements'); triggerHaptic('selection'); }}
-            className={`py-1.5 px-2 flex items-center justify-center gap-1.5 transition-colors uppercase ${
+            className={`py-1.5 px-1 flex items-center justify-center gap-1 transition-colors uppercase ${
               activeTab === 'replacements' 
                 ? 'bg-white text-black font-bold' 
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Calendar className="w-3 h-3" />
-            <span>Замены</span>
+            <span className="truncate">Замены</span>
           </button>
           <button
             onClick={() => { setActiveTab('broadcast'); triggerHaptic('selection'); }}
-            className={`py-1.5 px-2 flex items-center justify-center gap-1.5 transition-colors uppercase ${
+            className={`py-1.5 px-1 flex items-center justify-center gap-1 transition-colors uppercase ${
               activeTab === 'broadcast' 
                 ? 'bg-white text-black font-bold' 
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Megaphone className="w-3 h-3" />
-            <span>Объявления</span>
+            <span className="truncate">Посты</span>
           </button>
           <button
             onClick={() => { setActiveTab('attendance'); triggerHaptic('selection'); }}
-            className={`py-1.5 px-2 flex items-center justify-center gap-1.5 transition-colors uppercase ${
+            className={`py-1.5 px-1 flex items-center justify-center gap-1 transition-colors uppercase ${
               activeTab === 'attendance' 
                 ? 'bg-white text-black font-bold' 
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
             <UserCheck className="w-3 h-3" />
-            <span>Рапортичка</span>
+            <span className="truncate">Журнал</span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('deadlines'); triggerHaptic('selection'); }}
+            className={`py-1.5 px-1 flex items-center justify-center gap-1 transition-colors uppercase ${
+              activeTab === 'deadlines' 
+                ? 'bg-white text-black font-bold' 
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <BookmarkCheck className="w-3 h-3" />
+            <span className="truncate">Дедлайны</span>
           </button>
         </div>
 
@@ -746,14 +870,133 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
               </button>
             </form>
 
-            {/* Кнопка экспорта рапортички */}
-            <button
-              onClick={handleCopyReport}
-              className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-neutral-200 transition-colors"
-            >
-              {attendanceCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{attendanceCopied ? 'РАПОРТИЧКА СКОПИРОВАНА' : 'СКОПИРОВАТЬ РАПОРТИЧКУ ДЛЯ КУРАТОРА'}</span>
-            </button>
+            {/* Кнопки экспорта рапортички */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={handleCopyReport}
+                className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-neutral-200 transition-colors"
+              >
+                {attendanceCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{attendanceCopied ? 'РАПОРТИЧКА СКОПИРОВАНА' : 'СКОПИРОВАТЬ ДЛЯ КУРАТОРА'}</span>
+              </button>
+              <button
+                onClick={handleShareReport}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>ПЕРЕСЛАТЬ В TELEGRAM</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: ОБЩИЕ ДЕДЛАЙНЫ ГРУППЫ */}
+        {activeTab === 'deadlines' && (
+          <div className="space-y-4 font-mono">
+            {/* Описание функционала */}
+            <div className="p-3 bg-amber-950/20 border border-amber-500/30 flex items-start gap-2.5 text-[11px] text-zinc-300">
+              <BookmarkCheck className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-bold text-amber-300">ОБЩИЙ РЕЕСТР ДЕДЛАЙНОВ ДЛЯ {currentGroup}</span>
+                <p className="text-zinc-400 text-[10px] leading-relaxed">
+                  Дедлайны, опубликованные здесь, моментально появляются в личном чек-листе каждого студента вашей группы с бейджем <span className="text-amber-300 font-bold">[📌 ОТ СТАРОСТЫ]</span>.
+                </p>
+              </div>
+            </div>
+
+            {/* Форма публикации дедлайна */}
+            <form onSubmit={handleAddGroupDeadline} className="p-3 bg-zinc-950/70 border border-white/10 space-y-2.5">
+              <div className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5 text-amber-400" />
+                <span>НАЗНАЧИТЬ НОВЫЙ ДЕДЛАЙН:</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <input
+                  type="text"
+                  placeholder="Предмет (напр. Компьютерные сети)"
+                  value={deadlineSubject}
+                  onChange={(e) => setDeadlineSubject(e.target.value)}
+                  className="bg-black border border-white/10 px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-white font-mono"
+                />
+                <input
+                  type="text"
+                  placeholder="Срок сдачи (напр. до 24.10)"
+                  value={deadlineDue}
+                  onChange={(e) => setDeadlineDue(e.target.value)}
+                  className="bg-black border border-white/10 px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-white font-mono"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Описание задания (напр. Сдать отчет по лаб. №2)..."
+                  value={deadlineText}
+                  onChange={(e) => setDeadlineText(e.target.value)}
+                  className="flex-1 bg-black border border-white/10 px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-white font-mono"
+                />
+                <button
+                  type="submit"
+                  disabled={!deadlineText.trim()}
+                  className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-bold uppercase text-xs disabled:opacity-40 transition-colors"
+                >
+                  ОПУБЛИКОВАТЬ
+                </button>
+              </div>
+            </form>
+
+            {/* Список опубликованных дедлайнов группы */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase font-bold">
+                <span>ТЕКУЩИЕ ДЕДЛАЙНЫ ({groupDeadlines.length})</span>
+                {deadlinesLoading && <span className="text-zinc-500 animate-pulse">СИНХРОНИЗАЦИЯ...</span>}
+              </div>
+
+              {groupDeadlines.length === 0 ? (
+                <div className="py-8 text-center text-zinc-500 border border-dashed border-white/10 text-xs">
+                  Нет активных дедлайнов от старосты. Добавьте первый дедлайн выше.
+                </div>
+              ) : (
+                groupDeadlines.map(task => (
+                  <div
+                    key={task.id}
+                    className="p-2.5 bg-black/60 border border-white/10 flex items-start justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.5 bg-amber-950 border border-amber-500/40 text-amber-300 font-bold text-[9px]">
+                          📌 СТАРОСТА
+                        </span>
+                        <span className="text-[10px] text-zinc-500">
+                          {task.created_at ? new Date(task.created_at).toLocaleDateString('ru-RU') : ''}
+                        </span>
+                      </div>
+                      <div className="text-white font-sans text-xs">
+                        {task.text}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleShareGroupDeadline(task)}
+                        title="Поделиться в беседу"
+                        className="p-1.5 border border-white/10 text-zinc-400 hover:text-white hover:border-white transition-colors"
+                      >
+                        <Send className="w-3.5 h-3.5 text-blue-400" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGroupDeadline(task.id)}
+                        title="Удалить дедлайн"
+                        className="p-1.5 border border-white/10 text-zinc-500 hover:text-red-400 hover:border-red-500/40 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

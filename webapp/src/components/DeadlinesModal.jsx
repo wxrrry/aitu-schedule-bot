@@ -10,7 +10,8 @@ import {
   BookOpen, 
   Filter, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  BookmarkCheck
 } from 'lucide-react';
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
 
@@ -232,10 +233,16 @@ export default function DeadlinesModal({
                   </button>
 
                   <div className="space-y-0.5 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[9px] px-1.5 py-0.2 bg-zinc-900 border border-white/10 text-zinc-400 uppercase font-bold">
                         {t.subject}
                       </span>
+                      {(t.isGroup || t.is_group || t.subject?.includes('старост')) && (
+                        <span className="text-[9px] px-1.5 py-0.2 bg-amber-950/80 border border-amber-500/40 text-amber-300 uppercase font-bold flex items-center gap-1">
+                          <BookmarkCheck className="w-2.5 h-2.5 text-amber-400" />
+                          ОТ СТАРОСТЫ
+                        </span>
+                      )}
                       {t.done && (
                         <span className="text-[9px] text-emerald-400 font-bold uppercase">
                           СДАНО ✓
