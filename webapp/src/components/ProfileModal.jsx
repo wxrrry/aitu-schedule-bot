@@ -20,7 +20,8 @@ import {
   Settings,
   Flame,
   Award,
-  ArrowRight
+  ArrowRight,
+  Users
 } from 'lucide-react';
 import { 
   POPULAR_GROUPS, 
