@@ -59,20 +59,20 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <div className="space-y-4 animate-fadeIn text-center">
       {/* Header */}
-      <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
+      <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2 text-center flex flex-col items-center justify-center">
+        <div className="flex items-center justify-center gap-2 text-[10px] mx-auto flex-wrap">
+          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
             <Swords className="w-3.5 h-3.5" />
             <span>ДУЭЛИ И СРАВНЕНИЕ HEAD-TO-HEAD</span>
           </span>
-          <span className="text-zinc-500 font-mono">СТАТИСТИКА</span>
+          <span className="text-zinc-500 font-mono">· СТАТИСТИКА</span>
         </div>
-        <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+        <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight text-center">
           СРАВНЕНИЕ УЧАСТНИКОВ
         </h2>
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-[11px] text-zinc-400 leading-relaxed text-center max-w-xl mx-auto">
           Выберите двух любых игроков или две команды колледжа для подробного сопоставления показателей и боевой эффективности.
         </p>
       </div>

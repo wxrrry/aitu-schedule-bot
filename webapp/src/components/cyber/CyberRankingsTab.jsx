@@ -61,20 +61,20 @@ export default function CyberRankingsTab({
 
       {/* 1. TEAMS TAB (HLTV WORLD RANKING) */}
       {rankingSubTab === 'teams' && (
-        <div className="space-y-3.5">
+        <div className="space-y-3.5 text-center">
           {/* Header card */}
-          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2 text-center flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center gap-2 text-[10px] mx-auto flex-wrap">
+              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
                 <Shield className="w-3.5 h-3.5" />
                 <span>HLTV WORLD RANKING // КОМАНДЫ КОЛЛЕДЖА</span>
               </span>
-              <span className="text-zinc-500 font-mono">СЕЗОН 2026</span>
+              <span className="text-zinc-500 font-mono">· СЕЗОН 2026</span>
             </div>
-            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight text-center">
               МИРОВОЙ РЕЙТИНГ КОМАНД CS2
             </h2>
-            <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+            <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-400 font-mono flex-wrap text-center">
               <span>Обновлено: 11 октября 2026 (по итогам AITU PRO LEAGUE S1)</span>
               <span className="px-2 py-0.5 rounded-md bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] font-bold">
                 {HLTV_TEAM_RANKINGS.length} КОМАНД
@@ -239,8 +239,8 @@ export default function CyberRankingsTab({
                 </div>
 
                 {/* Lineup / Roster tags */}
-                <div className="pt-1 border-t border-[#212121] flex items-center justify-between gap-1.5 flex-wrap text-[10px]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="pt-1 border-t border-[#212121] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[10px] text-center">
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap text-center">
                     <span className="text-zinc-500 text-[9px] uppercase font-mono mr-0.5">СОСТАВ:</span>
                     {team.roster && team.roster.length > 0 ? (
                       team.roster.map((player, pIdx) => {
@@ -272,7 +272,7 @@ export default function CyberRankingsTab({
 
                   <button
                     onClick={() => onOpenTeam(team)}
-                    className="px-2 py-0.5 bg-[#181818] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-300 hover:text-white font-mono text-[9px] uppercase font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                    className="px-2 py-0.5 bg-[#181818] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-300 hover:text-white font-mono text-[9px] uppercase font-bold rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
                   >
                     <span>ОБЗОР</span>
                     <ArrowRight className="w-2.5 h-2.5" />
@@ -286,46 +286,54 @@ export default function CyberRankingsTab({
 
       {/* 2. PLAYERS TAB (ТОП ИГРОКОВ) */}
       {rankingSubTab === 'players' && (
-        <div className="space-y-3.5">
-          {/* Header & Stats bar */}
-          <div className="flex items-center justify-between px-1 flex-wrap gap-2">
-            <div>
-              <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-[#0ea5e9]" />
-                <span>РЕЙТИНГ ИГРОКОВ ПО КИЛЛАМ</span>
-              </h3>
-              <span className="text-[9px] text-zinc-500 font-mono uppercase">
-                УЧАСТНИКОВ В БАЗЕ: {sortedPlayersList.length} · ВЕРИФИЦИРОВАНО FASTCUP
+        <div className="space-y-3.5 text-center">
+          {/* Header card */}
+          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2 text-center flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center gap-2 text-[10px] mx-auto flex-wrap">
+              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
+                <Crosshair className="w-3.5 h-3.5" />
+                <span>ЛИЧНЫЙ ЗАЧЁТ // ТОП ФРАГЕРОВ ЛИГИ</span>
+              </span>
+              <span className="text-zinc-500 font-mono">· СЕЗОН 1</span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight text-center">
+              ТОП ИГРОКОВ ПО СТАТИСТИКЕ
+            </h2>
+            <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-400 font-mono flex-wrap text-center">
+              <span>Сортировка: {playerSort === 'kills' ? 'По фрагам' : playerSort === 'kd' ? 'По рейтингу KD' : 'По проценту хедшотов'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] font-bold">
+                {sortedPlayersList.length} ИГРОКОВ
               </span>
             </div>
+          </div>
 
-            {/* Sort Toggle */}
-            <div className="flex items-center gap-1 p-0.5 bg-[#141414] border border-[#212121] rounded-lg text-[9px] font-mono">
-              <button
-                onClick={() => { setPlayerSort('kills'); triggerHaptic('light'); }}
-                className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'kills' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                КИЛЛЫ
-              </button>
-              <button
-                onClick={() => { setPlayerSort('kd'); triggerHaptic('light'); }}
-                className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'kd' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                K/D
-              </button>
-              <button
-                onClick={() => { setPlayerSort('hs'); triggerHaptic('light'); }}
-                className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'hs' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                HS%
-              </button>
-            </div>
+          {/* Sort Toggle Bar */}
+          <div className="flex items-center justify-center gap-1.5 p-1 bg-[#111111] border border-[#212121] rounded-xl text-[10px] font-mono select-none">
+            <span className="text-zinc-500 font-sans font-bold text-[10px] uppercase mr-1">СОРТИРОВКА:</span>
+            <button
+              onClick={() => { setPlayerSort('kills'); triggerHaptic('light'); }}
+              className={`px-3 py-1 font-bold uppercase rounded-lg transition-colors cursor-pointer ${
+                playerSort === 'kills' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              КИЛЛЫ
+            </button>
+            <button
+              onClick={() => { setPlayerSort('kd'); triggerHaptic('light'); }}
+              className={`px-3 py-1 font-bold uppercase rounded-lg transition-colors cursor-pointer ${
+                playerSort === 'kd' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              K/D РЕЙТИНГ
+            </button>
+            <button
+              onClick={() => { setPlayerSort('hs'); triggerHaptic('light'); }}
+              className={`px-3 py-1 font-bold uppercase rounded-lg transition-colors cursor-pointer ${
+                playerSort === 'hs' ? 'bg-[#0ea5e9] text-white shadow-sm' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              % ХЕДШОТОВ
+            </button>
           </div>
 
           {/* Search Box */}

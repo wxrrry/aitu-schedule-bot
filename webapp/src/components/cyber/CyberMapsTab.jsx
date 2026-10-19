@@ -14,26 +14,26 @@ export default function CyberMapsTab({ onOpenPlayer }) {
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <div className="space-y-4 animate-fadeIn text-center">
       {/* Header card */}
-      <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
+      <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2 text-center flex flex-col items-center justify-center">
+        <div className="flex items-center justify-center gap-2 text-[10px] mx-auto flex-wrap">
+          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
             <Map className="w-3.5 h-3.5" />
             <span>СОРЕВНОВАТЕЛЬНЫЙ МАППУЛ CS2</span>
           </span>
-          <span className="text-zinc-500 font-mono">СЕЗОН 1 · FASTCUP</span>
+          <span className="text-zinc-500 font-mono">· СЕЗОН 1 · FASTCUP</span>
         </div>
-        <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+        <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight text-center">
           МЕТА И РАЗВЕДКА КАРТ
         </h2>
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-[11px] text-zinc-400 leading-relaxed text-center max-w-xl mx-auto">
           Баланс сторон CT и T, процент выбора карт в турнире, ключевые тактические зоны и лучшие игроки на каждой локации.
         </p>
       </div>
 
       {/* Map Selector Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none">
+      <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none flex-wrap">
         {CS2_MAP_POOL.map((m) => {
           const isActive = selectedMapId === m.id;
           return (
@@ -54,35 +54,32 @@ export default function CyberMapsTab({ onOpenPlayer }) {
 
       {/* Active Map Detail View */}
       {activeMap && (
-        <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-4 shadow-lg">
+        <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-4 shadow-lg text-center">
           {/* Map Header */}
-          <div className="flex items-center justify-between border-b border-[#212121] pb-3 flex-wrap gap-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-sm bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] text-[9px] font-black uppercase tracking-widest">
-                  {activeMap.status}
-                </span>
-                <span className="text-[10px] text-zinc-500 font-mono">
-                  {activeMap.pickRate} ПУЛА
-                </span>
-              </div>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                {activeMap.name}
-              </h3>
+          <div className="flex flex-col items-center justify-center border-b border-[#212121] pb-3 gap-2 text-center">
+            <div className="flex items-center justify-center gap-2 mb-0.5">
+              <span className="px-2 py-0.5 rounded-sm bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] text-[9px] font-black uppercase tracking-widest">
+                {activeMap.status}
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono">
+                {activeMap.pickRate} ПУЛА
+              </span>
             </div>
-
-            <div className="text-right">
-              <span className="text-[9px] text-zinc-500 uppercase block">ЛЮБИМОЕ ОРУЖИЕ</span>
-              <span className="text-xs font-black text-amber-300 font-mono">{activeMap.favWeapon}</span>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight text-center">
+              {activeMap.name}
+            </h3>
+            <div className="text-center font-mono text-[10px]">
+              <span className="text-zinc-500 uppercase mr-1">ЛЮБИМОЕ ОРУЖИЕ:</span>
+              <span className="font-black text-amber-300">{activeMap.favWeapon}</span>
             </div>
           </div>
 
-          <p className="text-[11px] text-zinc-300 leading-relaxed">
+          <p className="text-[11px] text-zinc-300 leading-relaxed text-center max-w-xl mx-auto">
             {activeMap.description}
           </p>
 
           {/* CT vs T Winrate Balance */}
-          <div className="p-3.5 bg-[#141414] border border-[#212121] rounded-xl space-y-2">
+          <div className="p-3.5 bg-[#141414] border border-[#212121] rounded-xl space-y-2 text-center">
             <div className="flex items-center justify-between text-xs font-bold uppercase font-mono">
               <div className="flex items-center gap-1.5 text-cyan-400">
                 <Shield className="w-3.5 h-3.5" />

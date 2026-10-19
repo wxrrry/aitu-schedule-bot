@@ -63,31 +63,31 @@ export default function CyberTournamentsTab({
     <div className="space-y-4 animate-fadeIn">
       {/* 1. ЕСЛИ ТУРНИР НЕ ВЫБРАН: СПИСОК ТУРНИРОВ */}
       {!selectedTournament ? (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-4 animate-fadeIn text-center">
           {/* Header Banner */}
-          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2 text-center flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center gap-2 text-[10px] mx-auto flex-wrap">
+              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5" />
                 <span>AITU CYBER LEAGUE // ТУРНИРЫ</span>
               </span>
-              <span className="text-zinc-500 font-mono">СЕЗОН 2026</span>
+              <span className="text-zinc-500 font-mono">· СЕЗОН 2026</span>
             </div>
-            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight text-center">
               ЧЕМПИОНАТЫ И КУБКИ КОЛЛЕДЖА
             </h2>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
+            <p className="text-[11px] text-zinc-400 leading-relaxed text-center max-w-xl mx-auto">
               Турнирная платформа колледжа: регистрация команд, олимпийская сетка плей-офф и протоколы матчей FastCup.
             </p>
 
-            <div className="flex items-center gap-2 pt-1 flex-wrap">
+            <div className="flex items-center justify-center gap-2 pt-1 flex-wrap mx-auto">
               {canOrganize ? (
                 <button
                   onClick={() => {
                     onOpenOrganizerModal();
                     triggerHaptic('medium');
                   }}
-                  className="px-3.5 py-2 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_2px_12px_rgba(14,165,233,0.35)]"
+                  className="px-3.5 py-2 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_2px_12px_rgba(14,165,233,0.35)]"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>СОЗДАТЬ ТУРНИР (ОРГ)</span>
@@ -136,18 +136,18 @@ export default function CyberTournamentsTab({
                     </span>
                   </div>
 
-                  <div onClick={() => handleOpenTournament(tourn)} className="cursor-pointer">
-                    <h3 className="text-base font-black text-white tracking-tight group-hover:text-[#0ea5e9] transition-colors uppercase font-sans">
+                  <div onClick={() => handleOpenTournament(tourn)} className="cursor-pointer text-center">
+                    <h3 className="text-base font-black text-white tracking-tight group-hover:text-[#0ea5e9] transition-colors uppercase font-sans text-center">
                       {tourn.title}
                     </h3>
-                    <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
+                    <p className="text-[11px] text-zinc-400 font-sans mt-0.5 text-center">
                       {tourn.subTitle} · {tourn.format}
                     </p>
                   </div>
 
                   {/* Highlights / Info */}
                   {isUpcoming ? (
-                    <div className="p-3 bg-[#181818] border border-[#212121] rounded-xl space-y-2 text-[10px]">
+                    <div className="p-3 bg-[#181818] border border-[#212121] rounded-xl space-y-2 text-[10px] text-center">
                       <div className="flex items-center justify-between text-zinc-400 font-mono">
                         <span>ЗАРЕГИСТРИРОВАНО КОМАНД:</span>
                         <span className="font-bold text-amber-300">{slotsCount} / {maxSlots}</span>
@@ -159,22 +159,22 @@ export default function CyberTournamentsTab({
                         />
                       </div>
                       {tourn.prizePool && (
-                        <div className="text-[10px] text-zinc-400 font-sans">
+                        <div className="text-[10px] text-zinc-400 font-sans text-center">
                           Награды: <span className="text-zinc-200 font-medium">{tourn.prizePool}</span>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#212121] text-[10px] font-mono">
-                      <div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#212121] text-[10px] font-mono text-center">
+                      <div className="text-center">
                         <span className="text-zinc-500 block text-[9px]">1 МЕСТО:</span>
                         <span className="text-amber-400 font-bold">{tourn.winner || "—"}</span>
                       </div>
-                      <div>
+                      <div className="text-center">
                         <span className="text-zinc-500 block text-[9px]">2 МЕСТО:</span>
                         <span className="text-zinc-300 font-bold">{tourn.secondPlace || "—"}</span>
                       </div>
-                      <div>
+                      <div className="text-center">
                         <span className="text-zinc-500 block text-[9px]">3 МЕСТО:</span>
                         <span className="text-zinc-400">{tourn.thirdPlace || "—"}</span>
                       </div>
@@ -182,7 +182,7 @@ export default function CyberTournamentsTab({
                   )}
 
                   {/* Action Row */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-[#212121]">
+                  <div className="pt-2 flex items-center justify-center gap-2 border-t border-[#212121] flex-wrap">
                     {isUpcoming && (
                       <button
                         onClick={(e) => {
@@ -190,7 +190,7 @@ export default function CyberTournamentsTab({
                           onOpenRegisterModal(tourn);
                           triggerHaptic('medium');
                         }}
-                        className="px-3 py-1.5 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold font-mono text-[10px] uppercase tracking-wider rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold font-mono text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                         <span>ПОДАТЬ ЗАЯВКУ</span>
@@ -199,7 +199,7 @@ export default function CyberTournamentsTab({
 
                     <button
                       onClick={() => handleOpenTournament(tourn)}
-                      className="text-xs font-bold text-white group-hover:text-[#0ea5e9] transition-colors uppercase tracking-wider text-[10px] flex items-center gap-1 ml-auto cursor-pointer"
+                      className="text-xs font-bold text-white group-hover:text-[#0ea5e9] transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <span>{isUpcoming ? 'ОТКРЫТЬ ТУРНИР / СЕТКУ' : 'ОТКРЫТЬ СЕТКУ И МАТЧИ'}</span>
                       <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
@@ -212,40 +212,38 @@ export default function CyberTournamentsTab({
         </div>
       ) : (
         /* 2. КОГДА ТУРНИР ВЫБРАН: ЭКРАН ТУРНИРА С СЕТКОЙ И МАТЧАМИ */
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-4 animate-fadeIn text-center">
           {/* Back button and Tournament Header */}
-          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2.5">
+          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2.5 text-center flex flex-col items-center justify-center">
             <button
               onClick={() => {
                 setSelectedTournament(null);
                 triggerHaptic('light');
               }}
-              className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white font-mono text-[10px] uppercase font-bold transition-colors pb-1 border-b border-[#212121]"
+              className="inline-flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white font-mono text-[10px] uppercase font-bold transition-colors pb-1 border-b border-[#212121]"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>← НАЗАД КО ВСЕМ ТУРНИРАМ</span>
             </button>
 
-            <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`px-2 py-0.2 text-[8px] font-bold border uppercase tracking-wider rounded-md ${selectedTournament.statusBadge}`}>
-                    {selectedTournament.status}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-mono">
-                    {selectedTournament.date}
-                  </span>
-                </div>
-                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight font-sans">
-                  {selectedTournament.title}
-                </h2>
-                <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
-                  {selectedTournament.format}
-                </p>
+            <div className="flex flex-col items-center justify-center gap-2 pt-1 text-center w-full">
+              <div className="flex items-center justify-center gap-2 mb-0.5">
+                <span className={`px-2 py-0.2 text-[8px] font-bold border uppercase tracking-wider rounded-md ${selectedTournament.statusBadge}`}>
+                  {selectedTournament.status}
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  {selectedTournament.date}
+                </span>
               </div>
+              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight font-sans text-center">
+                {selectedTournament.title}
+              </h2>
+              <p className="text-[11px] text-zinc-400 font-sans text-center">
+                {selectedTournament.format}
+              </p>
 
               {selectedTournament.winner && selectedTournament.type === 'past' && (
-                <div className="px-2.5 py-1.5 bg-amber-950/40 border border-amber-500/30 text-amber-300 font-mono text-[10px] font-bold rounded-lg">
+                <div className="px-3 py-1 bg-amber-950/40 border border-amber-500/30 text-amber-300 font-mono text-[10px] font-bold rounded-lg mt-1">
                   ЧЕМПИОН: {selectedTournament.winner}
                 </div>
               )}
