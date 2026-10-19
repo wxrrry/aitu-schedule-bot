@@ -533,28 +533,28 @@ export const TOURNAMENT_MATCHES = [
     id: "match_qf_aspect_vs_adaptive",
     fastcupId: 27846634,
     fastcupUrl: "https://cs2.fastcup.net/matches/27846634",
-    title: "1/4 \u0424\u0418\u041d\u0410\u041b\u0410: Aspect vs adaptive",
-    stage: "1/4 \u0424\u0418\u041d\u0410\u041b\u0410 (\u0427\u0415\u0422\u0412\u0415\u0420\u0422\u042c\u0424\u0418\u041d\u0410\u041b)",
+    title: "1/4 ФИНАЛА: adaptive vs Aspect",
+    stage: "1/4 ФИНАЛА (ЧЕТВЕРТЬФИНАЛ)",
     format: "Best of 3 (5v5)",
     duration: "58:24",
     region: "Москва (Custom / FastCup)",
     team1: {
-      name: "Aspect",
-      seed: "#1",
+      name: "adaptive",
+      seed: "#8",
       score: 2,
       isWinner: true,
       elo: 1000,
       players: [{"nick": "sonof_4everdance", "elo": 1000, "k": 34, "d": 10, "a": 10}, {"nick": "KOPOJI_AITU", "elo": 1000, "k": 33, "d": 17, "a": 15}, {"nick": "MaikL7575", "elo": 1000, "k": 32, "d": 15, "a": 9, "isCaptain": true}, {"nick": "deathingotham", "elo": 1000, "k": 22, "d": 13, "a": 9}, {"nick": "ne soglasen?", "elo": 1000, "k": 17, "d": 7, "a": 3}]
     },
     team2: {
-      name: "adaptive",
-      seed: "#8",
+      name: "Aspect",
+      seed: "#1",
       score: 0,
       isWinner: false,
       elo: 1000,
       players: [{"nick": "kvsd", "elo": 1000, "k": 17, "d": 27, "a": 6, "isCaptain": true}, {"nick": "klentin", "elo": 1000, "k": 16, "d": 28, "a": 1}, {"nick": "ASPECT | Word !+", "elo": 1000, "k": 12, "d": 28, "a": 7}, {"nick": "Nova !+!", "elo": 1000, "k": 11, "d": 29, "a": 4}, {"nick": "ASPECT | Soaro", "elo": 994, "k": 4, "d": 28, "a": 2}]
     },
-    maps: [{"name": "Mirage", "score1": 13, "score2": 1, "duration": "23:03", "winner": "Aspect"}, {"name": "Dust II", "score1": 13, "score2": 4, "duration": "27:15", "winner": "Aspect"}]
+    maps: [{"name": "Mirage", "score1": 13, "score2": 1, "duration": "23:03", "winner": "adaptive"}, {"name": "Dust II", "score1": 13, "score2": 4, "duration": "27:15", "winner": "adaptive"}]
   },
   {
     id: "match_triq_vs_dodo",

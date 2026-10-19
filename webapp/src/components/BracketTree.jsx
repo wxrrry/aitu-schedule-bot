@@ -13,7 +13,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
     }
   };
 
-  if (bracketData && (bracketData.semifinals || bracketData.round2)) {
+  if (bracketData && bracketData.isCustom && (bracketData.semifinals || bracketData.round2)) {
     const hasQf = bracketData.round2 && bracketData.round2.length > 0;
     const cols = hasQf ? 'grid-cols-3' : 'grid-cols-2';
     const minWidth = hasQf ? 'min-w-[720px]' : 'min-w-[500px]';
@@ -322,7 +322,10 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
             
             {/* COLUMN 1: ROUND 1 */}
             <div className="space-y-4 pt-12">
-              <div className="space-y-1 relative">
+              <div 
+                onClick={() => onSelectMatch?.('match_r1_adaptive_vs_ckson')}
+                className="space-y-1 relative cursor-pointer group transition-transform active:scale-[0.99]"
+              >
                 {/* Horizontal branch line to Round 2 */}
                 <div className="hidden sm:block absolute -right-6 top-1/2 w-6 h-[2px] bg-[#223d54]" />
 
@@ -336,7 +339,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-400 font-mono text-[10px]">#8</span>
                     <span className="font-bold truncate group-hover:text-amber-300 transition-colors">adaptive</span>
                   </div>
-                  <span className="text-emerald-400 text-[10px] font-mono font-bold">✓</span>
+                  <span className="text-emerald-400 text-[10px] font-mono font-bold">13 ✓</span>
                 </div>
 
                 {/* Team 2 (ckson) */}
@@ -349,6 +352,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-500 font-mono text-[10px]">#9</span>
                     <span className="truncate group-hover:text-zinc-200 transition-colors">ckson</span>
                   </div>
+                  <span className="text-zinc-500 text-[10px] font-mono">7</span>
                 </div>
               </div>
             </div>
@@ -356,7 +360,10 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
             {/* COLUMN 2: ROUND 2 (1/4 FINALS) */}
             <div className="space-y-8 relative">
               {/* Match 1: Aspect vs adaptive */}
-              <div className="space-y-1 relative">
+              <div 
+                onClick={() => onSelectMatch?.('match_qf_aspect_vs_adaptive')}
+                className="space-y-1 relative cursor-pointer group transition-transform active:scale-[0.99]"
+              >
                 <div 
                   onClick={(e) => handleTeamClick(e, "Aspect")}
                   className="px-3 py-2 bg-[#101b26] border border-[#1d3142] hover:border-white/30 text-zinc-400 text-[11px] font-sans flex items-center justify-between rounded-xs cursor-pointer group"
@@ -366,6 +373,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-500 font-mono text-[10px]">#1</span>
                     <span className="truncate group-hover:text-zinc-200 transition-colors">Aspect</span>
                   </div>
+                  <span className="text-zinc-500 text-[10px] font-mono">0</span>
                 </div>
                 <div 
                   onClick={(e) => handleTeamClick(e, "adaptive")}
@@ -376,7 +384,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-400 font-mono text-[10px]">#8</span>
                     <span className="font-bold truncate group-hover:text-amber-300 transition-colors">adaptive</span>
                   </div>
-                  <span className="text-emerald-400 text-[10px] font-mono font-bold">✓</span>
+                  <span className="text-emerald-400 text-[10px] font-mono font-bold">2 ✓</span>
                 </div>
               </div>
 
@@ -463,7 +471,10 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
             {/* COLUMN 3: SEMI-FINAL */}
             <div className="space-y-24 pt-8 relative">
               {/* Semi 1: adaptive vs LL TEAM */}
-              <div className="space-y-1 relative">
+              <div 
+                onClick={() => onSelectMatch?.('match_sf_adaptive_vs_ll')}
+                className="space-y-1 relative cursor-pointer group transition-transform active:scale-[0.99]"
+              >
                 <div 
                   onClick={(e) => handleTeamClick(e, "adaptive")}
                   className="px-3 py-2 bg-[#101b26] border border-[#1d3142] hover:border-white/30 text-zinc-400 text-[11px] font-sans flex items-center justify-between rounded-xs cursor-pointer group"
@@ -473,6 +484,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-500 font-mono text-[10px]">#8</span>
                     <span className="truncate group-hover:text-zinc-200 transition-colors">adaptive</span>
                   </div>
+                  <span className="text-zinc-500 text-[10px] font-mono">0</span>
                 </div>
                 <div 
                   onClick={(e) => handleTeamClick(e, "LL TEAM")}
@@ -483,7 +495,7 @@ export default function BracketTree({ onSelectMatch, onSelectTeam, bracketData }
                     <span className="text-zinc-400 font-mono text-[10px]">#4</span>
                     <span className="font-bold truncate group-hover:text-amber-300 transition-colors">LL TEAM</span>
                   </div>
-                  <span className="text-emerald-400 text-[10px] font-mono font-bold">✓ В ФИНАЛ</span>
+                  <span className="text-emerald-400 text-[10px] font-mono font-bold">2 ✓ В ФИНАЛ</span>
                 </div>
               </div>
 
