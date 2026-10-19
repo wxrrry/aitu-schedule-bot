@@ -81,7 +81,7 @@ export function getVerifiedRoleFromParams(userId) {
     const parts = startParam.split('role_');
     if (parts[1]) {
       const r = parts[1].split('_')[0].toLowerCase();
-      if (['student', 'starosta', 'zam_starosty', 'admin', 'superadmin'].includes(r)) {
+      if (['student', 'starosta', 'zam_starosty', 'organizer', 'admin', 'superadmin'].includes(r)) {
         return r;
       }
     }
@@ -91,7 +91,7 @@ export function getVerifiedRoleFromParams(userId) {
   try {
     const params = new URLSearchParams(window.location.search);
     const r = params.get('role');
-    if (r && ['student', 'starosta', 'zam_starosty', 'admin', 'superadmin'].includes(r.toLowerCase())) {
+    if (r && ['student', 'starosta', 'zam_starosty', 'organizer', 'admin', 'superadmin'].includes(r.toLowerCase())) {
       return r.toLowerCase();
     }
   } catch (e) {
@@ -99,6 +99,36 @@ export function getVerifiedRoleFromParams(userId) {
   }
 
   return null;
+}
+
+export function isOrganizer(userId, role) {
+  if (role === 'organizer' || role === 'admin' || role === 'superadmin') return true;
+  if (isSuperAdmin(userId, role)) return true;
+  if (typeof window !== 'undefined') {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('role') === 'organizer' || params.get('organizer') === '1') return true;
+      const startParam = tg?.initDataUnsafe?.start_param || '';
+      if (startParam.includes('role_organizer') || startParam.includes('organizer')) return true;
+      if (localStorage.getItem('aitu_organizer_mode') === 'true') return true;
+    } catch (e) {
+      // ignore
+    }
+  }
+  return false;
+}
+
+export function setOrganizerMode(enabled) {
+  try {
+    if (enabled) {
+      localStorage.setItem('aitu_organizer_mode', 'true');
+    } else {
+      localStorage.removeItem('aitu_organizer_mode');
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('aitu_role_changed'));
+    }
+  } catch (e) {}
 }
 
 export function getRoleDisplay(role = 'student') {
@@ -116,6 +146,14 @@ export function getRoleDisplay(role = 'student') {
         title: 'Администратор бота', 
         badge: '🛡 АДМИНИСТРАТОР', 
         icon: '🛡', 
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-950/40 border-amber-500/30'
+      };
+    case 'organizer':
+      return { 
+        title: 'Организатор турниров', 
+        badge: '🏆 ОРГАНИЗАТОР', 
+        icon: '🏆', 
         color: 'text-amber-400',
         bgColor: 'bg-amber-950/40 border-amber-500/30'
       };

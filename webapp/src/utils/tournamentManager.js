@@ -254,17 +254,25 @@ export function registerTeamForTournament(tournamentId, form) {
   const currentRegs = getTournamentRegistrations(tournamentId);
 
   const newEntry = {
-    id: `reg_${Date.now()}`,
+    id: form.id || `reg_${Date.now()}`,
     tournamentId,
     teamName: form.teamName.trim(),
     tag: (form.tag || form.teamName.slice(0, 4)).trim().toUpperCase(),
+    avatar: form.avatar || form.avatarUrl || '🛡️',
+    avatarUrl: form.avatarUrl || form.avatar || null,
+    avatarPreset: form.avatarPreset || 'shield',
     captainNick: form.captainNick.trim(),
     captainTg: form.captainTg.trim().startsWith('@') ? form.captainTg.trim() : `@${form.captainTg.trim()}`,
     captainSteamId: form.captainSteamId?.trim() || '',
+    captainFaceit: form.captainFaceit?.trim() || '',
+    captainGroup: form.captainGroup?.trim() || form.group?.trim() || '9ПО-43к',
     group: form.group?.trim() || 'Сборная',
-    players: form.players.filter(Boolean).map(p => p.trim()),
-    substitute: form.substitute?.trim() || '',
-    status: 'ПОДТВЕРЖДЕНА',
+    players: form.players || [],
+    roster: form.roster || [],
+    substitute: form.substitute || '',
+    status: form.status || 'ПОДТВЕРЖДЕНА',
+    seed: form.seed || (currentRegs.length + 1),
+    score: 0,
     createdAt: new Date().toLocaleDateString('ru-RU')
   };
 
@@ -295,10 +303,10 @@ export function registerTeamForTournament(tournamentId, form) {
       captainNick: newEntry.captainNick,
       captainTg: newEntry.captainTg,
       group: newEntry.group,
-      avatar: '',
-      players: newEntry.players,
+      avatar: newEntry.avatar || '',
+      players: newEntry.roster && newEntry.roster.length > 0 ? newEntry.roster : newEntry.players,
       status: newEntry.status,
-      seed: updatedRegs.length,
+      seed: newEntry.seed,
       score: 0
     })
   }).catch(err => console.warn("Failed to persist team to DB:", err));
@@ -311,7 +319,7 @@ export function registerTeamForTournament(tournamentId, form) {
     captainNick: newEntry.captainNick,
     captainTg: newEntry.captainTg,
     group: newEntry.group,
-    playersCount: newEntry.players.length + 1
+    playersCount: (newEntry.roster?.length || newEntry.players.length + 1)
   });
 
   if (typeof window !== 'undefined') {
@@ -319,6 +327,58 @@ export function registerTeamForTournament(tournamentId, form) {
   }
 
   return newEntry;
+}
+
+// Обновить данные заявки команды (статус, посев, состав)
+export function updateTeamRegistration(tournamentId, teamId, patch) {
+  const currentRegs = getTournamentRegistrations(tournamentId);
+  const idx = currentRegs.findIndex(r => r.id === teamId);
+  if (idx === -1) return null;
+
+  currentRegs[idx] = { ...currentRegs[idx], ...patch };
+
+  try {
+    localStorage.setItem(`${REGISTRATIONS_STORAGE_KEY}_${tournamentId}`, JSON.stringify(currentRegs));
+  } catch (e) {
+    console.error("Failed to update team registration", e);
+  }
+
+  // Обновляем в БД на VPS
+  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: currentRegs[idx].id,
+      teamName: currentRegs[idx].teamName,
+      tag: currentRegs[idx].tag,
+      captainNick: currentRegs[idx].captainNick,
+      captainTg: currentRegs[idx].captainTg,
+      group: currentRegs[idx].group,
+      avatar: currentRegs[idx].avatar || '',
+      players: currentRegs[idx].roster || currentRegs[idx].players,
+      status: currentRegs[idx].status,
+      seed: currentRegs[idx].seed || 0,
+      score: currentRegs[idx].score || 0
+    })
+  }).catch(() => {});
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: getAllTournaments() }));
+  }
+
+  return currentRegs[idx];
+}
+
+export function approveTeamRegistration(tournamentId, teamId) {
+  return updateTeamRegistration(tournamentId, teamId, { status: 'ПОДТВЕРЖДЕНА' });
+}
+
+export function rejectTeamRegistration(tournamentId, teamId) {
+  return updateTeamRegistration(tournamentId, teamId, { status: 'ОТКЛОНЕНА' });
+}
+
+export function setTeamSeed(tournamentId, teamId, seed) {
+  return updateTeamRegistration(tournamentId, teamId, { seed: Number(seed) });
 }
 
 // Создать новый турнир (сохранение в БД)
@@ -338,10 +398,19 @@ export function createNewTournament(tournamentData) {
     maxTeams: Number(tournamentData.maxTeams) || 8,
     registeredTeamsCount: 0,
     prizePool: tournamentData.prizePool || "Кубок колледжа + Дипломы",
+    prizeDetails: tournamentData.prizeDetails || {
+      firstPlace: "Кубок колледжа AITU + Золотые медали",
+      secondPlace: "Серебряные медали + Грамоты",
+      thirdPlace: "Бронзовые медали",
+      mvp: "Индивидуальная статуэтка MVP Турнира"
+    },
+    avatar: tournamentData.avatar || '🏆',
+    bannerPreset: tournamentData.bannerPreset || 'gold',
     rules: tournamentData.rules || [
       "Турнир проводится по олимпийской системе (Single Elimination).",
       "Все матчи играются до 2-х побед по картам (Best of 3).",
-      "Серверы предоставляются организаторами колледжа."
+      "Серверы предоставляются организаторами колледжа.",
+      "Обязательно присутствие капитана в Telegram за 15 минут до матча."
     ],
     initialRegisteredTeams: []
   };
@@ -375,26 +444,46 @@ export function createNewTournament(tournamentData) {
   return newTourn;
 }
 
-// Автоматическая генерация турнирной сетки на 4 или 8 команд
-export function generateSingleEliminationBracket(teamNames) {
-  const count = teamNames.length;
-  if (count <= 4) {
-    const t = [...teamNames];
-    while (t.length < 4) t.push(`TBD ${t.length + 1}`);
+// Автоматическая генерация турнирной сетки на 4 или 8 команд с учетом посева (seeding)
+export function generateSingleEliminationBracket(teamsInput) {
+  // Нормализуем массив команд: может быть массивом строк или объектов { teamName, seed, tag }
+  let teams = teamsInput.map((t, idx) => {
+    if (typeof t === 'string') {
+      return { name: t, seed: idx + 1 };
+    }
+    return {
+      name: t.teamName || t.name || `Команда ${idx + 1}`,
+      seed: Number(t.seed) || (idx + 1),
+      tag: t.tag || ''
+    };
+  });
 
+  // Сортируем по посеву
+  teams.sort((a, b) => a.seed - b.seed);
+
+  const count = teams.length;
+
+  // Формат на 4 команды
+  if (count <= 4) {
+    while (teams.length < 4) {
+      teams.push({ name: `TBD ${teams.length + 1}`, seed: teams.length + 1 });
+    }
+
+    const t = teams;
     return {
       title: "Плей-офф (4 команды)",
+      isCustom: true,
       round2: [],
       semifinals: [
         {
           matchId: "semi_1",
-          team1: { name: t[0], seed: "#1", score: null, isWinner: false },
-          team2: { name: t[3], seed: "#4", score: null, isWinner: false }
+          team1: { name: t[0].name, seed: `#${t[0].seed}`, score: null, isWinner: false },
+          team2: { name: t[3].name, seed: `#${t[3].seed}`, score: null, isWinner: false }
         },
         {
           matchId: "semi_2",
-          team1: { name: t[1], seed: "#2", score: null, isWinner: false },
-          team2: { name: t[2], seed: "#3", score: null, isWinner: false }
+          team1: { name: t[1].name, seed: `#${t[1].seed}`, score: null, isWinner: false },
+          team2: { name: t[2].name, seed: `#${t[2].seed}`, score: null, isWinner: false }
         }
       ],
       final: {
@@ -403,37 +492,42 @@ export function generateSingleEliminationBracket(teamNames) {
         team2: { name: "Победитель 1/2 (2)", seed: "", score: null, isWinner: false }
       },
       thirdPlace: {
+        matchId: "third_place",
         team1: { name: "Проигравший 1/2 (1)", seed: "", score: null, isWinner: false },
         team2: { name: "Проигравший 1/2 (2)", seed: "", score: null, isWinner: false }
       }
     };
   }
 
-  const t = [...teamNames];
-  while (t.length < 8) t.push(`TBD ${t.length + 1}`);
+  // Формат на 8 команд (стандарт олимпийской системы: #1 vs #8, #4 vs #5, #2 vs #7, #3 vs #6)
+  while (teams.length < 8) {
+    teams.push({ name: `TBD ${teams.length + 1}`, seed: teams.length + 1 });
+  }
 
+  const t = teams;
   return {
     title: "Плей-офф (8 команд)",
+    isCustom: true,
     round2: [
       {
         matchId: "qf_1",
-        team1: { name: t[0], seed: "#1", score: null, isWinner: false },
-        team2: { name: t[7], seed: "#8", score: null, isWinner: false }
+        team1: { name: t[0].name, seed: `#${t[0].seed}`, score: null, isWinner: false },
+        team2: { name: t[7].name, seed: `#${t[7].seed}`, score: null, isWinner: false }
       },
       {
         matchId: "qf_2",
-        team1: { name: t[3], seed: "#4", score: null, isWinner: false },
-        team2: { name: t[4], seed: "#5", score: null, isWinner: false }
+        team1: { name: t[3].name, seed: `#${t[3].seed}`, score: null, isWinner: false },
+        team2: { name: t[4].name, seed: `#${t[4].seed}`, score: null, isWinner: false }
       },
       {
         matchId: "qf_3",
-        team1: { name: t[1], seed: "#2", score: null, isWinner: false },
-        team2: { name: t[6], seed: "#7", score: null, isWinner: false }
+        team1: { name: t[1].name, seed: `#${t[1].seed}`, score: null, isWinner: false },
+        team2: { name: t[6].name, seed: `#${t[6].seed}`, score: null, isWinner: false }
       },
       {
         matchId: "qf_4",
-        team1: { name: t[2], seed: "#3", score: null, isWinner: false },
-        team2: { name: t[5], seed: "#6", score: null, isWinner: false }
+        team1: { name: t[2].name, seed: `#${t[2].seed}`, score: null, isWinner: false },
+        team2: { name: t[5].name, seed: `#${t[5].seed}`, score: null, isWinner: false }
       }
     ],
     semifinals: [
@@ -454,6 +548,7 @@ export function generateSingleEliminationBracket(teamNames) {
       team2: { name: "Финалист (2)", seed: "", score: null, isWinner: false }
     },
     thirdPlace: {
+      matchId: "third_place",
       team1: { name: "Бронза (1)", seed: "", score: null, isWinner: false },
       team2: { name: "Бронза (2)", seed: "", score: null, isWinner: false }
     }

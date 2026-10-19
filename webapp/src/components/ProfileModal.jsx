@@ -33,7 +33,8 @@ import {
   getSpecialtyByGroup, 
   getDepartmentByCourse,
   getRoleDisplay,
-  isSuperAdmin
+  isSuperAdmin,
+  isOrganizer
 } from '../utils/userProfile';
 import { useTelegramBackButton, triggerHaptic, openBotCommand } from '../utils/telegram';
 import { CS2_PLAYERS } from '../data/cs2TournamentData';
@@ -386,18 +387,43 @@ export default function ProfileModal({
                   </span>
                 </div>
 
-                {/* Role Specific Actions: Admin OR Starosta OR Student Request */}
+                {/* Role Specific Actions: Admin OR Organizer OR Starosta OR Student Request */}
                 {isSuperAdmin(profile?.id) || profile.role === 'superadmin' || profile.role === 'admin' ? (
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onNavigateTab) onNavigateTab('admin');
+                        triggerHaptic('medium');
+                      }}
+                      className="w-full py-2.5 px-3 bg-amber-400 hover:bg-amber-300 text-black font-mono text-xs uppercase font-black transition-all flex items-center justify-center gap-2 rounded-xs shadow-md cursor-pointer active:scale-95"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-black" />
+                      <span>👑 ПАНЕЛЬ АДМИНИСТРАТОРА (@controlleraitubot)</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onNavigateTab) onNavigateTab('esports');
+                        triggerHaptic('medium');
+                      }}
+                      className="w-full py-2 px-3 bg-zinc-900 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 font-mono text-[10px] uppercase font-bold transition-all flex items-center justify-center gap-1.5 rounded-xs cursor-pointer"
+                    >
+                      <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                      <span>🏆 ОРГАНИЗАТОР CS2 ТУРНИРОВ</span>
+                    </button>
+                  </div>
+                ) : profile.role === 'organizer' || isOrganizer(profile?.id, profile?.role) ? (
                   <button
                     onClick={() => {
                       onClose();
-                      if (onNavigateTab) onNavigateTab('admin');
+                      if (onNavigateTab) onNavigateTab('esports');
                       triggerHaptic('medium');
                     }}
-                    className="w-full py-2.5 px-3 bg-amber-400 hover:bg-amber-300 text-black font-mono text-xs uppercase font-black transition-all flex items-center justify-center gap-2 rounded-xs shadow-md cursor-pointer active:scale-95"
+                    className="w-full py-2.5 px-3 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/50 text-amber-300 font-mono text-xs uppercase font-bold transition-all flex items-center justify-center gap-2 rounded-xs active:scale-95 cursor-pointer"
                   >
-                    <ShieldCheck className="w-4 h-4 text-black" />
-                    <span>👑 ПАНЕЛЬ АДМИНИСТРАТОРА (@controlleraitubot)</span>
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>🏆 ПАНЕЛЬ ОРГАНИЗАТОРА ТУРНИРОВ</span>
                   </button>
                 ) : ['starosta', 'zam_starosty'].includes(profile.role) ? (
                   onOpenStarosta && (
