@@ -143,6 +143,9 @@ export function getAllTournaments() {
                 ...t,
                 title: sys.title,
                 subTitle: sys.subTitle,
+                type: sys.type,
+                status: sys.status,
+                statusBadge: sys.statusBadge,
                 matches: sys.matches,
                 bracket: sys.bracket,
                 rules: sys.rules,
@@ -150,7 +153,9 @@ export function getAllTournaments() {
                 secondPlace: sys.secondPlace,
                 thirdPlace: sys.thirdPlace,
                 date: sys.date,
-                teamsCount: sys.teamsCount
+                teamsCount: sys.teamsCount,
+                maxTeams: sys.maxTeams,
+                prizePool: sys.prizePool
               };
             }
             return t;

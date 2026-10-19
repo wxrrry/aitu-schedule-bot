@@ -29,7 +29,7 @@ export const CS2_PLAYERS = {
     hsPercentage: "44%",
     matchesPlayed: 3,
     winRate: "66%",
-    badges: ["КАПИТАН TRIQ", "ФИНАЛИСТ КУБКА", "TOP ENTRY"]
+    badges: ["КАПИТАН TRIQ", "ФИНАЛИСТ S1", "TOP ENTRY"]
   },
   "RAREMO": {
     nick: "RAREMO",
@@ -85,7 +85,7 @@ export const CS2_PLAYERS = {
     hsPercentage: "46%",
     matchesPlayed: 2,
     winRate: "100%",
-    badges: ["ЧЕМПИОН КУБКА 🏆", "КАПИТАН ЧЕМПИОНОВ", "IGL"]
+    badges: ["ЧЕМПИОН SEASON 1 🏆", "КАПИТАН ЧЕМПИОНОВ", "IGL"]
   },
   "sonof_4everdance": {
     nick: "sonof_4everdance",
@@ -500,7 +500,7 @@ export const CS2_PLAYERS = {
   },
 };
 
-// Реальные матчи осеннего кубка колледжа с верифицированной статистикой FastCup
+// Реальные матчи AITU PRO LEAGUE SEASON 1 с верифицированной статистикой FastCup
 export const TOURNAMENT_MATCHES = [
   {
     id: "match_r1_adaptive_vs_ckson",
@@ -666,10 +666,10 @@ export const TOURNAMENT_MATCHES = [
   },
 ];
 
-// Полная сетка осеннего турнира (Single Elimination по официальной схеме)
+// Полная сетка AITU PRO LEAGUE SEASON 1 (Single Elimination по официальной схеме)
 export const OFFICIAL_BRACKET = {
-  title: "CS 2 Single Elimination",
-  date: "Прошедшее воскресенье · 12.10.2026",
+  title: "AITU PRO LEAGUE S1 Playoffs",
+  date: "12.10.2026 · FastCup",
   round1: [
     {
       matchId: "r1_m1",
@@ -722,220 +722,38 @@ export const OFFICIAL_BRACKET = {
   }
 };
 
-// Сетка и протоколы AITU PRO LEAGUE SEASON 1 (Прошлый турнир лиги)
-export const PRO_LEAGUE_S1_BRACKET = {
-  title: "AITU PRO LEAGUE S1 Playoffs",
-  date: "Весенний сезон 2026",
-  semifinals: [
-    {
-      matchId: "s1_semi1",
-      team1: { name: "TRIQ", seed: "#1", isWinner: true, score: "2" },
-      team2: { name: "DODO TEAM", seed: "#4", isWinner: false, score: "0" }
-    },
-    {
-      matchId: "s1_semi2",
-      team1: { name: "Aspect", seed: "#2", isWinner: true, score: "2" },
-      team2: { name: "Team V0id", seed: "#3", isWinner: false, score: "1" }
-    }
-  ],
-  final: {
-    matchId: "s1_final",
-    team1: { name: "TRIQ", seed: "#1", isWinner: true, score: "2 🏆" },
-    team2: { name: "Aspect", seed: "#2", isWinner: false, score: "0" }
-  },
-  thirdPlace: {
-    team1: { name: "DODO TEAM", seed: "#4", isWinner: true, score: "2 🥉" },
-    team2: { name: "Team V0id", seed: "#3", isWinner: false, score: "1" }
-  }
-};
-
-export const PRO_LEAGUE_S1_MATCHES = [
-  {
-    id: "s1_match_final",
-    title: "ГРАНД-ФИНАЛ: TRIQ vs Aspect",
-    stage: "ГРАНД-ФИНАЛ 🏆",
-    format: "Best of 3 (5v5)",
-    duration: "01:14:20",
-    region: "Москва (Custom 128 tick)",
-    team1: {
-      name: "TRIQ",
-      seed: "#1",
-      score: 2,
-      isWinner: true,
-      elo: 1000,
-      players: [
-        { nick: "wxrry", isCaptain: true, elo: 1000, k: 38, d: 18, a: 11 },
-        { nick: "coldeph", elo: 1000, k: 35, d: 14, a: 8 },
-        { nick: "RAREMO", elo: 1000, k: 31, d: 16, a: 9 },
-        { nick: "Toxichniy", elo: 1000, k: 26, d: 17, a: 7 },
-        { nick: "Kalivan1703", elo: 1000, k: 22, d: 15, a: 8 }
-      ]
-    },
-    team2: {
-      name: "Aspect",
-      seed: "#2",
-      score: 0,
-      isWinner: false,
-      elo: 1000,
-      players: [
-        { nick: "ASPECT | Word !+", isCaptain: true, elo: 1000, k: 20, d: 30, a: 5 },
-        { nick: "kvsd", elo: 1000, k: 18, d: 30, a: 6 },
-        { nick: "klentin", elo: 1000, k: 16, d: 30, a: 4 },
-        { nick: "Nova !+!", elo: 1000, k: 14, d: 31, a: 5 },
-        { nick: "ASPECT | Soaro", elo: 1000, k: 12, d: 31, a: 3 }
-      ]
-    },
-    maps: [
-      { name: "Mirage", score1: 13, score2: 6, duration: "36:10", winner: "TRIQ" },
-      { name: "Inferno", score1: 13, score2: 8, duration: "38:10", winner: "TRIQ" }
-    ]
-  },
-  {
-    id: "s1_match_semi1",
-    title: "1/2 ФИНАЛА: TRIQ vs DODO TEAM",
-    stage: "1/2 ФИНАЛА (ПОЛУФИНАЛ)",
-    format: "Best of 3 (5v5)",
-    duration: "52:40",
-    region: "Москва (Custom)",
-    team1: {
-      name: "TRIQ",
-      seed: "#1",
-      score: 2,
-      isWinner: true,
-      elo: 1000,
-      players: [
-        { nick: "RAREMO", elo: 1000, k: 28, d: 9, a: 6 },
-        { nick: "wxrry", isCaptain: true, elo: 1000, k: 25, d: 8, a: 7 },
-        { nick: "coldeph", elo: 1000, k: 23, d: 7, a: 5 },
-        { nick: "Toxichniy", elo: 1000, k: 18, d: 9, a: 6 },
-        { nick: "Kalivan1703", elo: 1000, k: 14, d: 8, a: 5 }
-      ]
-    },
-    team2: {
-      name: "DODO TEAM",
-      seed: "#4",
-      score: 0,
-      isWinner: false,
-      elo: 1000,
-      players: [
-        { nick: "yaponec_3", elo: 1000, k: 14, d: 22, a: 3 },
-        { nick: "kotanye", elo: 1000, k: 10, d: 21, a: 2 },
-        { nick: "Astronif", isCaptain: true, elo: 1000, k: 8, d: 22, a: 3 },
-        { nick: "Ganzhubus", elo: 1000, k: 6, d: 21, a: 2 },
-        { nick: "prokllat", elo: 1000, k: 3, d: 22, a: 1 }
-      ]
-    },
-    maps: [
-      { name: "Vertigo", score1: 13, score2: 4, duration: "25:10", winner: "TRIQ" },
-      { name: "Ancient", score1: 13, score2: 5, duration: "27:30", winner: "TRIQ" }
-    ]
-  },
-  {
-    id: "s1_match_semi2",
-    title: "1/2 ФИНАЛА: Aspect vs Team V0id",
-    stage: "1/2 ФИНАЛА (ПОЛУФИНАЛ)",
-    format: "Best of 3 (5v5)",
-    duration: "01:21:15",
-    region: "Москва (Custom)",
-    team1: {
-      name: "Aspect",
-      seed: "#2",
-      score: 2,
-      isWinner: true,
-      elo: 1000,
-      players: [
-        { nick: "kvsd", elo: 1000, k: 26, d: 19, a: 8 },
-        { nick: "ASPECT | Word !+", isCaptain: true, elo: 1000, k: 24, d: 18, a: 7 },
-        { nick: "klentin", elo: 1000, k: 20, d: 20, a: 5 },
-        { nick: "Nova !+!", elo: 1000, k: 18, d: 21, a: 6 },
-        { nick: "ASPECT | Soaro", elo: 1000, k: 15, d: 20, a: 4 }
-      ]
-    },
-    team2: {
-      name: "Team V0id",
-      seed: "#3",
-      score: 1,
-      isWinner: false,
-      elo: 1000,
-      players: [
-        { nick: "N1xO", elo: 1000, k: 25, d: 21, a: 6 },
-        { nick: "sh3f1eld", elo: 1000, k: 21, d: 20, a: 5 },
-        { nick: "FeRtEx", elo: 1000, k: 19, d: 22, a: 7 },
-        { nick: "m1hnessy_1", isCaptain: true, elo: 1000, k: 18, d: 20, a: 5 },
-        { nick: "ion !", elo: 1000, k: 15, d: 20, a: 4 }
-      ]
-    },
-    maps: [
-      { name: "Anubis", score1: 13, score2: 9, duration: "28:15", winner: "Aspect" },
-      { name: "Mirage", score1: 10, score2: 13, duration: "30:20", winner: "Team V0id" },
-      { name: "Dust II", score1: 13, score2: 7, duration: "22:40", winner: "Aspect" }
-    ]
-  },
-  {
-    id: "s1_match_third_place",
-    title: "МАТЧ ЗА 3-Е МЕСТО: DODO TEAM vs Team V0id",
-    stage: "МАТЧ ЗА 3-Е МЕСТО 🥉",
-    format: "Best of 3 (5v5)",
-    duration: "01:10:05",
-    region: "Москва (Custom)",
-    team1: {
-      name: "DODO TEAM",
-      seed: "#4",
-      score: 2,
-      isWinner: true,
-      elo: 1000,
-      players: [
-        { nick: "yaponec_3", elo: 1000, k: 27, d: 18, a: 6 },
-        { nick: "kotanye", elo: 1000, k: 22, d: 19, a: 5 },
-        { nick: "Astronif", isCaptain: true, elo: 1000, k: 18, d: 19, a: 4 },
-        { nick: "Ganzhubus", elo: 1000, k: 16, d: 20, a: 4 },
-        { nick: "prokllat", elo: 1000, k: 12, d: 19, a: 3 }
-      ]
-    },
-    team2: {
-      name: "Team V0id",
-      seed: "#3",
-      score: 1,
-      isWinner: false,
-      elo: 1000,
-      players: [
-        { nick: "N1xO", elo: 1000, k: 24, d: 20, a: 5 },
-        { nick: "sh3f1eld", elo: 1000, k: 20, d: 19, a: 4 },
-        { nick: "m1hnessy_1", isCaptain: true, elo: 1000, k: 18, d: 19, a: 5 },
-        { nick: "FeRtEx", elo: 1000, k: 17, d: 20, a: 6 },
-        { nick: "ion !", elo: 1000, k: 16, d: 19, a: 4 }
-      ]
-    },
-    maps: [
-      { name: "Inferno", score1: 13, score2: 11, duration: "32:10", winner: "DODO TEAM" },
-      { name: "Mirage", score1: 8, score2: 13, duration: "26:40", winner: "Team V0id" },
-      { name: "Nuke", score1: 13, score2: 9, duration: "29:15", winner: "DODO TEAM" }
-    ]
-  }
-];
+// Сетка и протоколы AITU PRO LEAGUE SEASON 1
+export const PRO_LEAGUE_S1_BRACKET = OFFICIAL_BRACKET;
+export const PRO_LEAGUE_S1_MATCHES = TOURNAMENT_MATCHES;
 
 // Реестр турниров колледжа (сетка доступна только внутри выбранного турнира)
 export const TOURNAMENTS_LIST = [
   {
     id: "autumn_2026",
     title: "AITU CS2 Autumn Cup",
-    subTitle: "Турнир прошедшего воскресенья",
-    type: "past",
-    status: "ЗАВЕРШЁН",
-    statusBadge: "bg-zinc-800 border-white/20 text-zinc-300",
-    date: "12.10.2026 (прошлое воскресенье)",
+    subTitle: "Осенний кубок колледжа AITU",
+    type: "upcoming",
+    status: "ПРИЁМ ЗАЯВОК",
+    statusBadge: "bg-amber-500/10 border-amber-500/30 text-amber-400",
+    date: "Ноябрь 2026",
     format: "Single Elimination · Best of 3 (5v5)",
-    teamsCount: "9 команд",
-    winner: "LL TEAM 🏆",
-    secondPlace: "TRIQ 🥈",
-    thirdPlace: "adaptive 🥉",
-    bracket: OFFICIAL_BRACKET,
-    matches: TOURNAMENT_MATCHES,
+    teamsCount: "Регистрация открыта",
+    maxTeams: 8,
+    prizePool: "Кубок колледжа + Дипломы",
+    winner: null,
+    secondPlace: null,
+    thirdPlace: null,
+    bracket: {
+      isPending: true,
+      title: "СЕТКА ПЛЕЙ-ОФФ // АНОНС",
+      pendingMessage: "Сетка плей-офф осеннего кубка формируется после завершения регистрации команд. Капитаны могут подать заявку прямо сейчас!"
+    },
+    matches: [],
     rules: [
       "Формат турнира: Single Elimination (плей-офф на выбывание с матчем за 3-е место).",
       "Формат матчей: Best of 3 (до двух побед по картам). Составы 5 на 5.",
-      "Серверы: Москва, выделенный Custom-сервер колледжа FastCup.",
-      "Карты турнира: Mirage, Vertigo, Anubis, Inferno, Cache, Nuke, Dust II."
+      "Серверы: Москва, выделенный сервер колледжа 128 tick.",
+      "Карты турнира: Mirage, Vertigo, Anubis, Inferno, Ancient, Nuke, Dust II."
     ]
   },
   {
@@ -945,19 +763,19 @@ export const TOURNAMENTS_LIST = [
     type: "past",
     status: "ЗАВЕРШЁН",
     statusBadge: "bg-zinc-800 border-white/20 text-zinc-300",
-    date: "Весенний сезон 2026",
-    format: "Group Stage + Playoff · Best of 3 (5v5)",
-    teamsCount: "8 команд",
-    winner: "TRIQ 🏆",
-    secondPlace: "Aspect 🥈",
-    thirdPlace: "DODO TEAM 🥉",
-    bracket: PRO_LEAGUE_S1_BRACKET,
-    matches: PRO_LEAGUE_S1_MATCHES,
+    date: "12.10.2026 (FastCup)",
+    format: "Single Elimination · Best of 3 (5v5)",
+    teamsCount: "9 команд",
+    winner: "LL TEAM 🏆",
+    secondPlace: "TRIQ 🥈",
+    thirdPlace: "adaptive 🥉",
+    bracket: OFFICIAL_BRACKET,
+    matches: TOURNAMENT_MATCHES,
     rules: [
-      "Формат лиги: Регулярный групповой этап + Плей-офф (Single Elimination).",
-      "Матчи плей-офф: Best of 3 (до двух побед по картам). Составы 5 на 5.",
-      "Серверы: Выделенный Custom-сервер колледжа AITU 128 tick.",
-      "Карты турнира: Mirage, Inferno, Nuke, Ancient, Anubis, Dust II, Vertigo."
+      "Формат лиги: Single Elimination (плей-офф на выбывание с матчем за 3-е место).",
+      "Формат матчей: Best of 3 (до двух побед по картам). Составы 5 на 5.",
+      "Серверы: Москва, выделенный Custom-сервер колледжа FastCup.",
+      "Карты турнира: Mirage, Vertigo, Anubis, Inferno, Cache, Nuke, Dust II."
     ]
   }
 ];
@@ -970,7 +788,7 @@ export const HLTV_TEAM_RANKINGS = [
     changeType: "up",
     name: "LL TEAM",
     points: 1000,
-    status: "ЧЕМПИОН КУБКА",
+    status: "ЧЕМПИОН SEASON 1",
     badgeColor: "text-amber-400 border-amber-400/40 bg-amber-950/30",
     trophy: "🏆",
     record: "3-0 (Побед: 100%)",
@@ -988,7 +806,7 @@ export const HLTV_TEAM_RANKINGS = [
     changeType: "up",
     name: "TRIQ",
     points: 748,
-    status: "ФИНАЛИСТ КУБКА",
+    status: "ФИНАЛИСТ SEASON 1",
     badgeColor: "text-zinc-200 border-white/30 bg-zinc-800/40",
     trophy: "🥈",
     record: "2-1 (Побед: 67%)",
