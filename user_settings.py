@@ -208,3 +208,80 @@ def get_user_settings_keyboard(
         ])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def format_chat_settings_text(
+    chat_id: int,
+    chat_title: str,
+    group_name: str,
+    binding = None
+) -> str:
+    """Генерирует описание настроек системных оповещений для беседы."""
+    f_breaks = "🟢 Включено" if getattr(binding, "notify_five_min_breaks", True) else "🔴 Отключено"
+    r_10 = "🟢 Включено" if getattr(binding, "notify_10min", True) else "🔴 Отключено"
+    m_alert = "🟢 Включено" if getattr(binding, "notify_morning", True) else "🔴 Отключено"
+    mid_alert = "🟢 Включено" if getattr(binding, "notify_midnight", True) else "🔴 Отключено"
+    reps = "🟢 Включено" if getattr(binding, "notify_replacements", True) else "🔴 Отключено"
+
+    return (
+        f"⚙️ <b>Настройки оповещений беседы</b>\n"
+        f"──────────────────────\n"
+        f"💬 <b>Чат:</b> <b>{chat_title or 'Беседа'}</b> [<code>{chat_id}</code>]\n"
+        f"👥 <b>Группа:</b> <code>{group_name}</code>\n\n"
+        f"Управляйте типами сообщений, которые бот отправляет в эту беседу:\n\n"
+        f"🔔 <b>Звонок на пятиминутку:</b> {f_breaks}\n"
+        f"   ▫️ <i>Системный звонок на 5-минутный перерыв внутри пар</i>\n\n"
+        f"⏰ <b>Колокольчик за 10 мин:</b> {r_10}\n"
+        f"   ▫️ <i>Напоминание перед началом каждой пары</i>\n\n"
+        f"🌅 <b>Утренняя сводка (08:00):</b> {m_alert}\n"
+        f"   ▫️ <i>Утреннее расписание по будням</i>\n\n"
+        f"🌙 <b>Полночная рассылка (00:00):</b> {mid_alert}\n"
+        f"   ▫️ <i>Детальное расписание на наступающий день</i>\n\n"
+        f"⚠️ <b>Замены и отмены:</b> {reps}\n"
+        f"   ▫️ <i>Мгновенные оповещения при публикации замен</i>\n\n"
+        f"👇 <i>Нажмите на тумблер ниже, чтобы включить или отключить оповещение:</i>"
+    )
+
+
+def get_chat_settings_keyboard(chat_id: int, binding = None) -> InlineKeyboardMarkup:
+    """Генерирует инлайн-клавиатуру с тумблерами оповещений для беседы."""
+    icon_f = "✅" if getattr(binding, "notify_five_min_breaks", True) else "❌"
+    icon_10 = "✅" if getattr(binding, "notify_10min", True) else "❌"
+    icon_m = "✅" if getattr(binding, "notify_morning", True) else "❌"
+    icon_mid = "✅" if getattr(binding, "notify_midnight", True) else "❌"
+    icon_rep = "✅" if getattr(binding, "notify_replacements", True) else "❌"
+
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=f"{icon_f} Звонки на пятиминутки",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_five_min_breaks"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"{icon_10} Колокольчик за 10 мин",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_10min"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"{icon_m} Утренняя сводка (08:00)",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_morning"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"{icon_mid} Полночная рассылка (00:00)",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_midnight"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"{icon_rep} Замены и отмены пар",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_replacements"
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

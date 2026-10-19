@@ -70,31 +70,36 @@ def format_starostat_menu_text(group_name: str, starosta_user, zam_user) -> str:
     )
 
 
-def get_starostat_menu_keyboard(group_name: str, starosta_user, zam_user) -> InlineKeyboardMarkup:
-    """Клавиатура управления старостатом группы."""
+def get_starostat_menu_keyboard(group_name: str, starosta_user, zam_user, can_modify: bool = True) -> InlineKeyboardMarkup:
+    """Клавиатура управления старостатом группы с проверкой прав доступа."""
     builder = InlineKeyboardBuilder()
 
-    # Кнопка для старосты
-    if starosta_user:
+    if not can_modify:
         builder.row(
-            InlineKeyboardButton(text="👑 Переизбрать старосту", callback_data="starostat_pick_starosta"),
-            InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_starosta")
+            InlineKeyboardButton(text="🔒 Смена доступна только старосте/заму", callback_data="starostat_locked_notice")
         )
     else:
-        builder.row(
-            InlineKeyboardButton(text="👑 Выбрать старосту", callback_data="starostat_pick_starosta")
-        )
+        # Кнопка для старосты
+        if starosta_user:
+            builder.row(
+                InlineKeyboardButton(text="👑 Переизбрать старосту", callback_data="starostat_pick_starosta"),
+                InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_starosta")
+            )
+        else:
+            builder.row(
+                InlineKeyboardButton(text="👑 Выбрать старосту", callback_data="starostat_pick_starosta")
+            )
 
-    # Кнопка для зама
-    if zam_user:
-        builder.row(
-            InlineKeyboardButton(text="🎖 Переизбрать заместителя", callback_data="starostat_pick_zam"),
-            InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_zam")
-        )
-    else:
-        builder.row(
-            InlineKeyboardButton(text="🎖 Выбрать заместителя", callback_data="starostat_pick_zam")
-        )
+        # Кнопка для зама
+        if zam_user:
+            builder.row(
+                InlineKeyboardButton(text="🎖 Переизбрать заместителя", callback_data="starostat_pick_zam"),
+                InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_zam")
+            )
+        else:
+            builder.row(
+                InlineKeyboardButton(text="🎖 Выбрать заместителя", callback_data="starostat_pick_zam")
+            )
 
     builder.row(
         InlineKeyboardButton(text="◀️ Назад в настройки", callback_data="settings_back_to_menu")

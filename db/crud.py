@@ -169,13 +169,20 @@ async def get_user_by_username(username: str) -> User | None:
 
 
 async def update_user_group(user_id: int | str, group_name: str) -> bool:
-    """Обновляет академическую группу пользователя."""
+    """Обновляет академическую группу пользователя. Если староста переходит в другую группу, его роль сбрасывается на student."""
     u_id = int(user_id)
+    canon = canonical_group_name(group_name) or group_name.strip()
     async with async_session() as session:
-        stmt = update(User).where(User.user_id == u_id).values(group_name=group_name)
-        res = await session.execute(stmt)
+        user_res = await session.execute(select(User).where(User.user_id == u_id))
+        user = user_res.scalar_one_or_none()
+        if not user:
+            return False
+        if user.group_name != canon:
+            user.group_name = canon
+            if user.role in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
+                user.role = UserRole.STUDENT.value
         await session.commit()
-        return res.rowcount > 0
+        return True
 
 
 async def update_user_role(user_id: int | str, role: str) -> bool:
@@ -680,6 +687,43 @@ async def get_all_chat_bindings() -> list[ChatBinding]:
         return list(res.scalars().all())
 
 
+async def get_chat_binding(chat_id: int) -> ChatBinding | None:
+    """Возвращает привязку беседы по её chat_id."""
+    async with async_session() as session:
+        stmt = select(ChatBinding).where(ChatBinding.chat_id == chat_id)
+        res = await session.execute(stmt)
+        return res.scalar_one_or_none()
+
+
+async def update_chat_notification_setting(chat_id: int, key: str, value: bool) -> bool:
+    """Обновляет булеву настройку системных уведомлений беседы."""
+    valid_keys = {
+        "notify_five_min_breaks",
+        "notify_10min",
+        "notify_morning",
+        "notify_midnight",
+        "notify_replacements"
+    }
+    if key not in valid_keys:
+        return False
+    async with async_session() as session:
+        stmt = update(ChatBinding).where(ChatBinding.chat_id == chat_id).values(**{key: value})
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
+async def toggle_chat_notification_setting(chat_id: int, key: str) -> bool:
+    """Инвертирует настройку системных уведомлений беседы и возвращает новое значение."""
+    binding = await get_chat_binding(chat_id)
+    if not binding:
+        return False
+    curr_val = getattr(binding, key, True)
+    new_val = not curr_val
+    await update_chat_notification_setting(chat_id, key, new_val)
+    return new_val
+
+
 # =============================================================
 # GROUP OFFICERS (STAROSTA / ZAM_STAROSTY) MANAGEMENT
 # =============================================================
@@ -710,7 +754,7 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
     Назначает старосту или заместителя старосты для группы:
     - Для одной группы не может быть больше 1 старосты и 1 зама.
     - Если слот уже занят, предыдущий офицер с этой ролью разжалуется до student.
-    - Новый пользователь получает указанную роль и привязывается к группе.
+    - Новый пользователь получает указанную роль и надежно сохраняется в БД.
     """
     if officer_role not in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
         return False, "Недопустимая роль офицера."
@@ -722,7 +766,17 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
         res = await session.execute(target_stmt)
         target_user = res.scalar_one_or_none()
         if not target_user:
-            return False, "Пользователь не найден в базе данных бота."
+            target_user = User(
+                user_id=new_user_id,
+                username=None,
+                full_name="",
+                group_name=canon_grp,
+                role=officer_role
+            )
+            session.add(target_user)
+        else:
+            target_user.role = officer_role
+            target_user.group_name = canon_grp
 
         curr_stmt = select(User).where(
             and_(
@@ -735,9 +789,6 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
         old_officers = curr_res.scalars().all()
         for old in old_officers:
             old.role = UserRole.STUDENT.value
-
-        target_user.role = officer_role
-        target_user.group_name = canon_grp
 
         await session.commit()
         return True, "Успешно назначено."

@@ -67,6 +67,32 @@ export default function App() {
         }));
       }
     });
+
+    // Синхронизация роли и настроек напрямую из базы данных SQLite бэкенда
+    const uid = profile?.id;
+    if (uid) {
+      fetch(`/api/profile?user_id=${uid}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(serverData => {
+          if (serverData && serverData.role) {
+            setProfile(prev => {
+              const updated = {
+                ...prev,
+                role: serverData.role,
+                group: serverData.group || prev.group,
+                remind10min: serverData.remind_10min ?? prev.remind10min,
+                morningAlert: serverData.morning_alert ?? prev.morningAlert,
+                fiveMinBreaks: serverData.five_min_breaks ?? prev.fiveMinBreaks
+              };
+              saveUserProfile(updated);
+              return updated;
+            });
+          }
+        })
+        .catch(err => {
+          console.debug('Failed to sync profile from DB:', err);
+        });
+    }
   }, []);
 
   // Если приложение открыто в обычном браузере по ссылке, а не внутри Telegram Mini App

@@ -23,6 +23,22 @@ async def run_data_migrations():
     из файлов Python/JSON в базу данных SQLite.
     """
     async with async_session() as session:
+        # 0. Проверяем и накатываем новые столбцы уведомлений в chat_bindings до выполнения SELECT запросов
+        from sqlalchemy import text
+        for col_name in [
+            "notify_five_min_breaks",
+            "notify_10min",
+            "notify_morning",
+            "notify_midnight",
+            "notify_replacements"
+        ]:
+            try:
+                await session.execute(text(f"ALTER TABLE chat_bindings ADD COLUMN {col_name} BOOLEAN DEFAULT 1"))
+                await session.commit()
+                logger.info(f"Добавлен столбец {col_name} в chat_bindings.")
+            except Exception:
+                await session.rollback()
+
         # 1. Засеиваем группы колледжа
         res = await session.execute(select(Group))
         existing_groups = {g.name: g for g in res.scalars().all()}
@@ -203,7 +219,7 @@ async def run_data_migrations():
             )
             if not init_flag.scalar_one_or_none():
                 # Первичный запуск: фиксируем флаг инициализации
-                session.add(ChatBinding(chat_id=0, group_name="__SYSTEM_INIT_TOURNAMENTS__", thread_id=None))
+                session.add(ChatBinding(chat_id=0, group_name="__SYSTEM_INIT_TOURNAMENTS__"))
                 await session.commit()
                 logger.info("Флаг первичной инициализации турниров сохранен.")
         except Exception as te:

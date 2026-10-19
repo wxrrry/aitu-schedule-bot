@@ -26,6 +26,7 @@ from schedule_data import (
     DAYS_RU,
     get_course_from_group_name,
     get_bell_schedule,
+    get_bell_times,
     get_course_lunch_info,
     COURSE_BELL_SCHEDULE,
 )
@@ -70,7 +71,10 @@ from db.crud import (
     get_group_replacements,
     delete_replacement_by_id,
     normalize_group_name,
-    canonical_group_name
+    canonical_group_name,
+    get_chat_binding,
+    toggle_chat_notification_setting,
+    update_chat_notification_setting
 )
 from permissions import (
     is_superadmin,
@@ -78,6 +82,7 @@ from permissions import (
     is_starosta,
     is_starosta_or_zam,
     can_manage_group,
+    can_change_group_officers,
     get_user_role_display
 )
 from keyboards import (
@@ -121,6 +126,7 @@ from keyboards import (
 )
 from features import (
     get_now_status,
+    get_formatted_now_status,
     get_teachers_catalog_text,
     get_teachers_inline_keyboard,
     get_teacher_detail_text,
@@ -147,7 +153,9 @@ from user_settings import (
     format_user_settings_text,
     get_user_settings_keyboard,
     get_users_with_setting,
-    load_all_settings
+    load_all_settings,
+    format_chat_settings_text,
+    get_chat_settings_keyboard
 )
 from lectures import (
     get_all_lectures,
@@ -351,6 +359,8 @@ async def send_midnight_schedule():
 
     for b in bindings:
         try:
+            if not getattr(b, "notify_midnight", True):
+                continue
             if target_date.weekday() == 5:
                 pairs = await get_lessons_for_day(b.group_name, 5, parity_code)
                 reps = await get_replacements_for_date_and_group(target_date, b.group_name)
@@ -383,6 +393,8 @@ async def send_morning_alert():
                 logger.error(f"Ошибка утренней рассылки в legacy чат {CHAT_ID}: {e}")
 
     for b in bindings:
+        if not getattr(b, "notify_morning", True):
+            continue
         text = await get_formatted_morning_alert(today, group_name=b.group_name)
         if text:
             try:
@@ -453,6 +465,8 @@ async def broadcast_replacement_alert(rep):
     try:
         bindings = await get_all_chat_bindings()
         for b in bindings:
+            if not getattr(b, "notify_replacements", True):
+                continue
             if not grp or is_same_group(b.group_name, grp):
                 recipient_ids.add(b.chat_id)
     except Exception as e:
@@ -623,6 +637,8 @@ async def send_five_minute_break(pair_num: int, target_courses: list[int] | None
     # 1. Отправка в привязанные беседы
     bindings = await get_all_chat_bindings()
     for b in bindings:
+        if not getattr(b, "notify_five_min_breaks", True):
+            continue
         c = get_course_from_group_name(b.group_name)
         if target_courses is not None and c not in target_courses:
             continue
@@ -1701,6 +1717,29 @@ async def handle_download_maket(event: types.Message | types.CallbackQuery):
 @dp.message(F.text == "⚙️ Настройки")
 @dp.message(F.text == "🔔 Мои напоминания")
 async def handle_user_settings(message: types.Message):
+    # Если команда вызвана в групповом чате / супергруппе — показываем настройки беседы
+    if message.chat.type in ("group", "supergroup"):
+        binding = await get_chat_binding(message.chat.id)
+        if not binding:
+            await message.answer(
+                "ℹ️ <b>Беседа не привязана к группе</b>\n"
+                "──────────────────────\n"
+                "Чтобы настроить системные оповещения для этой беседы, сначала привяжите её к учебной группе:\n"
+                "<code>/bind &lt;группа&gt;</code> (например: <code>/bind 9ПО-43к</code>)"
+            )
+            return
+
+        text = format_chat_settings_text(
+            message.chat.id,
+            message.chat.title or "Беседа",
+            binding.group_name,
+            binding=binding
+        )
+        kb = get_chat_settings_keyboard(message.chat.id, binding=binding)
+        await message.answer(text, reply_markup=kb)
+        return
+
+    # В личных сообщениях — персональные настройки студента
     user_id = message.from_user.id
     user_name = message.from_user.first_name or ""
     user = await get_user(user_id)
@@ -1711,6 +1750,84 @@ async def handle_user_settings(message: types.Message):
     text = format_user_settings_text(user_id, user_name, group_name=grp, role_display=role_disp)
     kb = get_user_settings_keyboard(user_id, is_admin=is_adm, is_starosta=is_star, group_name=grp)
     await message.answer(text, reply_markup=kb)
+
+
+@dp.message(Command("chat_settings"))
+async def handle_chat_settings_command(message: types.Message):
+    """Явная команда вызова настроек оповещений беседы."""
+    if message.chat.type not in ("group", "supergroup"):
+        await message.answer(
+            "ℹ️ Команда <code>/chat_settings</code> предназначена для бесед колледжа.\n"
+            "В личных сообщениях используйте <code>/settings</code>."
+        )
+        return
+    await handle_user_settings(message)
+
+
+@dp.callback_query(F.data.startswith("toggle_chat_set_"))
+async def handle_toggle_chat_setting(call: types.CallbackQuery):
+    """Переключение тумблеров системных оповещений беседы (пятиминутки, 10 мин звонок, утро, полночь, замены)."""
+    data = call.data.replace("toggle_chat_set_", "")
+    # Формат: {chat_id}_{setting_key}
+    parts = data.split("_", 1)
+    if len(parts) < 2:
+        await call.answer("Некорректный запрос", show_alert=True)
+        return
+
+    try:
+        chat_id = int(parts[0])
+    except ValueError:
+        await call.answer("Некорректный ID беседы", show_alert=True)
+        return
+
+    setting_key = parts[1]
+    binding = await get_chat_binding(chat_id)
+    if not binding:
+        await call.answer("Беседа не найдена в базе данных.", show_alert=True)
+        return
+
+    user_id = call.from_user.id
+    is_bot_adm = await is_admin(user_id)
+    is_officer = await is_starosta_or_zam(user_id, binding.group_name)
+
+    is_chat_adm = False
+    try:
+        chat_member = await call.bot.get_chat_member(chat_id, user_id)
+        if chat_member.status in ("creator", "administrator"):
+            is_chat_adm = True
+    except Exception:
+        pass
+
+    if not (is_bot_adm or is_officer or is_chat_adm):
+        await call.answer(
+            "⛔️ Изменять настройки оповещений беседы могут только администраторы чата или староста/зам группы.",
+            show_alert=True
+        )
+        return
+
+    new_val = await toggle_chat_notification_setting(chat_id, setting_key)
+    titles = {
+        "notify_five_min_breaks": "Звонки на пятиминутки",
+        "notify_10min": "Колокольчик за 10 мин",
+        "notify_morning": "Утренняя сводка (08:00)",
+        "notify_midnight": "Полночная рассылка (00:00)",
+        "notify_replacements": "Замены и отмены пар"
+    }
+    title = titles.get(setting_key, setting_key)
+    state_str = "включено ✅" if new_val else "отключено ❌"
+    await call.answer(f"{title}: {state_str}")
+
+    updated_binding = await get_chat_binding(chat_id)
+    chat_title = call.message.chat.title if call.message and call.message.chat else "Беседа"
+    text = format_chat_settings_text(chat_id, chat_title, updated_binding.group_name, binding=updated_binding)
+    kb = get_chat_settings_keyboard(chat_id, binding=updated_binding)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e).lower():
+            logger.debug(f"Toggle chat setting error: {e}")
+    except Exception:
+        pass
 
 
 @dp.callback_query(F.data.startswith("toggle_set_"))
@@ -1914,13 +2031,22 @@ async def handle_starostat_menu(call: types.CallbackQuery, state: FSMContext):
     user = await get_user(user_id)
     grp = user.group_name if user else "9ПО-43к"
     officers = await get_group_officers(grp)
+    can_mod, _ = await can_change_group_officers(user_id, grp)
     text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
-    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"], can_modify=can_mod)
     try:
         await call.message.edit_text(text, reply_markup=kb)
     except Exception:
         await call.message.answer(text, reply_markup=kb)
     await call.answer()
+
+
+@dp.callback_query(F.data == "starostat_locked_notice")
+async def handle_starostat_locked_notice(call: types.CallbackQuery):
+    await call.answer(
+        "🔒 Руководство группы уже назначено. Изменять роли могут только действующий староста или заместитель.",
+        show_alert=True
+    )
 
 
 @dp.callback_query(F.data == "settings_back_to_menu")
@@ -1949,6 +2075,11 @@ async def handle_starostat_pick_role(call: types.CallbackQuery):
     user = await get_user(call.from_user.id)
     grp = user.group_name if user else "9ПО-43к"
 
+    allowed, reason = await can_change_group_officers(call.from_user.id, grp)
+    if not allowed:
+        await call.answer(f"⛔️ {reason}", show_alert=True)
+        return
+
     kb = get_officer_election_keyboard(actual_role)
     text = (
         f"👑 <b>Назначение {role_title} для группы {grp}:</b>\n\n"
@@ -1968,6 +2099,11 @@ async def handle_starostat_self_assign(call: types.CallbackQuery):
     user = await get_user(user_id)
     grp = user.group_name if user else "9ПО-43к"
 
+    allowed, reason = await can_change_group_officers(user_id, grp)
+    if not allowed:
+        await call.answer(f"⛔️ {reason}", show_alert=True)
+        return
+
     success, msg = await assign_group_officer(grp, role, user_id)
     role_name = "старостой" if role == "starosta" else "заместителем старосты"
     if success:
@@ -1976,8 +2112,9 @@ async def handle_starostat_self_assign(call: types.CallbackQuery):
         await call.answer(f"Ошибка: {msg}", show_alert=True)
 
     officers = await get_group_officers(grp)
+    can_mod, _ = await can_change_group_officers(user_id, grp)
     text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
-    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"], can_modify=can_mod)
     try:
         await call.message.edit_text(text, reply_markup=kb)
     except Exception:
@@ -1991,13 +2128,19 @@ async def handle_starostat_demote(call: types.CallbackQuery):
     user = await get_user(call.from_user.id)
     grp = user.group_name if user else "9ПО-43к"
 
+    allowed, reason = await can_change_group_officers(call.from_user.id, grp)
+    if not allowed:
+        await call.answer(f"⛔️ {reason}", show_alert=True)
+        return
+
     await demote_group_officer(grp, actual_role)
     role_name = "Староста" if actual_role == "starosta" else "Заместитель старосты"
     await call.answer(f"{role_name} группы {grp} снят.", show_alert=True)
 
     officers = await get_group_officers(grp)
+    can_mod, _ = await can_change_group_officers(call.from_user.id, grp)
     text = format_starostat_menu_text(grp, officers["starosta"], officers["zam_starosty"])
-    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"])
+    kb = get_starostat_menu_keyboard(grp, officers["starosta"], officers["zam_starosty"], can_modify=can_mod)
     try:
         await call.message.edit_text(text, reply_markup=kb)
     except Exception:
@@ -2009,6 +2152,11 @@ async def handle_starostat_manual_prompt(call: types.CallbackQuery, state: FSMCo
     role = call.data.replace("starostat_manual_", "")  # 'starosta' или 'zam_starosty'
     user = await get_user(call.from_user.id)
     grp = user.group_name if user else "9ПО-43к"
+
+    allowed, reason = await can_change_group_officers(call.from_user.id, grp)
+    if not allowed:
+        await call.answer(f"⛔️ {reason}", show_alert=True)
+        return
 
     await state.update_data(target_role=role, group_name=grp)
     await state.set_state(StarostatState.waiting_officer_username)
@@ -2038,6 +2186,13 @@ async def handle_starostat_officer_input(message: types.Message, state: FSMConte
     data = await state.get_data()
     role = data.get("target_role", "starosta")
     grp = data.get("group_name", "9ПО-43к")
+
+    allowed, reason = await can_change_group_officers(message.from_user.id, grp)
+    if not allowed:
+        await message.answer(f"⛔️ {reason}")
+        await state.clear()
+        return
+
     raw_val = message.text.strip()
 
     target_user = None
@@ -3175,157 +3330,188 @@ async def handle_notify_zam_callback(call: types.CallbackQuery):
 async def handle_inline_query(inline_query: types.InlineQuery):
     """
     Инлайн-режим: позволяет вызывать бота в любом чате через @aituraspisaniebot.
-    Делится расписанием на сегодня, завтра, текущим статусом, звонками и заменами.
+    Делится расписанием на сегодня, завтра, текущим статусом, неделей, звонками и заменами.
+    Контекстно подстраивается под группу пользователя или запрошенную группу/преподавателя/кабинет.
     """
-    query = inline_query.query.strip().lower()
-    results: list[types.InlineQueryResultArticle] = []
-    
+    raw_query = inline_query.query.strip()
+    query = raw_query.lower()
+
+    # 1. Загрузка профиля пользователя
+    user = await get_user(inline_query.from_user.id)
+    caller_group = canonical_group_name(user.group_name) if (user and user.group_name) else "9ПО-43к"
+
+    # 2. Определение целевой группы: если в запросе указана группа, переключаемся на неё
+    target_group = caller_group
+    query_group = None
+
+    for token in raw_query.split():
+        canon = canonical_group_name(token)
+        if canon and any(ch.isalpha() for ch in canon) and any(ch.isdigit() for ch in canon):
+            if (await get_group_by_name(canon)) or canon in ("9ПО-43к", "9ПО-41", "9ПО-42", "9ПО-31", "9ПО-32к", "9ПО-21", "9ПО-22к"):
+                query_group = canon
+                target_group = canon
+                break
+
+    if not query_group:
+        canon_full = canonical_group_name(raw_query)
+        if canon_full and ((await get_group_by_name(canon_full)) or canon_full in ("9ПО-43к", "9ПО-41", "9ПО-42", "9ПО-31", "9ПО-32к", "9ПО-21", "9ПО-22к")):
+            query_group = canon_full
+            target_group = canon_full
+
+    course = get_course_from_group_name(target_group)
     now = datetime.now(BOT_TZ)
     today = now.date()
     tomorrow = today + timedelta(days=1)
     current_time_str = now.strftime("%H:%M")
     parity_code, parity_name = get_week_parity(today)
-    
-    # 1. Сегодня
-    today_text = format_day_schedule(today, title_prefix="Расписание на сегодня", current_time_str=current_time_str)
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_today",
-            title="📅 Расписание на сегодня",
-            description=f"{DAYS_RU[today.weekday()]}, {today.day} {MONTHS_RU[today.month]} · {parity_name}",
-            input_message_content=types.InputTextMessageContent(
-                message_text=today_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
+    course_bells = get_bell_times(course)
+    course_lunch = get_course_lunch_info(course)
 
-    # 2. Завтра
-    tomorrow_text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра")
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_tomorrow",
-            title="🔜 Расписание на завтра",
-            description=f"{DAYS_RU[tomorrow.weekday()]}, {tomorrow.day} {MONTHS_RU[tomorrow.month]}",
-            input_message_content=types.InputTextMessageContent(
-                message_text=tomorrow_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
+    # Генерация форматированных текстов для целевой группы
+    try:
+        today_text = await get_formatted_day_schedule(today, title_prefix="Расписание на сегодня", current_time_str=current_time_str, group_name=target_group)
+    except Exception:
+        today_text = format_day_schedule(today, title_prefix="Расписание на сегодня", current_time_str=current_time_str, group_name=target_group)
 
-    # 3. Сейчас идёт пара
-    now_text = get_now_status(now)
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_now",
-            title="⚡️ Какая пара идёт сейчас?",
-            description=f"Текущее время {current_time_str} · прогресс пары и звонки",
-            input_message_content=types.InputTextMessageContent(
-                message_text=now_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
+    try:
+        tomorrow_text = await get_formatted_day_schedule(tomorrow, title_prefix="Расписание на завтра", group_name=target_group)
+    except Exception:
+        tomorrow_text = format_day_schedule(tomorrow, title_prefix="Расписание на завтра", group_name=target_group)
 
-    # 4. Неделя
+    try:
+        now_text = await get_formatted_now_status(group_name=target_group, now_dt=now)
+    except Exception:
+        now_text = get_now_status(now, group_name=target_group)
+
     monday = today - timedelta(days=today.weekday())
-    week_text = format_week_schedule(monday)
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_week",
-            title="🗓 Расписание на всю неделю",
-            description="Понедельник — Пятница (группа 9ПО-43к)",
-            input_message_content=types.InputTextMessageContent(
-                message_text=week_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
+    try:
+        week_text = await get_formatted_week_schedule(monday, group_name=target_group)
+    except Exception:
+        week_text = format_week_schedule(monday, group_name=target_group)
+
+    try:
+        zameny_text = await get_formatted_replacements_summary(group_name=target_group)
+    except Exception:
+        zameny_text = format_replacements_summary()
+
+    # Текст звонков для курса целевой группы
+    bell_lines = [
+        f"🔔 <b>Расписание звонков ({course} курс · {target_group})</b>",
+        "──────────────────────"
+    ]
+    for p_num, b_range in sorted(course_bells.items()):
+        range_str = f"{b_range[0]} — {b_range[1]}" if isinstance(b_range, (tuple, list)) and len(b_range) == 2 else str(b_range)
+        bell_lines.append(f"▫️ <b>{p_num}-я пара:</b> <code>{range_str}</code>")
+    if course_lunch:
+        lunch_range = f"{course_lunch.get('start', '')} — {course_lunch.get('end', '')}".strip(" —")
+        bell_lines.append(f"\n🍽 <b>Большая перемена (обед):</b> <code>{lunch_range}</code> ({course_lunch.get('duration', '30 мин')})")
+    bell_text = "\n".join(bell_lines)
+
+    # Базовые карточки целевой группы
+    card_today = types.InlineQueryResultArticle(
+        id=f"inline_today_{target_group}_{today.isoformat()}",
+        title=f"📅 Расписание на сегодня ({target_group})",
+        description=f"{DAYS_RU[today.weekday()]}, {today.day} {MONTHS_RU[today.month]} · {parity_name} · {target_group}",
+        input_message_content=types.InputTextMessageContent(message_text=today_text, parse_mode=ParseMode.HTML)
+    )
+    card_tomorrow = types.InlineQueryResultArticle(
+        id=f"inline_tomorrow_{target_group}_{tomorrow.isoformat()}",
+        title=f"🔜 Расписание на завтра ({target_group})",
+        description=f"{DAYS_RU[tomorrow.weekday()]}, {tomorrow.day} {MONTHS_RU[tomorrow.month]} · {target_group}",
+        input_message_content=types.InputTextMessageContent(message_text=tomorrow_text, parse_mode=ParseMode.HTML)
+    )
+    card_now = types.InlineQueryResultArticle(
+        id=f"inline_now_{target_group}",
+        title=f"⚡️ Какая пара идёт сейчас? ({target_group})",
+        description=f"Время {current_time_str} · статус пары и звонки ({target_group})",
+        input_message_content=types.InputTextMessageContent(message_text=now_text, parse_mode=ParseMode.HTML)
+    )
+    card_week = types.InlineQueryResultArticle(
+        id=f"inline_week_{target_group}",
+        title=f"🗓 Расписание на всю неделю ({target_group})",
+        description=f"Понедельник — Пятница (группа {target_group})",
+        input_message_content=types.InputTextMessageContent(message_text=week_text, parse_mode=ParseMode.HTML)
+    )
+    card_zameny = types.InlineQueryResultArticle(
+        id=f"inline_zameny_{target_group}",
+        title=f"⚠️ Замены и отмены пар ({target_group})",
+        description=f"Актуальные изменения в расписании ({target_group})",
+        input_message_content=types.InputTextMessageContent(message_text=zameny_text, parse_mode=ParseMode.HTML)
+    )
+    card_bells = types.InlineQueryResultArticle(
+        id=f"inline_bells_{course}_{target_group}",
+        title=f"🔔 Звонки и обеды ({course} курс · {target_group})",
+        description=f"Расписание пар и обеденного перерыва для {course} курса",
+        input_message_content=types.InputTextMessageContent(message_text=bell_text, parse_mode=ParseMode.HTML)
+    )
+    card_moodle = types.InlineQueryResultArticle(
+        id="inline_moodle",
+        title="📁 СДО Moodle и материалы",
+        description="Ссылка на do.eduhouse.ru и макет титульника",
+        input_message_content=types.InputTextMessageContent(message_text=get_moodle_info_text(), parse_mode=ParseMode.HTML)
+    )
+    card_lectures = types.InlineQueryResultArticle(
+        id="inline_lectures",
+        title="📚 Конспекты лекций (4 курс 1 семестр)",
+        description="МДК 07.02, Менеджмент, МДК 04.01, Экономика, БЖД (с датами и TL;DR)",
+        input_message_content=types.InputTextMessageContent(message_text=LECTURES_INTRO_TEXT, parse_mode=ParseMode.HTML),
+        reply_markup=get_lectures_menu_keyboard()
     )
 
-    # 5. Замены и отмены
-    zameny_text = format_replacements_summary()
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_zameny",
-            title="⚠️ Замены и отмены пар",
-            description="Актуальные изменения в расписании",
-            input_message_content=types.InputTextMessageContent(
-                message_text=zameny_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
+    results: list[types.InlineQueryResultArticle] = []
 
-    # 6. Звонки
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_bells",
-            title="🔔 Расписание звонков и пятиминуток",
-            description="1-4 пары, 5-минутки внутри и обед 35 минут",
-            input_message_content=types.InputTextMessageContent(
-                message_text=BELLS_TEXT,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
+    # 3. Маршрутизация по типу запроса
+    if not query or query_group:
+        results = [card_today, card_tomorrow, card_now, card_week, card_zameny, card_bells, card_moodle, card_lectures]
+    else:
+        # Анализ ключевых слов
+        if any(w in query for w in ("сегодня", "today", "щас", "седня")):
+            results.append(card_today)
+        if any(w in query for w in ("завтра", "tomorrow", "след")):
+            results.append(card_tomorrow)
+        if any(w in query for w in ("сейчас", "now", "пара", "идет", "идёт")):
+            results.append(card_now)
+        if any(w in query for w in ("неделя", "week", "всю", "график")):
+            results.append(card_week)
+        if any(w in query for w in ("замены", "отмены", "замена", "отмена")):
+            results.append(card_zameny)
+        if any(w in query for w in ("звонки", "звонок", "обед", "перемена", "пятиминутк")):
+            results.append(card_bells)
+        if any(w in query for w in ("мудл", "moodle", "титульник", "макет", "сдо")):
+            results.append(card_moodle)
 
-    # 7. СДО Moodle
-    moodle_text = get_moodle_info_text()
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_moodle",
-            title="📁 СДО Moodle и материалы",
-            description="Ссылка на do.eduhouse.ru и макет титульника",
-            input_message_content=types.InputTextMessageContent(
-                message_text=moodle_text,
-                parse_mode=ParseMode.HTML
-            )
-        )
-    )
-
-    # 8. Конспекты лекций
-    results.append(
-        types.InlineQueryResultArticle(
-            id="inline_lectures",
-            title="📚 Конспекты лекций (4 курс 1 семестр)",
-            description="МДК 07.02, Менеджмент, МДК 04.01, Экономика, БЖД (с датами и TL;DR)",
-            input_message_content=types.InputTextMessageContent(
-                message_text=LECTURES_INTRO_TEXT,
-                parse_mode=ParseMode.HTML
-            ),
-            reply_markup=get_lectures_menu_keyboard()
-        )
-    )
-
-    if query:
-        search_results: list[types.InlineQueryResultArticle] = []
-        
-        # 1. Поиск по базе конспектов лекций
-        lec_matches = search_lectures(query)
-        if query in ("лекции", "лекция", "конспект", "конспекты", "тема", "темы", "учеба", "учёба"):
-            lec_matches = get_all_lectures()
-            
-        for lec in lec_matches[:6]:
-            card_text = format_lecture_card(lec)
-            search_results.append(
-                types.InlineQueryResultArticle(
-                    id=f"inline_lec_{lec['id']}",
-                    title=f"📖 {lec['subject']}: {lec['title'][:40]}",
-                    description=f"{lec['date']} · {lec['teacher']} · {lec['pair']}",
-                    input_message_content=types.InputTextMessageContent(
-                        message_text=card_text,
-                        parse_mode=ParseMode.HTML
-                    ),
-                    reply_markup=get_lecture_card_keyboard(lec["id"], lec["subject_code"])
+        # Дни недели (пн, вт, ср, чт, пт)
+        day_keywords = {
+            "понедельник": 0, "пн": 0,
+            "вторник": 1, "вт": 1,
+            "среда": 2, "ср": 2,
+            "четверг": 3, "чт": 3,
+            "пятница": 4, "пт": 4
+        }
+        for kw, d_idx in day_keywords.items():
+            if kw in query:
+                try:
+                    d_text = await get_formatted_weekday_by_index(d_idx, parity_code=parity_code, group_name=target_group)
+                except Exception:
+                    d_text = format_weekday_by_index(d_idx, parity_code, group_name=target_group)
+                results.append(
+                    types.InlineQueryResultArticle(
+                        id=f"inline_day_{target_group}_{d_idx}",
+                        title=f"📆 {DAYS_RU[d_idx]} ({parity_name}) · {target_group}",
+                        description=f"Расписание группы {target_group} на {DAYS_RU[d_idx]}",
+                        input_message_content=types.InputTextMessageContent(
+                            message_text=d_text,
+                            parse_mode=ParseMode.HTML
+                        )
+                    )
                 )
-            )
+                break
 
-        # 2. Если ввод похож на номер кабинета (например "304", "515", "с/з")
+        # Кабинет (например "304", "515", "зал", "с/з")
         if any(c.isdigit() for c in query) or "с/з" in query or "зал" in query:
             room_res = search_room_schedule(query)
             if "не найден" not in room_res.lower():
-                search_results.append(
+                results.append(
                     types.InlineQueryResultArticle(
                         id=f"inline_room_{query}",
                         title=f"📍 Кабинет {query.upper()}",
@@ -3337,31 +3523,7 @@ async def handle_inline_query(inline_query: types.InlineQuery):
                     )
                 )
 
-        # 3. Если совпадение с днем недели
-        day_keywords = {
-            "понедельник": 0, "пн": 0,
-            "вторник": 1, "вт": 1,
-            "среда": 2, "ср": 2,
-            "четверг": 3, "чт": 3,
-            "пятница": 4, "пт": 4
-        }
-        for kw, d_idx in day_keywords.items():
-            if kw in query:
-                d_text = format_weekday_by_index(d_idx, parity_code)
-                search_results.append(
-                    types.InlineQueryResultArticle(
-                        id=f"inline_day_{d_idx}",
-                        title=f"📆 {DAYS_RU[d_idx]} ({parity_name})",
-                        description=f"Расписание на {DAYS_RU[d_idx]} для текущей недели",
-                        input_message_content=types.InputTextMessageContent(
-                            message_text=d_text,
-                            parse_mode=ParseMode.HTML
-                        )
-                    )
-                )
-                break
-
-        # 4. Поиск по преподавателю
+        # Поиск по преподавателю
         if len(query) >= 3 and not (query.isdigit() or "зал" in query or "с/з" in query):
             try:
                 from db.crud import find_teacher_lessons
@@ -3394,7 +3556,7 @@ async def handle_inline_query(inline_query: types.InlineQuery):
                             f"🗓 <b>Дни занятий в колледже:</b> {', '.join(days_active)}\n"
                             f"💡 <i>Отправлено через инлайн-режим @aituraspisaniebot</i>"
                         )
-                        search_results.append(
+                        results.append(
                             types.InlineQueryResultArticle(
                                 id=f"inline_teacher_{abs(hash(t_name)) % 10000000}",
                                 title=f"👨‍🏫 {t_name}",
@@ -3408,48 +3570,35 @@ async def handle_inline_query(inline_query: types.InlineQuery):
             except Exception as e:
                 logger.error(f"Ошибка инлайн-поиска преподавателя: {e}")
 
-        # 5. Поиск по учебной группе (например "9ПО-43к", "3ис-21", "1э-11")
-        from db.crud import canonical_group_name
-        canon_grp = canonical_group_name(query)
-        if canon_grp and any(ch.isalpha() for ch in canon_grp) and any(ch.isdigit() for ch in canon_grp):
-            try:
-                from formatter import get_formatted_day_schedule
-                grp_today_text = await get_formatted_day_schedule(today, title_prefix=f"Расписание {canon_grp} на сегодня", group_name=canon_grp)
-                grp_tomorrow_text = await get_formatted_day_schedule(tomorrow, title_prefix=f"Расписание {canon_grp} на завтра", group_name=canon_grp)
-                
-                search_results.append(
-                    types.InlineQueryResultArticle(
-                        id=f"inline_group_today_{canon_grp}",
-                        title=f"👥 Группа {canon_grp} — Сегодня",
-                        description=f"Расписание на {DAYS_RU[today.weekday()]} ({parity_name})",
-                        input_message_content=types.InputTextMessageContent(
-                            message_text=grp_today_text,
-                            parse_mode=ParseMode.HTML
-                        )
-                    )
+        # Поиск по лекциям
+        lec_matches = search_lectures(query)
+        if query in ("лекции", "лекция", "конспект", "конспекты", "тема", "темы", "учеба", "учёба"):
+            lec_matches = get_all_lectures()
+            
+        for lec in lec_matches[:4]:
+            card_text = format_lecture_card(lec)
+            results.append(
+                types.InlineQueryResultArticle(
+                    id=f"inline_lec_{lec['id']}",
+                    title=f"📖 {lec['subject']}: {lec['title'][:40]}",
+                    description=f"{lec['date']} · {lec['teacher']} · {lec['pair']}",
+                    input_message_content=types.InputTextMessageContent(
+                        message_text=card_text,
+                        parse_mode=ParseMode.HTML
+                    ),
+                    reply_markup=get_lecture_card_keyboard(lec["id"], lec["subject_code"])
                 )
-                search_results.append(
-                    types.InlineQueryResultArticle(
-                        id=f"inline_group_tomorrow_{canon_grp}",
-                        title=f"👥 Группа {canon_grp} — Завтра",
-                        description=f"Расписание на {DAYS_RU[tomorrow.weekday()]}",
-                        input_message_content=types.InputTextMessageContent(
-                            message_text=grp_tomorrow_text,
-                            parse_mode=ParseMode.HTML
-                        )
-                    )
-                )
-            except Exception as e:
-                logger.error(f"Ошибка инлайн-поиска группы: {e}")
+            )
 
-        if search_results:
-            results = search_results + results
+        # Если специфических совпадений не было, добавляем базовый набор карточек целевой группы
+        if not results:
+            results = [card_today, card_tomorrow, card_now, card_week, card_zameny, card_bells, card_moodle, card_lectures]
 
-    logger.info(f"Инлайн-запрос от user_id={inline_query.from_user.id}: query={query!r}, возвращаем {len(results)} карточек")
+    logger.info(f"Инлайн-запрос от user_id={inline_query.from_user.id}: query={query!r}, целевая группа={target_group}, возвращаем {len(results)} карточек")
     try:
         await inline_query.answer(
             results=results[:20],
-            cache_time=1,
+            cache_time=2,
             is_personal=True
         )
     except Exception as e:
