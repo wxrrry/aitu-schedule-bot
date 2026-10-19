@@ -170,7 +170,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                 {p1.nick} {p1.isCaptain ? '(C)' : ''}
               </div>
               <div className="text-[10px] text-zinc-400 font-mono">
-                ELO {p1.elo || 1000} · {p1.favWeapon || 'AK-47'}
+                ELO {p1.elo || 1000} · {p1.group || '9ПО-43к'}
               </div>
             </div>
 
@@ -186,7 +186,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                 {p2.nick} {p2.isCaptain ? '(C)' : ''}
               </div>
               <div className="text-[10px] text-zinc-400 font-mono">
-                ELO {p2.elo || 1000} · {p2.favWeapon || 'AK-47'}
+                ELO {p2.elo || 1000} · {p2.group || '9ПО-43к'}
               </div>
             </div>
           </div>

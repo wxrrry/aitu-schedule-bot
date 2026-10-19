@@ -69,8 +69,8 @@ export default function CyberMapsTab({ onOpenPlayer }) {
               {activeMap.name}
             </h3>
             <div className="text-center font-mono text-[10px]">
-              <span className="text-zinc-500 uppercase mr-1">ЛЮБИМОЕ ОРУЖИЕ:</span>
-              <span className="font-black text-amber-300">{activeMap.favWeapon}</span>
+              <span className="text-zinc-500 uppercase mr-1">ФОРМАТ:</span>
+              <span className="font-bold text-[#0ea5e9]">5v5 Competitive</span>
             </div>
           </div>
 

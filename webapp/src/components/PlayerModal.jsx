@@ -115,18 +115,18 @@ export default function PlayerModal({ player, onClose, onSelectTeam }) {
           </div>
         </div>
 
-        {/* Weapon */}
+        {/* Info */}
         <div className="p-3 bg-zinc-950 border border-white/10 space-y-2 font-mono text-xs">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5">
             <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
-              СНАРЯЖЕНИЕ
+              КОМАНДНЫЙ ПРОФИЛЬ
             </span>
             <span className="text-[9px] text-zinc-500 uppercase">CS2 COMPETITIVE</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div>
-              <span className="text-zinc-500 block text-[9px] uppercase">ЛЮБИМОЕ ОРУЖИЕ:</span>
-              <span className="text-white font-bold">{player.favWeapon || "AK-47"}</span>
+              <span className="text-zinc-500 block text-[9px] uppercase">УЧЕБНАЯ ГРУППА:</span>
+              <span className="text-white font-bold">{player.group || "9ПО-43к"}</span>
             </div>
             <div>
               <span className="text-zinc-500 block text-[9px] uppercase">КОМАНДА:</span>
