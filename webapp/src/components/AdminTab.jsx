@@ -586,8 +586,8 @@ export default function AdminTab({ profile }) {
                   onClick={() => {
                     const list = restoreDefaultTournaments();
                     setTournaments(list);
-                    setSelectedTournId('winter_major_2026');
-                    notify('Системные турниры (Осенний кубок и Зимний чемпионат) успешно восстановлены!');
+                    setSelectedTournId(list[0]?.id || 'aitu_pro_league_s1');
+                    notify('Официальный турнир AITU PRO LEAGUE S1 успешно восстановлен!');
                   }}
                   className="text-[10px] text-emerald-400 hover:text-emerald-300 uppercase font-bold flex items-center gap-1 cursor-pointer"
                   title="Восстановить системные турниры"
@@ -1782,13 +1782,13 @@ export default function AdminTab({ profile }) {
               onClick={() => {
                 const list = restoreDefaultTournaments();
                 setTournaments(list);
-                setSelectedTournId('winter_major_2026');
-                notify('Все системные турниры (Осенний кубок и Зимний чемпионат) успешно восстановлены!');
+                setSelectedTournId(list[0]?.id || 'aitu_pro_league_s1');
+                notify('Официальный турнир AITU PRO LEAGUE S1 успешно восстановлен!');
               }}
               className="w-full py-2 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>⚡ ВОССТАНОВИТЬ СИСТЕМНЫЕ ТУРНИРЫ (ОСЕННИЙ И ЗИМНИЙ КУБКИ)</span>
+              <span>⚡ ВОССТАНОВИТЬ ОФИЦИАЛЬНЫЙ ТУРНИР (AITU PRO LEAGUE S1)</span>
             </button>
           </div>
 

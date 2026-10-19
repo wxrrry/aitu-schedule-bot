@@ -13,10 +13,11 @@ import {
   Crosshair, 
   Upload, 
   Camera, 
-  Maximize2 
+  Maximize2,
+  Trash2
 } from 'lucide-react';
 import BracketTree from '../BracketTree';
-import { getTournamentRegistrations } from '../../utils/tournamentManager';
+import { getTournamentRegistrations, deleteTournament } from '../../utils/tournamentManager';
 import { triggerHaptic } from '../../utils/telegram';
 
 export default function CyberTournamentsTab({
@@ -204,6 +205,23 @@ export default function CyberTournamentsTab({
                       <span>{isUpcoming ? 'ОТКРЫТЬ ТУРНИР / СЕТКУ' : 'ОТКРЫТЬ СЕТКУ И МАТЧИ'}</span>
                       <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
                     </button>
+
+                    {canOrganize && tourn.id !== 'aitu_pro_league_s1' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Вы уверены, что хотите удалить турнир «${tourn.title}»?`)) {
+                            deleteTournament(tourn.id);
+                            triggerHaptic('warning');
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 font-bold font-mono text-[10px] uppercase rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Удалить турнир"
+                      >
+                        <Trash2 className="w-3 h-3 text-rose-400" />
+                        <span>УДАЛИТЬ</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );

@@ -182,7 +182,7 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
 
   const handleDeleteCurrentTournament = () => {
     if (!currentTourn) return;
-    if (currentTourn.id === 'season_1_2026') {
+    if (currentTourn.id === 'season_1_2026' || currentTourn.id === 'aitu_pro_league_s1') {
       alert("Исторический турнир AITU PRO LEAGUE SEASON 1 защищён от удаления.");
       return;
     }

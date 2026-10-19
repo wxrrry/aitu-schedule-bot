@@ -2,18 +2,30 @@
 import { OFFICIAL_BRACKET, TOURNAMENT_MATCHES, TOURNAMENTS_LIST } from '../data/cs2TournamentData';
 import { sendDataToBot } from './telegram';
 
-const TOURNAMENTS_STORAGE_KEY = 'aitu_tournaments_v3';
-const REGISTRATIONS_STORAGE_KEY = 'aitu_tournament_registrations_v3';
-const DELETED_TOURNAMENTS_KEY = 'aitu_deleted_tournaments_v3';
+const TOURNAMENTS_STORAGE_KEY = 'aitu_tournaments_v5';
+const REGISTRATIONS_STORAGE_KEY = 'aitu_tournament_registrations_v5';
+const DELETED_TOURNAMENTS_KEY = 'aitu_deleted_tournaments_v5';
+
+// Автоматическая очистка устаревших ключей кэша
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem('aitu_tournaments_v3');
+    localStorage.removeItem('aitu_tournaments_v4');
+    localStorage.removeItem('aitu_tournament_registrations_v3_winter_major_2026');
+  }
+} catch (e) {}
 
 const API_BASE = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
 
 // Список удаленных пользователем турниров (черный список для предотвращения повторного появления)
 export function getDeletedTournamentIds() {
   try {
-    return JSON.parse(localStorage.getItem(DELETED_TOURNAMENTS_KEY) || '[]');
+    const list = JSON.parse(localStorage.getItem(DELETED_TOURNAMENTS_KEY) || '[]');
+    if (!list.includes('winter_major_2026')) list.push('winter_major_2026');
+    if (!list.includes('autumn_2026')) list.push('autumn_2026');
+    return list;
   } catch (e) {
-    return [];
+    return ['winter_major_2026', 'autumn_2026'];
   }
 }
 
@@ -48,7 +60,7 @@ export async function syncTournamentsFromApi() {
     if (data && Array.isArray(data.tournaments)) {
       const deletedIds = getDeletedTournamentIds();
       const serverTournaments = data.tournaments
-        .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026')
+        .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026' && t.id !== 'winter_major_2026' && !t.id?.includes('winter'))
         .map(t => {
         let rulesArr = t.rules;
         if (typeof rulesArr === 'string') {
@@ -135,7 +147,7 @@ export function getAllTournaments() {
         const missingSystem = DEFAULT_SYSTEM_TOURNAMENTS.filter(st => !cachedIds.has(st.id) && !deletedIds.includes(st.id));
 
         list = [...parsed, ...missingSystem]
-          .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026')
+          .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026' && t.id !== 'winter_major_2026' && !t.id?.includes('winter'))
           .map(t => {
             const sys = DEFAULT_SYSTEM_TOURNAMENTS.find(s => s.id === t.id);
             if (sys) {
@@ -185,36 +197,6 @@ export function getAllTournaments() {
 export function restoreDefaultTournaments() {
   const list = [...DEFAULT_SYSTEM_TOURNAMENTS];
   saveAllTournaments(list);
-
-  // Восстанавливаем заявки зимнего кубка
-  const winter = DEFAULT_SYSTEM_TOURNAMENTS.find(t => t.id === "winter_major_2026");
-  if (winter?.initialRegisteredTeams) {
-    try {
-      localStorage.setItem(`${REGISTRATIONS_STORAGE_KEY}_winter_major_2026`, JSON.stringify(winter.initialRegisteredTeams));
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  // Синхронизируем базовый турнир с БД
-  if (winter) {
-    fetch(`${API_BASE}/api/tournaments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: winter.id,
-        title: winter.title,
-        subTitle: winter.subTitle,
-        game: winter.discipline,
-        status: 'registration',
-        date: winter.date,
-        format: winter.format,
-        maxTeams: winter.maxTeams,
-        prizePool: winter.prizePool,
-        rules: winter.rules
-      })
-    }).catch(() => {});
-  }
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('aitu_tournaments_updated', { detail: list }));
