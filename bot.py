@@ -76,6 +76,7 @@ from db.crud import (
     normalize_group_name,
     canonical_group_name
 )
+from db.models import ChatBinding, UserRole, User
 from permissions import (
     is_superadmin,
     is_admin,
