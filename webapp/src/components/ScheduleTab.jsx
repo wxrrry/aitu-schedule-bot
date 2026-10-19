@@ -622,16 +622,6 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
         </button>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            onClick={() => {
-              setAuditoriumInitialTab('floorplan');
-              setIsAuditoriumModalOpen(true);
-              triggerHaptic('light');
-            }}
-            className="flex items-center gap-1 px-2 py-1 bg-black border border-blue-500/40 hover:border-blue-400 text-blue-300 uppercase font-bold transition-colors"
-          >
-            <span>🗺 СХЕМА ЭТАЖЕЙ</span>
-          </button>
 
           <button
             onClick={() => {
