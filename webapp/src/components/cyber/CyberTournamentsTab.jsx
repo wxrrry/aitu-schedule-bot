@@ -479,7 +479,7 @@ export default function CyberTournamentsTab({
                           )}
                         </button>
 
-                        {(isSuper || selectedTournament.type === 'upcoming' || selectedTournament.status === 'ИДЁТ' || selectedTournament.status === 'ПРИЁМ ЗАЯВОК') && (
+                        {(canOrganize || isSuper) && (
                           <button
                             onClick={() => {
                               if (editingScoreMatchId === activeMatch.id) {
