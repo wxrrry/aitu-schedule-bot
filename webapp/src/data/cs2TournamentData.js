@@ -905,3 +905,179 @@ export const HLTV_TEAM_RANKINGS = [
     ]
   }
 ];
+
+// Соревновательный маппул CS2 и аналитика карт лиги колледжа
+export const CS2_MAP_POOL = [
+  {
+    id: "mirage",
+    name: "Mirage",
+    status: "ACTIVE POOL",
+    pickRate: "28%",
+    matchesCount: 5,
+    avgRounds: 21.6,
+    ctWinrate: 54,
+    tWinrate: 46,
+    topPlayer: "wxrry",
+    topPlayerTeam: "TRIQ",
+    favWeapon: "AK-47",
+    color: "#e81c5a",
+    description: "Самая популярная карта первого сезона лиги. Классический баланс с лёгким перевесом стороны спецназа (CT).",
+    callouts: [
+      { name: "A-Site (Плент А)", ctWin: "56%", tip: "Контроль Connector и Palace ключевой для выбивания плента." },
+      { name: "Mid (Центр)", ctWin: "50%", tip: "Дым в окно и отсечка коннектора позволяют занять шорт." },
+      { name: "B-Site (Плент Б)", ctWin: "48%", tip: "Атака через апартаменты эффективна при флеш-поддержке." }
+    ]
+  },
+  {
+    id: "vertigo",
+    name: "Vertigo",
+    status: "ACTIVE POOL",
+    pickRate: "18%",
+    matchesCount: 3,
+    avgRounds: 22.0,
+    ctWinrate: 48,
+    tWinrate: 52,
+    topPlayer: "t0ma999",
+    topPlayerTeam: "LL TEAM",
+    favWeapon: "M4A1-S",
+    color: "#ff8c00",
+    description: "Многоуровневая небоскрёбная локация, карта гранд-финала лиги с агрессивными перестрелками на рампе А.",
+    callouts: [
+      { name: "A-Ramp (Рампа А)", ctWin: "46%", tip: "Основная точка давления стороны атаки в раннем тайминге." },
+      { name: "Mid (Центральная лестница)", ctWin: "52%", tip: "Быстрый перетяг защиты через шорт." },
+      { name: "B-Site (Плент Б)", ctWin: "54%", tip: "Высокая плотность позиций для перекрёстного огня CT." }
+    ]
+  },
+  {
+    id: "anubis",
+    name: "Anubis",
+    status: "ACTIVE POOL",
+    pickRate: "16%",
+    matchesCount: 3,
+    avgRounds: 21.0,
+    ctWinrate: 42,
+    tWinrate: 58,
+    topPlayer: "shhh_11",
+    topPlayerTeam: "LL TEAM",
+    favWeapon: "AK-47",
+    color: "#00d2ff",
+    description: "Динамичная песчаная арена с водными каналами. Выраженное преимущество стороны атаки (T) за счёт быстрого сплита.",
+    callouts: [
+      { name: "Canal & Water (Канал)", ctWin: "40%", tip: "Контроль воды даёт атаке возможность моментальной ротации." },
+      { name: "B-Site (Плент Б)", ctWin: "44%", tip: "Сложная позиция для защиты без глубоких смоков." },
+      { name: "A-Main (Выход А)", ctWin: "49%", tip: "Узкое горлышко, удобное для снайперских пиков." }
+    ]
+  },
+  {
+    id: "inferno",
+    name: "Inferno",
+    status: "ACTIVE POOL",
+    pickRate: "14%",
+    matchesCount: 4,
+    avgRounds: 22.5,
+    ctWinrate: 56,
+    tWinrate: 44,
+    topPlayer: "RAREMO",
+    topPlayerTeam: "TRIQ",
+    favWeapon: "AWP",
+    color: "#ff3b30",
+    description: "Узкие улочки европейского городка. Контроль банана и плотная гранатная отсечка обеспечивают победу CT.",
+    callouts: [
+      { name: "Banana (Банан)", ctWin: "60%", tip: "Борьба за первый контакт на банане решает 70% раундов." },
+      { name: "Pit (Пески / Пит)", ctWin: "58%", tip: "Неприступная позиция опорника при грамотной задержке времени." },
+      { name: "Apartments (Ковры)", ctWin: "51%", tip: "Опасная зона для атаки при прострелах из бойлера." }
+    ]
+  },
+  {
+    id: "cache",
+    name: "Cache",
+    status: "ACTIVE POOL",
+    pickRate: "12%",
+    matchesCount: 2,
+    avgRounds: 23.0,
+    ctWinrate: 50,
+    tWinrate: 50,
+    topPlayer: "Flake(1337)",
+    topPlayerTeam: "LL TEAM",
+    favWeapon: "AK-47",
+    color: "#34c759",
+    description: "Чернобыльская промышленная зона. Идеально сбалансированная классическая карта, решившая исход финала.",
+    callouts: [
+      { name: "Mid & White Box", ctWin: "50%", tip: "Борьба за вентиляцию и гараж." },
+      { name: "A-Site & Squeaky (Скрип)", ctWin: "51%", tip: "Быстрый пуш под флешку через скрип." },
+      { name: "B-Site & Checkers", ctWin: "49%", tip: "Ключевая точка удержания с молли и дымом в токсике." }
+    ]
+  },
+  {
+    id: "nuke",
+    name: "Nuke",
+    status: "ACTIVE POOL",
+    pickRate: "8%",
+    matchesCount: 2,
+    avgRounds: 20.0,
+    ctWinrate: 61,
+    tWinrate: 39,
+    topPlayer: "KOPOJI_AITU",
+    topPlayerTeam: "adaptive",
+    favWeapon: "M4A4",
+    color: "#af52de",
+    description: "Атомная электростанция. Традиционно самая защитная карта соревновательного пула (61% побед за CT).",
+    callouts: [
+      { name: "Ramp (Рампа)", ctWin: "64%", tip: "Опорник рампы держит ключевой проход на нижний плент." },
+      { name: "Yard & Secret (Улица)", ctWin: "57%", tip: "Смоки на улице позволяют атаке просочиться в секрет." },
+      { name: "A-Site & Heaven (Девять)", ctWin: "62%", tip: "Доминирующая снайперская высота для защиты." }
+    ]
+  },
+  {
+    id: "dust2",
+    name: "Dust II",
+    status: "ACTIVE POOL",
+    pickRate: "4%",
+    matchesCount: 2,
+    avgRounds: 22.0,
+    ctWinrate: 47,
+    tWinrate: 53,
+    topPlayer: "t0ma999",
+    topPlayerTeam: "LL TEAM",
+    favWeapon: "AWP",
+    color: "#e5b80b",
+    description: "Легендарная карта в ближневосточном сеттинге с длинными прицельными дуэлями на лонге и миду.",
+    callouts: [
+      { name: "Long A (Длина А)", ctWin: "49%", tip: "Контроль длины через флеш-бокс даёт преимущество на пленте." },
+      { name: "Mid Doors (Двери центра)", ctWin: "45%", tip: "Снайперские дуэли в первом тайминге раунда." },
+      { name: "B-Tunnels (Темка Б)", ctWin: "52%", tip: "Узкий выход, легко блокируемый зажигательными гранатами." }
+    ]
+  }
+];
+
+// Сводная статистика турнирной лиги колледжа
+export const CS2_LEAGUE_STATS = {
+  totalDamage: 142850,
+  totalKills: 884,
+  totalDeaths: 884,
+  totalAssists: 298,
+  totalMatches: 6,
+  totalRounds: 184,
+  totalMaps: 11,
+  ctWinrate: 51.8,
+  tWinrate: 48.2,
+  avgMatchDuration: "33м 40с",
+  records: [
+    { title: "Рекорд фрагов за карту", value: "63 килла", holder: "t0ma999", team: "LL TEAM", match: "Гранд-Финал" },
+    { title: "Наивысший K/D плей-офф", value: "1.54", holder: "t0ma999", team: "LL TEAM", match: "Турнир" },
+    { title: "Самый высокий урон", value: "142.8 ADR", holder: "t0ma999", team: "LL TEAM", match: "Гранд-Финал" },
+    { title: "Лучший снайпер (AWP)", value: "38 фрагов", holder: "KOPOJI_AITU", team: "adaptive", match: "Плей-офф" },
+    { title: "Лучший энтри-фрагер", value: "72% дуэлей", holder: "RAREMO", team: "TRIQ", match: "Плей-офф" },
+    { title: "Лучший клатчер", value: "4 клатча (1vX)", holder: "wxrry", team: "TRIQ", match: "Плей-офф" }
+  ],
+  collegeGroups: [
+    { group: "9ПО-43к", teams: "LL TEAM & TRIQ", playersCount: 10, trophies: "Чемпион 🏆 и Финалист 🥈", winRate: "83%", totalKills: 472 },
+    { group: "9ПО-41к", teams: "adaptive", playersCount: 5, trophies: "3-е место 🥉", winRate: "66%", totalKills: 178 },
+    { group: "9СА-21к", teams: "Team V0id", playersCount: 5, trophies: "1/2 финала", winRate: "50%", totalKills: 91 },
+    { group: "9ИС-31к", teams: "DODO TEAM", playersCount: 5, trophies: "1/4 финала", winRate: "0%", totalKills: 42 },
+    { group: "9ВД-11к", teams: "Aspect", playersCount: 5, trophies: "1/4 финала", winRate: "0%", totalKills: 38 },
+    { group: "9ИБ-32к", teams: "322DOBEG TEAM", playersCount: 5, trophies: "1/4 финала", winRate: "0%", totalKills: 35 },
+    { group: "9ПО-42к", teams: "ckson", playersCount: 5, trophies: "Раунд 1", winRate: "0%", totalKills: 28 }
+  ]
+};
+
