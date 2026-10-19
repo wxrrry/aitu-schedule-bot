@@ -20,6 +20,7 @@ import {
   Check,
   Upload,
   Maximize2,
+  ExternalLink,
   X
 } from 'lucide-react';
 import { 
@@ -805,7 +806,7 @@ const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
               ) : (
                 <div className="space-y-4">
                   {/* Match Selector Buttons */}
-                  <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px]">
                     {selectedTournament.matches.map(match => (
                       <button
                         key={match.id}
@@ -833,13 +834,27 @@ const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
                   {activeMatch && (
                     <div className="p-4 bg-[#0a0a0c] border border-white/10 space-y-4">
                       {/* Meta */}
-                      <div className="flex items-center justify-between border-b border-white/[0.08] pb-2 text-[10px]">
+                      <div className="flex items-center justify-between border-b border-white/[0.08] pb-2 text-[10px] flex-wrap gap-2">
                         <span className="text-amber-400 uppercase font-bold tracking-wider">
                           {activeMatch.stage} · {activeMatch.format}
                         </span>
-                        <span className="text-zinc-500">
-                          ДЛИТЕЛЬНОСТЬ: {activeMatch.duration} · {activeMatch.region}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-500">
+                            ДЛИТЕЛЬНОСТЬ: {activeMatch.duration} · {activeMatch.region}
+                          </span>
+                          {activeMatch.fastcupUrl && (
+                            <a
+                              href={activeMatch.fastcupUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-0.5 bg-orange-950/70 hover:bg-orange-900 border border-orange-500/50 text-orange-400 hover:text-white font-mono text-[9px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span>FASTCUP</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
 
                       {/* Scoreboard Big Banner */}

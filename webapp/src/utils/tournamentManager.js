@@ -131,7 +131,19 @@ export function getAllTournaments() {
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        list = parsed.filter(t => !deletedIds.includes(t.id));
+        list = parsed.filter(t => !deletedIds.includes(t.id)).map(t => {
+          if (t.id === 'autumn_2026') {
+            const sys = DEFAULT_SYSTEM_TOURNAMENTS.find(s => s.id === 'autumn_2026');
+            if (sys) {
+              return {
+                ...t,
+                matches: sys.matches,
+                bracket: sys.bracket
+              };
+            }
+          }
+          return t;
+        });
         return list;
       }
     }
