@@ -21,6 +21,7 @@ import {
   GitBranch
 } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
+import MermaidBlock from './MermaidBlock';
 
 // Map callout types to their styling, icon, and title
 const CALLOUT_CONFIG = {
@@ -386,9 +387,16 @@ export default function MarkdownViewer({ content, searchQuery = '' }) {
         codeLines.push(lines[i]);
         i++;
       }
-      elements.push(
-        <CodeBlock key={`code-${i}`} lang={lang} code={codeLines.join('\n')} />
-      );
+      const rawCode = codeLines.join('\n');
+      if (lang?.toLowerCase() === 'mermaid') {
+        elements.push(
+          <MermaidBlock key={`mermaid-${i}`} code={rawCode} />
+        );
+      } else {
+        elements.push(
+          <CodeBlock key={`code-${i}`} lang={lang} code={rawCode} />
+        );
+      }
       i++;
       continue;
     }
