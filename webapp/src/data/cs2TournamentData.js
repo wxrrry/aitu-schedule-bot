@@ -1,6 +1,21 @@
-// Реальные данные турниров колледжа по CS2 и статистика игроков (FastCup)
+// Реальные данные турниров колледжа по CS2 и общий топ игроков по киллам (FastCup)
 
 export const CS2_PLAYERS = {
+  "t0ma999": {
+    nick: "t0ma999",
+    isCaptain: true,
+    team: "LL TEAM",
+    elo: 1000,
+    favWeapon: "AK-47 / Deagle",
+    totalKills: 120,
+    totalDeaths: 78,
+    totalAssists: 35,
+    kdRatio: "1.54",
+    hsPercentage: "50%",
+    matchesPlayed: 2,
+    winRate: "100%",
+    badges: ["MVP ФИНАЛА ⭐️", "ЧЕМПИОН 🏆", "TOP RATING"]
+  },
   "wxrry": {
     nick: "wxrry",
     isCaptain: true,
@@ -30,6 +45,20 @@ export const CS2_PLAYERS = {
     winRate: "66%",
     badges: ["ФИНАЛИСТ", "TOP AIM", "RIFLER"]
   },
+  "KOPOJI_AITU": {
+    nick: "KOPOJI_AITU",
+    team: "adaptive",
+    elo: 1000,
+    favWeapon: "AK-47 / M4A1-S",
+    totalKills: 106,
+    totalDeaths: 70,
+    totalAssists: 27,
+    kdRatio: "1.51",
+    hsPercentage: "40%",
+    matchesPlayed: 3,
+    winRate: "66%",
+    badges: ["БРОНЗОВЫЙ ПРИЗЁР 🥉", "TOP FRAGGER ADAPTIVE", "CLUTCHER"]
+  },
   "coldeph": {
     nick: "coldeph",
     team: "TRIQ",
@@ -44,49 +73,6 @@ export const CS2_PLAYERS = {
     winRate: "66%",
     badges: ["TOP FRAGGER", "ФИНАЛИСТ", "AWP MASTER"]
   },
-  "Toxichniy": {
-    nick: "Toxichniy",
-    team: "TRIQ",
-    elo: 1000,
-    favWeapon: "M4A1-S / MP9",
-    totalKills: 84,
-    totalDeaths: 82,
-    totalAssists: 24,
-    kdRatio: "1.02",
-    hsPercentage: "46%",
-    matchesPlayed: 3,
-    winRate: "66%",
-    badges: ["CLUTCH PLAYER", "ФИНАЛИСТ", "ANCHOR"]
-  },
-  "Kalivan1703": {
-    nick: "Kalivan1703",
-    team: "TRIQ",
-    elo: 1000,
-    favWeapon: "M4A4 / USP-S",
-    totalKills: 74,
-    totalDeaths: 74,
-    totalAssists: 25,
-    kdRatio: "1.00",
-    hsPercentage: "48%",
-    matchesPlayed: 3,
-    winRate: "66%",
-    badges: ["ФИНАЛИСТ", "DEFENSIVE ANCHOR"]
-  },
-  "t0ma999": {
-    nick: "t0ma999",
-    isCaptain: true,
-    team: "LL TEAM",
-    elo: 1000,
-    favWeapon: "AK-47 / Deagle",
-    totalKills: 120,
-    totalDeaths: 78,
-    totalAssists: 35,
-    kdRatio: "1.54",
-    hsPercentage: "50%",
-    matchesPlayed: 2,
-    winRate: "100%",
-    badges: ["MVP ФИНАЛА ⭐️", "ЧЕМПИОН 🏆", "TOP RATING"]
-  },
   "shhh_11": {
     nick: "shhh_11",
     team: "LL TEAM",
@@ -100,6 +86,34 @@ export const CS2_PLAYERS = {
     matchesPlayed: 2,
     winRate: "100%",
     badges: ["ЧЕМПИОН КУБКА 🏆", "КАПИТАН ЧЕМПИОНОВ", "IGL"]
+  },
+  "sonof_4everdance": {
+    nick: "sonof_4everdance",
+    team: "adaptive",
+    elo: 1000,
+    favWeapon: "M4A1-S / AK-47",
+    totalKills: 96,
+    totalDeaths: 67,
+    totalAssists: 25,
+    kdRatio: "1.43",
+    hsPercentage: "35%",
+    matchesPlayed: 3,
+    winRate: "66%",
+    badges: ["БРОНЗОВЫЙ ПРИЗЁР 🥉", "ENTRY FRAGGER"]
+  },
+  "Toxichniy": {
+    nick: "Toxichniy",
+    team: "TRIQ",
+    elo: 1000,
+    favWeapon: "M4A1-S / MP9",
+    totalKills: 84,
+    totalDeaths: 82,
+    totalAssists: 24,
+    kdRatio: "1.02",
+    hsPercentage: "46%",
+    matchesPlayed: 3,
+    winRate: "66%",
+    badges: ["CLUTCH PLAYER", "ФИНАЛИСТ", "ANCHOR"]
   },
   "Flake(1337)": {
     nick: "Flake(1337)",
@@ -129,48 +143,6 @@ export const CS2_PLAYERS = {
     winRate: "100%",
     badges: ["ЧЕМПИОН 🏆", "ANCHOR"]
   },
-  "MB_kot": {
-    nick: "MB_kot",
-    team: "LL TEAM",
-    elo: 1000,
-    favWeapon: "Galil AR / MP9",
-    totalKills: 62,
-    totalDeaths: 87,
-    totalAssists: 32,
-    kdRatio: "0.71",
-    hsPercentage: "40%",
-    matchesPlayed: 2,
-    winRate: "100%",
-    badges: ["ЧЕМПИОН 🏆", "ENTRY"]
-  },
-  "KOPOJI_AITU": {
-    nick: "KOPOJI_AITU",
-    team: "adaptive",
-    elo: 1000,
-    favWeapon: "AK-47 / M4A1-S",
-    totalKills: 106,
-    totalDeaths: 70,
-    totalAssists: 27,
-    kdRatio: "1.51",
-    hsPercentage: "40%",
-    matchesPlayed: 3,
-    winRate: "66%",
-    badges: ["БРОНЗОВЫЙ ПРИЗЁР 🥉", "TOP FRAGGER ADAPTIVE", "CLUTCHER"]
-  },
-  "sonof_4everdance": {
-    nick: "sonof_4everdance",
-    team: "adaptive",
-    elo: 1000,
-    favWeapon: "M4A1-S / AK-47",
-    totalKills: 96,
-    totalDeaths: 67,
-    totalAssists: 25,
-    kdRatio: "1.43",
-    hsPercentage: "35%",
-    matchesPlayed: 3,
-    winRate: "66%",
-    badges: ["БРОНЗОВЫЙ ПРИЗЁР 🥉", "ENTRY FRAGGER"]
-  },
   "MaikL7575": {
     nick: "MaikL7575",
     isCaptain: true,
@@ -186,6 +158,20 @@ export const CS2_PLAYERS = {
     winRate: "66%",
     badges: ["КАПИТАН ADAPTIVE", "БРОНЗОВЫЙ ПРИЗЁР 🥉"]
   },
+  "Kalivan1703": {
+    nick: "Kalivan1703",
+    team: "TRIQ",
+    elo: 1000,
+    favWeapon: "M4A4 / USP-S",
+    totalKills: 74,
+    totalDeaths: 74,
+    totalAssists: 25,
+    kdRatio: "1.00",
+    hsPercentage: "48%",
+    matchesPlayed: 3,
+    winRate: "66%",
+    badges: ["ФИНАЛИСТ", "DEFENSIVE ANCHOR"]
+  },
   "deathingotham": {
     nick: "deathingotham",
     team: "adaptive",
@@ -199,6 +185,20 @@ export const CS2_PLAYERS = {
     matchesPlayed: 3,
     winRate: "66%",
     badges: ["БРОНЗОВЫЙ ПРИЗЁР 🥉", "SUPPORT"]
+  },
+  "MB_kot": {
+    nick: "MB_kot",
+    team: "LL TEAM",
+    elo: 1000,
+    favWeapon: "Galil AR / MP9",
+    totalKills: 62,
+    totalDeaths: 87,
+    totalAssists: 32,
+    kdRatio: "0.71",
+    hsPercentage: "40%",
+    matchesPlayed: 2,
+    winRate: "100%",
+    badges: ["ЧЕМПИОН 🏆", "ENTRY"]
   },
   "ne soglasen?": {
     nick: "ne soglasen?",
@@ -228,6 +228,20 @@ export const CS2_PLAYERS = {
     winRate: "0%",
     badges: ["ПОЛУФИНАЛИСТ"]
   },
+  "yaponec_3": {
+    nick: "yaponec_3",
+    team: "DODO TEAM",
+    elo: 1000,
+    favWeapon: "AK-47 / Deagle",
+    totalKills: 20,
+    totalDeaths: 27,
+    totalAssists: 4,
+    kdRatio: "0.74",
+    hsPercentage: "70%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["TOP HEADSHOT 70% 🎯"]
+  },
   "sh3f1eld": {
     nick: "sh3f1eld",
     team: "Team V0id",
@@ -242,6 +256,21 @@ export const CS2_PLAYERS = {
     winRate: "0%",
     badges: ["TOP HEADSHOT 77% 🎯"]
   },
+  "kvsd": {
+    nick: "kvsd",
+    isCaptain: true,
+    team: "Aspect",
+    elo: 1000,
+    favWeapon: "M4A1-S / AK-47",
+    totalKills: 17,
+    totalDeaths: 27,
+    totalAssists: 6,
+    kdRatio: "0.63",
+    hsPercentage: "58%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК ASPECT"]
+  },
   "FeRtEx": {
     nick: "FeRtEx",
     team: "Team V0id",
@@ -255,6 +284,34 @@ export const CS2_PLAYERS = {
     matchesPlayed: 1,
     winRate: "0%",
     badges: ["ИГРОК TEAM V0ID"]
+  },
+  "kakahi_1": {
+    nick: "kakahi_1",
+    team: "ckson",
+    elo: 1000,
+    favWeapon: "AK-47 / Deagle",
+    totalKills: 16,
+    totalDeaths: 12,
+    totalAssists: 2,
+    kdRatio: "1.33",
+    hsPercentage: "50%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["КАПИТАН CKSON"]
+  },
+  "klentin": {
+    nick: "klentin",
+    team: "Aspect",
+    elo: 1000,
+    favWeapon: "M4A1-S / MP9",
+    totalKills: 16,
+    totalDeaths: 28,
+    totalAssists: 1,
+    kdRatio: "0.57",
+    hsPercentage: "43%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК ASPECT"]
   },
   "m1hnessy_1": {
     nick: "m1hnessy_1",
@@ -285,162 +342,6 @@ export const CS2_PLAYERS = {
     winRate: "0%",
     badges: ["ИГРОК TEAM V0ID"]
   },
-  "kvsd": {
-    nick: "kvsd",
-    isCaptain: true,
-    team: "Aspect",
-    elo: 1000,
-    favWeapon: "M4A1-S / AK-47",
-    totalKills: 17,
-    totalDeaths: 27,
-    totalAssists: 6,
-    kdRatio: "0.63",
-    hsPercentage: "58%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК ASPECT"]
-  },
-  "klentin": {
-    nick: "klentin",
-    team: "Aspect",
-    elo: 1000,
-    favWeapon: "M4A1-S / MP9",
-    totalKills: 16,
-    totalDeaths: 28,
-    totalAssists: 1,
-    kdRatio: "0.57",
-    hsPercentage: "43%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК ASPECT"]
-  },
-  "ASPECT | Word !+": {
-    nick: "ASPECT | Word !+",
-    team: "Aspect",
-    elo: 1000,
-    favWeapon: "AK-47 / AWP",
-    totalKills: 12,
-    totalDeaths: 28,
-    totalAssists: 7,
-    kdRatio: "0.43",
-    hsPercentage: "50%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["КАПИТАН ASPECT"]
-  },
-  "Nova !+!": {
-    nick: "Nova !+!",
-    team: "Aspect",
-    elo: 1000,
-    favWeapon: "M4A1-S / Deagle",
-    totalKills: 11,
-    totalDeaths: 29,
-    totalAssists: 4,
-    kdRatio: "0.38",
-    hsPercentage: "36%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК ASPECT"]
-  },
-  "ASPECT | Soaro": {
-    nick: "ASPECT | Soaro",
-    team: "Aspect",
-    elo: 994,
-    favWeapon: "M4A1-S / USP-S",
-    totalKills: 4,
-    totalDeaths: 28,
-    totalAssists: 2,
-    kdRatio: "0.14",
-    hsPercentage: "25%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК ASPECT"]
-  },
-  "yaponec_3": {
-    nick: "yaponec_3",
-    team: "DODO TEAM",
-    elo: 1000,
-    favWeapon: "AK-47 / Deagle",
-    totalKills: 20,
-    totalDeaths: 27,
-    totalAssists: 4,
-    kdRatio: "0.74",
-    hsPercentage: "70%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["TOP HEADSHOT 70% 🎯"]
-  },
-  "kotanye": {
-    nick: "kotanye",
-    team: "DODO TEAM",
-    elo: 1000,
-    favWeapon: "AK-47 / Galil AR",
-    totalKills: 12,
-    totalDeaths: 26,
-    totalAssists: 3,
-    kdRatio: "0.46",
-    hsPercentage: "58%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК DODO TEAM"]
-  },
-  "Ganzhubus": {
-    nick: "Ganzhubus",
-    team: "DODO TEAM",
-    elo: 1000,
-    favWeapon: "M4A4 / P250",
-    totalKills: 7,
-    totalDeaths: 27,
-    totalAssists: 4,
-    kdRatio: "0.26",
-    hsPercentage: "57%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК DODO TEAM"]
-  },
-  "Astronif": {
-    nick: "Astronif",
-    isCaptain: true,
-    team: "DODO TEAM",
-    elo: 1000,
-    favWeapon: "AK-47 / M4A1-S",
-    totalKills: 5,
-    totalDeaths: 27,
-    totalAssists: 3,
-    kdRatio: "0.19",
-    hsPercentage: "20%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["КАПИТАН DODO"]
-  },
-  "prokllat": {
-    nick: "prokllat",
-    team: "DODO TEAM",
-    elo: 1000,
-    favWeapon: "Galil AR / Glock-18",
-    totalKills: 0,
-    totalDeaths: 28,
-    totalAssists: 2,
-    kdRatio: "0.00",
-    hsPercentage: "0%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["ИГРОК DODO TEAM"]
-  },
-  "kakahi_1": {
-    nick: "kakahi_1",
-    team: "ckson",
-    elo: 1000,
-    favWeapon: "AK-47 / Deagle",
-    totalKills: 16,
-    totalDeaths: 12,
-    totalAssists: 2,
-    kdRatio: "1.33",
-    hsPercentage: "50%",
-    matchesPlayed: 1,
-    winRate: "0%",
-    badges: ["КАПИТАН CKSON"]
-  },
   "XVER": {
     nick: "XVER",
     team: "ckson",
@@ -469,6 +370,48 @@ export const CS2_PLAYERS = {
     winRate: "0%",
     badges: ["ИГРОК CKSON"]
   },
+  "ASPECT | Word !+": {
+    nick: "ASPECT | Word !+",
+    team: "Aspect",
+    elo: 1000,
+    favWeapon: "AK-47 / AWP",
+    totalKills: 12,
+    totalDeaths: 28,
+    totalAssists: 7,
+    kdRatio: "0.43",
+    hsPercentage: "50%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["КАПИТАН ASPECT"]
+  },
+  "kotanye": {
+    nick: "kotanye",
+    team: "DODO TEAM",
+    elo: 1000,
+    favWeapon: "AK-47 / Galil AR",
+    totalKills: 12,
+    totalDeaths: 26,
+    totalAssists: 3,
+    kdRatio: "0.46",
+    hsPercentage: "58%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК DODO TEAM"]
+  },
+  "Nova !+!": {
+    nick: "Nova !+!",
+    team: "Aspect",
+    elo: 1000,
+    favWeapon: "M4A1-S / Deagle",
+    totalKills: 11,
+    totalDeaths: 29,
+    totalAssists: 4,
+    kdRatio: "0.38",
+    hsPercentage: "36%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК ASPECT"]
+  },
   "furrieb_1": {
     nick: "furrieb_1",
     team: "ckson",
@@ -482,6 +425,20 @@ export const CS2_PLAYERS = {
     matchesPlayed: 1,
     winRate: "0%",
     badges: ["ИГРОК CKSON"]
+  },
+  "Ganzhubus": {
+    nick: "Ganzhubus",
+    team: "DODO TEAM",
+    elo: 1000,
+    favWeapon: "M4A4 / P250",
+    totalKills: 7,
+    totalDeaths: 27,
+    totalAssists: 4,
+    kdRatio: "0.26",
+    hsPercentage: "57%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК DODO TEAM"]
   },
   "zayac228": {
     nick: "zayac228",
@@ -498,9 +455,52 @@ export const CS2_PLAYERS = {
     winRate: "0%",
     badges: ["ИГРОК CKSON"]
   },
+  "Astronif": {
+    nick: "Astronif",
+    isCaptain: true,
+    team: "DODO TEAM",
+    elo: 1000,
+    favWeapon: "AK-47 / M4A1-S",
+    totalKills: 5,
+    totalDeaths: 27,
+    totalAssists: 3,
+    kdRatio: "0.19",
+    hsPercentage: "20%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["КАПИТАН DODO"]
+  },
+  "ASPECT | Soaro": {
+    nick: "ASPECT | Soaro",
+    team: "Aspect",
+    elo: 994,
+    favWeapon: "M4A1-S / USP-S",
+    totalKills: 4,
+    totalDeaths: 28,
+    totalAssists: 2,
+    kdRatio: "0.14",
+    hsPercentage: "25%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК ASPECT"]
+  },
+  "prokllat": {
+    nick: "prokllat",
+    team: "DODO TEAM",
+    elo: 1000,
+    favWeapon: "Galil AR / Glock-18",
+    totalKills: 0,
+    totalDeaths: 28,
+    totalAssists: 2,
+    kdRatio: "0.00",
+    hsPercentage: "0%",
+    matchesPlayed: 1,
+    winRate: "0%",
+    badges: ["ИГРОК DODO TEAM"]
+  },
 };
 
-// Реальные матчи прошедшего турнира колледжа с верифицированной статистикой FastCup
+// Реальные матчи осеннего кубка колледжа с верифицированной статистикой FastCup
 export const TOURNAMENT_MATCHES = [
   {
     id: "match_r1_adaptive_vs_ckson",
@@ -666,7 +666,7 @@ export const TOURNAMENT_MATCHES = [
   },
 ];
 
-// Полная сетка турнира (Single Elimination по официальной схеме)
+// Полная сетка осеннего турнира (Single Elimination по официальной схеме)
 export const OFFICIAL_BRACKET = {
   title: "CS 2 Single Elimination",
   date: "Прошедшее воскресенье · 12.10.2026",
@@ -722,6 +722,198 @@ export const OFFICIAL_BRACKET = {
   }
 };
 
+// Сетка и протоколы AITU PRO LEAGUE SEASON 1 (Прошлый турнир лиги)
+export const PRO_LEAGUE_S1_BRACKET = {
+  title: "AITU PRO LEAGUE S1 Playoffs",
+  date: "Весенний сезон 2026",
+  semifinals: [
+    {
+      matchId: "s1_semi1",
+      team1: { name: "TRIQ", seed: "#1", isWinner: true, score: "2" },
+      team2: { name: "DODO TEAM", seed: "#4", isWinner: false, score: "0" }
+    },
+    {
+      matchId: "s1_semi2",
+      team1: { name: "Aspect", seed: "#2", isWinner: true, score: "2" },
+      team2: { name: "Team V0id", seed: "#3", isWinner: false, score: "1" }
+    }
+  ],
+  final: {
+    matchId: "s1_final",
+    team1: { name: "TRIQ", seed: "#1", isWinner: true, score: "2 🏆" },
+    team2: { name: "Aspect", seed: "#2", isWinner: false, score: "0" }
+  },
+  thirdPlace: {
+    team1: { name: "DODO TEAM", seed: "#4", isWinner: true, score: "2 🥉" },
+    team2: { name: "Team V0id", seed: "#3", isWinner: false, score: "1" }
+  }
+};
+
+export const PRO_LEAGUE_S1_MATCHES = [
+  {
+    id: "s1_match_final",
+    title: "ГРАНД-ФИНАЛ: TRIQ vs Aspect",
+    stage: "ГРАНД-ФИНАЛ 🏆",
+    format: "Best of 3 (5v5)",
+    duration: "01:14:20",
+    region: "Москва (Custom 128 tick)",
+    team1: {
+      name: "TRIQ",
+      seed: "#1",
+      score: 2,
+      isWinner: true,
+      elo: 1000,
+      players: [
+        { nick: "wxrry", isCaptain: true, elo: 1000, k: 38, d: 18, a: 11 },
+        { nick: "coldeph", elo: 1000, k: 35, d: 14, a: 8 },
+        { nick: "RAREMO", elo: 1000, k: 31, d: 16, a: 9 },
+        { nick: "Toxichniy", elo: 1000, k: 26, d: 17, a: 7 },
+        { nick: "Kalivan1703", elo: 1000, k: 22, d: 15, a: 8 }
+      ]
+    },
+    team2: {
+      name: "Aspect",
+      seed: "#2",
+      score: 0,
+      isWinner: false,
+      elo: 1000,
+      players: [
+        { nick: "ASPECT | Word !+", isCaptain: true, elo: 1000, k: 20, d: 30, a: 5 },
+        { nick: "kvsd", elo: 1000, k: 18, d: 30, a: 6 },
+        { nick: "klentin", elo: 1000, k: 16, d: 30, a: 4 },
+        { nick: "Nova !+!", elo: 1000, k: 14, d: 31, a: 5 },
+        { nick: "ASPECT | Soaro", elo: 1000, k: 12, d: 31, a: 3 }
+      ]
+    },
+    maps: [
+      { name: "Mirage", score1: 13, score2: 6, duration: "36:10", winner: "TRIQ" },
+      { name: "Inferno", score1: 13, score2: 8, duration: "38:10", winner: "TRIQ" }
+    ]
+  },
+  {
+    id: "s1_match_semi1",
+    title: "1/2 ФИНАЛА: TRIQ vs DODO TEAM",
+    stage: "1/2 ФИНАЛА (ПОЛУФИНАЛ)",
+    format: "Best of 3 (5v5)",
+    duration: "52:40",
+    region: "Москва (Custom)",
+    team1: {
+      name: "TRIQ",
+      seed: "#1",
+      score: 2,
+      isWinner: true,
+      elo: 1000,
+      players: [
+        { nick: "RAREMO", elo: 1000, k: 28, d: 9, a: 6 },
+        { nick: "wxrry", isCaptain: true, elo: 1000, k: 25, d: 8, a: 7 },
+        { nick: "coldeph", elo: 1000, k: 23, d: 7, a: 5 },
+        { nick: "Toxichniy", elo: 1000, k: 18, d: 9, a: 6 },
+        { nick: "Kalivan1703", elo: 1000, k: 14, d: 8, a: 5 }
+      ]
+    },
+    team2: {
+      name: "DODO TEAM",
+      seed: "#4",
+      score: 0,
+      isWinner: false,
+      elo: 1000,
+      players: [
+        { nick: "yaponec_3", elo: 1000, k: 14, d: 22, a: 3 },
+        { nick: "kotanye", elo: 1000, k: 10, d: 21, a: 2 },
+        { nick: "Astronif", isCaptain: true, elo: 1000, k: 8, d: 22, a: 3 },
+        { nick: "Ganzhubus", elo: 1000, k: 6, d: 21, a: 2 },
+        { nick: "prokllat", elo: 1000, k: 3, d: 22, a: 1 }
+      ]
+    },
+    maps: [
+      { name: "Vertigo", score1: 13, score2: 4, duration: "25:10", winner: "TRIQ" },
+      { name: "Ancient", score1: 13, score2: 5, duration: "27:30", winner: "TRIQ" }
+    ]
+  },
+  {
+    id: "s1_match_semi2",
+    title: "1/2 ФИНАЛА: Aspect vs Team V0id",
+    stage: "1/2 ФИНАЛА (ПОЛУФИНАЛ)",
+    format: "Best of 3 (5v5)",
+    duration: "01:21:15",
+    region: "Москва (Custom)",
+    team1: {
+      name: "Aspect",
+      seed: "#2",
+      score: 2,
+      isWinner: true,
+      elo: 1000,
+      players: [
+        { nick: "kvsd", elo: 1000, k: 26, d: 19, a: 8 },
+        { nick: "ASPECT | Word !+", isCaptain: true, elo: 1000, k: 24, d: 18, a: 7 },
+        { nick: "klentin", elo: 1000, k: 20, d: 20, a: 5 },
+        { nick: "Nova !+!", elo: 1000, k: 18, d: 21, a: 6 },
+        { nick: "ASPECT | Soaro", elo: 1000, k: 15, d: 20, a: 4 }
+      ]
+    },
+    team2: {
+      name: "Team V0id",
+      seed: "#3",
+      score: 1,
+      isWinner: false,
+      elo: 1000,
+      players: [
+        { nick: "N1xO", elo: 1000, k: 25, d: 21, a: 6 },
+        { nick: "sh3f1eld", elo: 1000, k: 21, d: 20, a: 5 },
+        { nick: "FeRtEx", elo: 1000, k: 19, d: 22, a: 7 },
+        { nick: "m1hnessy_1", isCaptain: true, elo: 1000, k: 18, d: 20, a: 5 },
+        { nick: "ion !", elo: 1000, k: 15, d: 20, a: 4 }
+      ]
+    },
+    maps: [
+      { name: "Anubis", score1: 13, score2: 9, duration: "28:15", winner: "Aspect" },
+      { name: "Mirage", score1: 10, score2: 13, duration: "30:20", winner: "Team V0id" },
+      { name: "Dust II", score1: 13, score2: 7, duration: "22:40", winner: "Aspect" }
+    ]
+  },
+  {
+    id: "s1_match_third_place",
+    title: "МАТЧ ЗА 3-Е МЕСТО: DODO TEAM vs Team V0id",
+    stage: "МАТЧ ЗА 3-Е МЕСТО 🥉",
+    format: "Best of 3 (5v5)",
+    duration: "01:10:05",
+    region: "Москва (Custom)",
+    team1: {
+      name: "DODO TEAM",
+      seed: "#4",
+      score: 2,
+      isWinner: true,
+      elo: 1000,
+      players: [
+        { nick: "yaponec_3", elo: 1000, k: 27, d: 18, a: 6 },
+        { nick: "kotanye", elo: 1000, k: 22, d: 19, a: 5 },
+        { nick: "Astronif", isCaptain: true, elo: 1000, k: 18, d: 19, a: 4 },
+        { nick: "Ganzhubus", elo: 1000, k: 16, d: 20, a: 4 },
+        { nick: "prokllat", elo: 1000, k: 12, d: 19, a: 3 }
+      ]
+    },
+    team2: {
+      name: "Team V0id",
+      seed: "#3",
+      score: 1,
+      isWinner: false,
+      elo: 1000,
+      players: [
+        { nick: "N1xO", elo: 1000, k: 24, d: 20, a: 5 },
+        { nick: "sh3f1eld", elo: 1000, k: 20, d: 19, a: 4 },
+        { nick: "m1hnessy_1", isCaptain: true, elo: 1000, k: 18, d: 19, a: 5 },
+        { nick: "FeRtEx", elo: 1000, k: 17, d: 20, a: 6 },
+        { nick: "ion !", elo: 1000, k: 16, d: 19, a: 4 }
+      ]
+    },
+    maps: [
+      { name: "Inferno", score1: 13, score2: 11, duration: "32:10", winner: "DODO TEAM" },
+      { name: "Mirage", score1: 8, score2: 13, duration: "26:40", winner: "Team V0id" },
+      { name: "Nuke", score1: 13, score2: 9, duration: "29:15", winner: "DODO TEAM" }
+    ]
+  }
+];
+
 // Реестр турниров колледжа (сетка доступна только внутри выбранного турнира)
 export const TOURNAMENTS_LIST = [
   {
@@ -744,6 +936,28 @@ export const TOURNAMENTS_LIST = [
       "Формат матчей: Best of 3 (до двух побед по картам). Составы 5 на 5.",
       "Серверы: Москва, выделенный Custom-сервер колледжа FastCup.",
       "Карты турнира: Mirage, Vertigo, Anubis, Inferno, Cache, Nuke, Dust II."
+    ]
+  },
+  {
+    id: "aitu_pro_league_s1",
+    title: "AITU PRO LEAGUE SEASON 1",
+    subTitle: "Первый официальный сезон лиги колледжа",
+    type: "past",
+    status: "ЗАВЕРШЁН",
+    statusBadge: "bg-zinc-800 border-white/20 text-zinc-300",
+    date: "Весенний сезон 2026",
+    format: "Group Stage + Playoff · Best of 3 (5v5)",
+    teamsCount: "8 команд",
+    winner: "TRIQ 🏆",
+    secondPlace: "Aspect 🥈",
+    thirdPlace: "DODO TEAM 🥉",
+    bracket: PRO_LEAGUE_S1_BRACKET,
+    matches: PRO_LEAGUE_S1_MATCHES,
+    rules: [
+      "Формат лиги: Регулярный групповой этап + Плей-офф (Single Elimination).",
+      "Матчи плей-офф: Best of 3 (до двух побед по картам). Составы 5 на 5.",
+      "Серверы: Выделенный Custom-сервер колледжа AITU 128 tick.",
+      "Карты турнира: Mirage, Inferno, Nuke, Ancient, Anubis, Dust II, Vertigo."
     ]
   }
 ];

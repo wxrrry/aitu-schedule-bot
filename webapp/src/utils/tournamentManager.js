@@ -130,22 +130,32 @@ export function getAllTournaments() {
     const raw = localStorage.getItem(TOURNAMENTS_STORAGE_KEY);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        list = parsed.filter(t => !deletedIds.includes(t.id)).map(t => {
-          if (t.id === 'autumn_2026') {
-            const sys = DEFAULT_SYSTEM_TOURNAMENTS.find(s => s.id === 'autumn_2026');
+        // Подмешиваем системные турниры, если их еще нет в кэше пользователя
+        const cachedIds = new Set(parsed.map(t => t.id));
+        const missingSystem = DEFAULT_SYSTEM_TOURNAMENTS.filter(st => !cachedIds.has(st.id) && !deletedIds.includes(st.id));
+
+        list = [...parsed, ...missingSystem]
+          .filter(t => !deletedIds.includes(t.id))
+          .map(t => {
+            const sys = DEFAULT_SYSTEM_TOURNAMENTS.find(s => s.id === t.id);
             if (sys) {
               return {
                 ...t,
+                title: sys.title,
+                subTitle: sys.subTitle,
                 matches: sys.matches,
-                bracket: sys.bracket
+                bracket: sys.bracket,
+                rules: sys.rules,
+                winner: sys.winner,
+                secondPlace: sys.secondPlace,
+                thirdPlace: sys.thirdPlace,
+                date: sys.date,
+                teamsCount: sys.teamsCount
               };
             }
-          }
-          return t;
-        });
+            return t;
+          });
         return list;
-      }
     }
   } catch (e) {
     console.warn("Failed to load custom tournaments", e);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Trophy, 
   Users, 
@@ -21,6 +21,9 @@ import {
   Upload,
   Maximize2,
   ExternalLink,
+  Search,
+  Flame,
+  Target,
   X
 } from 'lucide-react';
 import { 
@@ -50,6 +53,28 @@ export default function HLTVTab() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [rootTab, setRootTab] = useState('tournaments'); // 'tournaments', 'players'
+  const [playerSearch, setPlayerSearch] = useState('');
+  const [playerSort, setPlayerSort] = useState('kills'); // 'kills', 'kd', 'hs'
+
+  const sortedPlayersList = useMemo(() => {
+    let list = Object.values(CS2_PLAYERS);
+    if (playerSearch.trim()) {
+      const q = playerSearch.trim().toLowerCase();
+      list = list.filter(p => 
+        p.nick.toLowerCase().includes(q) || 
+        (p.team && p.team.toLowerCase().includes(q))
+      );
+    }
+    return [...list].sort((a, b) => {
+      if (playerSort === 'kd') {
+        return parseFloat(b.kdRatio || 0) - parseFloat(a.kdRatio || 0);
+      }
+      if (playerSort === 'hs') {
+        return parseInt(b.hsPercentage || 0) - parseInt(a.hsPercentage || 0);
+      }
+      return b.totalKills - a.totalKills;
+    });
+  }, [playerSearch, playerSort]);
 
   // Match screenshot & scoring state
   const [viewingScreenshot, setViewingScreenshot] = useState(null);
@@ -555,41 +580,252 @@ const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
             </div>
           )}
 
-          {/* TAB: КАТАЛОГ ИГРОКОВ */}
+          {/* TAB: КАТАЛОГ И ОБЩИЙ ТОП ИГРОКОВ */}
           {rootTab === 'players' && (
-            <div className="space-y-3">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest block px-1">
-                ПРОФИЛИ УЧАСТНИКОВ:
-              </span>
+            <div className="space-y-3.5">
+              {/* Header & Stats bar */}
+              <div className="flex items-center justify-between px-1 flex-wrap gap-2">
+                <div>
+                  <h3 className="text-xs font-black text-white uppercase tracking-wider font-sans flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    <span>ОБЩИЙ ТОП ИГРОКОВ ПО КИЛЛАМ</span>
+                  </h3>
+                  <span className="text-[9px] text-zinc-500 font-mono uppercase">
+                    УЧАСТНИКОВ В БАЗЕ: {sortedPlayersList.length} · ВЕРИФИЦИРОВАНО FASTCUP
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {Object.values(CS2_PLAYERS).map(p => (
-                  <div
-                    key={p.nick}
-                    onClick={() => setSelectedPlayer(p)}
-                    className="p-3 bg-black border border-white/10 hover:border-white/30 cursor-pointer transition-all space-y-2 group"
+                {/* Sort Toggle */}
+                <div className="flex items-center gap-1 p-0.5 bg-black border border-white/10 text-[9px] font-mono">
+                  <button
+                    onClick={() => { setPlayerSort('kills'); triggerHaptic('light'); }}
+                    className={`px-2 py-1 font-bold uppercase transition-colors ${
+                      playerSort === 'kills' ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-white group-hover:text-amber-300 transition-colors text-xs font-mono">
-                          {p.nick}
-                        </div>
-                        <div className="text-[9px] text-zinc-400 font-mono">
-                          {p.team}{p.isCaptain ? ' · Капитан' : ''}
-                        </div>
-                      </div>
-                      <span className="px-1.5 py-0.5 bg-zinc-900 border border-white/20 text-white font-bold text-[9px]">
-                        KD {p.kdRatio}
-                      </span>
-                    </div>
+                    КИЛЛЫ
+                  </button>
+                  <button
+                    onClick={() => { setPlayerSort('kd'); triggerHaptic('light'); }}
+                    className={`px-2 py-1 font-bold uppercase transition-colors ${
+                      playerSort === 'kd' ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    K/D
+                  </button>
+                  <button
+                    onClick={() => { setPlayerSort('hs'); triggerHaptic('light'); }}
+                    className={`px-2 py-1 font-bold uppercase transition-colors ${
+                      playerSort === 'hs' ? 'bg-amber-400 text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    HS%
+                  </button>
+                </div>
+              </div>
 
-                    <div className="grid grid-cols-3 gap-1 pt-1 border-t border-white/[0.06] text-[9px] text-zinc-400">
-                      <div>Фраги: <strong className="text-white">{p.totalKills}</strong></div>
-                      <div>HS: <strong className="text-white">{p.hsPercentage}</strong></div>
-                      <div>Винрейт: <strong className="text-white">{p.winRate}</strong></div>
+              {/* Search Box */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={playerSearch}
+                  onChange={(e) => setPlayerSearch(e.target.value)}
+                  placeholder="Поиск по нику или команде (например: wxrry, TRIQ, adaptive)..."
+                  className="w-full bg-black border border-white/10 pl-8 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 font-sans transition-colors"
+                />
+                {playerSearch && (
+                  <button
+                    onClick={() => setPlayerSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Podium for TOP 3 Fraggers (shown if no search query and sorted by kills) */}
+              {!playerSearch && playerSort === 'kills' && sortedPlayersList.length >= 3 && (
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  {/* #2 Rank - Silver */}
+                  <div
+                    onClick={() => { setSelectedPlayer(sortedPlayersList[1]); triggerHaptic('selection'); }}
+                    className="p-2.5 bg-black border border-zinc-400/50 hover:border-white transition-all text-center space-y-1.5 cursor-pointer relative group"
+                  >
+                    <div className="text-[10px] font-mono font-bold text-zinc-300">
+                      🥈 #2 ТОП
+                    </div>
+                    <div className="font-bold text-white text-xs truncate group-hover:text-amber-300 transition-colors font-mono">
+                      {sortedPlayersList[1].nick}
+                    </div>
+                    <div className="text-[9px] text-zinc-400 font-mono">
+                      {sortedPlayersList[1].team}
+                    </div>
+                    <div className="text-base font-black text-white font-mono">
+                      {sortedPlayersList[1].totalKills} <span className="text-[9px] text-zinc-500 font-normal">K</span>
+                    </div>
+                    <div className="text-[8px] text-emerald-400 font-mono font-bold">
+                      KD {sortedPlayersList[1].kdRatio}
                     </div>
                   </div>
-                ))}
+
+                  {/* #1 Rank - Gold Leader */}
+                  <div
+                    onClick={() => { setSelectedPlayer(sortedPlayersList[0]); triggerHaptic('selection'); }}
+                    className="p-2.5 bg-amber-950/30 border-2 border-amber-400 hover:border-amber-300 transition-all text-center space-y-1.5 cursor-pointer relative group shadow-lg shadow-amber-500/10"
+                  >
+                    <div className="text-[10px] font-mono font-bold text-amber-300 flex items-center justify-center gap-1">
+                      <Trophy className="w-3 h-3 text-amber-400" />
+                      <span>🥇 #1 MVP</span>
+                    </div>
+                    <div className="font-black text-amber-300 text-sm truncate group-hover:text-white transition-colors font-mono">
+                      {sortedPlayersList[0].nick}
+                    </div>
+                    <div className="text-[9px] text-zinc-300 font-mono">
+                      {sortedPlayersList[0].team}
+                    </div>
+                    <div className="text-xl font-black text-amber-400 font-mono">
+                      {sortedPlayersList[0].totalKills} <span className="text-[10px] text-amber-400/70 font-normal">K</span>
+                    </div>
+                    <div className="text-[8px] text-emerald-400 font-mono font-bold">
+                      KD {sortedPlayersList[0].kdRatio} · HS {sortedPlayersList[0].hsPercentage}
+                    </div>
+                  </div>
+
+                  {/* #3 Rank - Bronze */}
+                  <div
+                    onClick={() => { setSelectedPlayer(sortedPlayersList[2]); triggerHaptic('selection'); }}
+                    className="p-2.5 bg-black border border-amber-700/50 hover:border-amber-600 transition-all text-center space-y-1.5 cursor-pointer relative group"
+                  >
+                    <div className="text-[10px] font-mono font-bold text-amber-600">
+                      🥉 #3 ТОП
+                    </div>
+                    <div className="font-bold text-white text-xs truncate group-hover:text-amber-300 transition-colors font-mono">
+                      {sortedPlayersList[2].nick}
+                    </div>
+                    <div className="text-[9px] text-zinc-400 font-mono">
+                      {sortedPlayersList[2].team}
+                    </div>
+                    <div className="text-base font-black text-white font-mono">
+                      {sortedPlayersList[2].totalKills} <span className="text-[9px] text-zinc-500 font-normal">K</span>
+                    </div>
+                    <div className="text-[8px] text-emerald-400 font-mono font-bold">
+                      KD {sortedPlayersList[2].kdRatio}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Leaderboard List */}
+              <div className="space-y-1.5 pt-1">
+                {sortedPlayersList.map((p, idx) => {
+                  const rank = idx + 1;
+                  const isTop3 = rank <= 3;
+                  const kdNum = parseFloat(p.kdRatio || 0);
+
+                  return (
+                    <div
+                      key={p.nick}
+                      onClick={() => { setSelectedPlayer(p); triggerHaptic('selection'); }}
+                      className={`p-2.5 bg-black border transition-all cursor-pointer flex items-center justify-between gap-2.5 group select-none ${
+                        rank === 1
+                          ? 'border-amber-400/50 hover:border-amber-400 bg-amber-950/10'
+                          : rank === 2
+                          ? 'border-zinc-400/40 hover:border-white'
+                          : rank === 3
+                          ? 'border-amber-700/40 hover:border-amber-500'
+                          : 'border-white/10 hover:border-white/30'
+                      }`}
+                    >
+                      {/* Left: Rank & Nick */}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-7 h-7 flex items-center justify-center font-mono font-bold text-xs shrink-0 ${
+                          rank === 1 
+                            ? 'bg-amber-400 text-black font-black' 
+                            : rank === 2 
+                            ? 'bg-zinc-300 text-black font-black' 
+                            : rank === 3 
+                            ? 'bg-amber-700 text-white font-black' 
+                            : 'bg-zinc-900 text-zinc-400 border border-white/10 text-[11px]'
+                        }`}>
+                          {rank <= 3 ? (rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉') : `#${rank}`}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-white text-xs font-mono group-hover:text-amber-300 transition-colors truncate">
+                              {p.nick}
+                            </span>
+                            {p.isCaptain && (
+                              <span className="text-[8px] bg-amber-950/80 border border-amber-500/40 text-amber-400 px-1 font-bold font-mono">
+                                (C)
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTeam(p.team);
+                              }}
+                              className="text-[9px] text-zinc-400 hover:text-amber-300 font-mono underline decoration-dotted transition-colors"
+                            >
+                              {p.team}
+                            </button>
+                          </div>
+
+                          {/* Badges preview */}
+                          {p.badges && p.badges.length > 0 && (
+                            <div className="flex items-center gap-1 pt-0.5 flex-wrap">
+                              {p.badges.slice(0, 2).map((b, bIdx) => (
+                                <span key={bIdx} className="text-[8px] text-zinc-500 font-mono uppercase bg-zinc-900/60 px-1 py-0.2 border border-white/5">
+                                  {b}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Stats Columns */}
+                      <div className="flex items-center gap-3 shrink-0 font-mono text-right">
+                        <div className="min-w-[46px]">
+                          <div className="text-sm font-black text-amber-400">
+                            {p.totalKills} <span className="text-[9px] text-zinc-500 font-normal">K</span>
+                          </div>
+                          <div className="text-[8px] text-zinc-500">
+                            {p.totalDeaths} D · {p.totalAssists} A
+                          </div>
+                        </div>
+
+                        <div className="min-w-[40px] hidden xs:block">
+                          <div className={`text-xs font-bold ${kdNum >= 1.0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {p.kdRatio}
+                          </div>
+                          <div className="text-[8px] text-zinc-500">
+                            K/D
+                          </div>
+                        </div>
+
+                        <div className="min-w-[34px] hidden sm:block">
+                          <div className="text-xs font-bold text-zinc-300">
+                            {p.hsPercentage}
+                          </div>
+                          <div className="text-[8px] text-zinc-500">
+                            HS
+                          </div>
+                        </div>
+
+                        <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-white transition-colors" />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {sortedPlayersList.length === 0 && (
+                  <div className="p-8 text-center text-zinc-500 text-xs font-mono">
+                    Игроки по запросу «{playerSearch}» не найдены
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -778,6 +1014,7 @@ const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
               ) : (
                 /* Полная интерактивная турнирная сетка плей-офф в аутентичном формате */
                 <BracketTree 
+                  bracketData={selectedTournament?.bracket}
                   onSelectMatch={(matchId) => {
                     setSelectedMatchId(matchId);
                     setTournamentTab('matches');
