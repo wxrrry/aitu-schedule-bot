@@ -215,16 +215,27 @@ export default function CyberTournamentsTab({
         <div className="space-y-4 animate-fadeIn text-center">
           {/* Back button and Tournament Header */}
           <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2.5 text-center flex flex-col items-center justify-center">
-            <button
-              onClick={() => {
-                setSelectedTournament(null);
-                triggerHaptic('light');
-              }}
-              className="inline-flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white font-mono text-[10px] uppercase font-bold transition-colors pb-1 border-b border-[#212121]"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>← НАЗАД КО ВСЕМ ТУРНИРАМ</span>
-            </button>
+            <div className="w-full flex items-center justify-between pb-2 border-b border-[#212121]">
+              <button
+                onClick={() => {
+                  setSelectedTournament(null);
+                  triggerHaptic('light');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#18181f] hover:bg-[#23232c] border border-[#2e2e38] text-zinc-200 hover:text-white font-mono text-xs uppercase font-bold rounded-lg transition-all cursor-pointer shadow-sm"
+              >
+                <ChevronLeft className="w-4 h-4 text-[#0ea5e9]" />
+                <span>← НАЗАД КО ВСЕМ ТУРНИРАМ</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTournament(null);
+                  triggerHaptic('light');
+                }}
+                className="text-zinc-500 hover:text-zinc-300 font-mono text-[10px] uppercase cursor-pointer"
+              >
+                ✕ ВЫЙТИ
+              </button>
+            </div>
 
             <div className="flex flex-col items-center justify-center gap-2 pt-1 text-center w-full">
               <div className="flex items-center justify-center gap-2 mb-0.5">
@@ -367,6 +378,23 @@ export default function CyberTournamentsTab({
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Match Subnav Back bar */}
+                  <div className="flex items-center justify-between p-2.5 bg-[#141418] border border-[#26262f] rounded-xl text-xs font-mono">
+                    <button
+                      onClick={() => {
+                        setTournamentTab('bracket');
+                        triggerHaptic('light');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1c1c24] hover:bg-[#252530] text-zinc-200 hover:text-white font-bold uppercase rounded-lg border border-[#30303e] transition-colors cursor-pointer shadow-sm"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                      <span>← НАЗАД К СЕТКЕ ТУРНИРА</span>
+                    </button>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      МАТЧЕЙ: {selectedTournament.matches.length}
+                    </span>
+                  </div>
+
                   {/* Match Selector Buttons */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px]">
                     {selectedTournament.matches.map(match => (
@@ -750,6 +778,20 @@ export default function CyberTournamentsTab({
                       <p className="text-[10px] text-zinc-500 text-center font-mono pt-1">
                         💡 Нажмите на любого игрока в таблице, чтобы открыть его детальный профиль
                       </p>
+
+                      {/* Match Footer Back button */}
+                      <div className="pt-2 border-t border-[#212121]">
+                        <button
+                          onClick={() => {
+                            setTournamentTab('bracket');
+                            triggerHaptic('light');
+                          }}
+                          className="w-full py-2 bg-[#18181f] hover:bg-[#22222b] text-zinc-200 hover:text-white font-bold font-mono text-xs uppercase rounded-xl border border-[#2e2e3a] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                          <span>ВЕРНУТЬСЯ К ТУРНИРНОЙ СЕТКЕ</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -760,14 +802,39 @@ export default function CyberTournamentsTab({
           {/* 3. ВКЛАДКА: РЕГЛАМЕНТ ТУРНИРА */}
           {tournamentTab === 'rules' && (
             <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-3 font-mono text-xs">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block border-b border-[#212121] pb-1.5">
-                РЕГЛАМЕНТ: {selectedTournament.title.toUpperCase()}
-              </span>
+              <div className="flex items-center justify-between border-b border-[#212121] pb-2">
+                <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block">
+                  РЕГЛАМЕНТ: {selectedTournament.title.toUpperCase()}
+                </span>
+                <button
+                  onClick={() => {
+                    setTournamentTab('bracket');
+                    triggerHaptic('light');
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] text-zinc-300 hover:text-white px-2 py-1 bg-[#18181f] border border-[#2e2e3a] rounded-md font-bold uppercase transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3 h-3 text-[#0ea5e9]" />
+                  <span>К СЕТКЕ</span>
+                </button>
+              </div>
 
               <div className="space-y-2 text-zinc-300 font-sans leading-relaxed text-[11px]">
                 {selectedTournament.rules?.map((rule, idx) => (
                   <p key={idx}>• {rule}</p>
                 ))}
+              </div>
+
+              <div className="pt-2 border-t border-[#212121]">
+                <button
+                  onClick={() => {
+                    setTournamentTab('bracket');
+                    triggerHaptic('light');
+                  }}
+                  className="w-full py-2 bg-[#18181f] hover:bg-[#22222b] text-zinc-200 hover:text-white font-bold font-mono text-xs uppercase rounded-xl border border-[#2e2e3a] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                  <span>ВЕРНУТЬСЯ К ТУРНИРНОЙ СЕТКЕ</span>
+                </button>
               </div>
             </div>
           )}

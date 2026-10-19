@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, 
+  ChevronLeft,
   Trophy, 
   Users, 
   Send, 
@@ -188,12 +189,30 @@ export default function TeamRegistrationModal({ isOpen, onClose, tournament, pro
             </p>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              type="button"
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-mono text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+              <span>НАЗАД</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              title="Закрыть"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {submitted ? (
@@ -593,14 +612,27 @@ export default function TeamRegistrationModal({ isOpen, onClose, tournament, pro
               </div>
             </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>ПОДАТЬ ЗАЯВКУ КОМАНДЫ НА ТУРНИР</span>
-            </button>
+            {/* Submit and Back */}
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  triggerHaptic('light');
+                }}
+                className="py-2.5 px-4 bg-zinc-900 border border-white/20 text-zinc-300 hover:text-white font-bold text-xs uppercase tracking-wider hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1 cursor-pointer shrink-0"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+                <span>НАЗАД</span>
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>ПОДАТЬ ЗАЯВКУ</span>
+              </button>
+            </div>
           </form>
         )}
       </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, 
+  ChevronLeft,
   Trophy, 
   Plus, 
   Users, 
@@ -246,12 +247,30 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
             </p>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              type="button"
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-mono text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+              <span>НАЗАД</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              title="Закрыть"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Tab switch */}
@@ -717,6 +736,21 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
             </button>
           </form>
         )}
+
+        {/* Footer Back Button */}
+        <div className="pt-2 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              triggerHaptic('light');
+            }}
+            className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-zinc-300 hover:text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+            <span>НАЗАД / ЗАКРЫТЬ ПАНЕЛЬ ОРГАНИЗАТОРА</span>
+          </button>
+        </div>
       </div>
     </div>
   );

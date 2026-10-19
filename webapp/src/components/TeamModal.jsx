@@ -9,6 +9,7 @@ import {
   TrendingUp, 
   TrendingDown, 
   Minus,
+  ChevronLeft,
   ChevronRight,
   Target,
   ArrowRight
@@ -196,15 +197,28 @@ export default function TeamModal({ team, onClose, onSelectPlayer, onSelectMatch
             </p>
           </div>
 
-          <button 
-            onClick={() => {
-              onClose();
-              triggerHaptic('light');
-            }}
-            className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white font-mono text-xs font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 text-[#0ea5e9]" />
+              <span>НАЗАД</span>
+            </button>
+            <button 
+              onClick={() => {
+                onClose();
+                triggerHaptic('light');
+              }}
+              className="p-1 border border-white/10 hover:border-white text-zinc-400 hover:text-white transition-colors shrink-0 cursor-pointer"
+              title="Закрыть"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* 4 Summary Cards */}
@@ -409,9 +423,10 @@ export default function TeamModal({ team, onClose, onSelectPlayer, onSelectMatch
             onClose();
             triggerHaptic('light');
           }}
-          className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors"
+          className="w-full py-2.5 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
         >
-          ЗАКРЫТЬ ОБЗОР КОМАНДЫ
+          <ChevronLeft className="w-4 h-4" />
+          <span>НАЗАД / ЗАКРЫТЬ ОБЗОР КОМАНДЫ</span>
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, ChevronLeft, ArrowLeft } from 'lucide-react';
 import { 
   TOURNAMENTS_LIST,
   CS2_PLAYERS,
@@ -244,6 +244,42 @@ export default function HLTVTab() {
 
   return (
     <div className="space-y-4 font-mono text-xs pb-28 animate-fadeIn">
+      {/* Универсальная верхняя панель НАЗАД при нахождении в подразделах или турнире */}
+      {cyberTab !== 'home' && (
+        <div className="sticky top-0 z-30 flex items-center justify-between p-2 bg-[#0e0e11]/95 backdrop-blur-md border border-[#26262f] rounded-xl select-none shadow-lg">
+          <button
+            onClick={() => {
+              if (selectedTournament) {
+                setSelectedTournament(null);
+              } else {
+                setCyberTab('home');
+              }
+              triggerHaptic('light');
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#18181f] hover:bg-[#23232c] active:bg-[#2a2a35] border border-[#343442] text-zinc-100 hover:text-white text-xs font-bold font-mono uppercase rounded-lg transition-all cursor-pointer shadow-sm"
+          >
+            <ChevronLeft className="w-4 h-4 text-[#0ea5e9]" />
+            <span>
+              {selectedTournament ? 'НАЗАД К СПИСКУ ТУРНИРОВ' : 'НАЗАД НА ГЛАВНУЮ'}
+            </span>
+          </button>
+
+          {selectedTournament && (
+            <button
+              onClick={() => {
+                setSelectedTournament(null);
+                setCyberTab('home');
+                triggerHaptic('light');
+              }}
+              className="px-2.5 py-1.5 bg-black/40 hover:bg-[#1a1a22] border border-white/10 hover:border-white/20 text-zinc-400 hover:text-zinc-200 text-[10px] font-mono font-bold uppercase rounded-lg transition-colors cursor-pointer"
+              title="На главную страницу киберспорта"
+            >
+              НА ГЛАВНУЮ ✕
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 1. ГЛАВНАЯ СТРАНИЦА */}
       {cyberTab === 'home' && (
         <CyberHomeTab
@@ -411,9 +447,10 @@ export default function HLTVTab() {
               </div>
               <button
                 onClick={() => setViewingScreenshot(null)}
-                className="text-xs text-zinc-400 hover:text-white px-2 py-1 border border-[#2e2e2e] hover:bg-[#181818] rounded-md transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs text-zinc-300 hover:text-white px-2.5 py-1 bg-zinc-900 border border-[#3e3e3e] hover:bg-[#252525] rounded-md transition-colors cursor-pointer font-bold"
               >
-                ✕ ЗАКРЫТЬ
+                <ChevronLeft className="w-3.5 h-3.5 text-cyan-400" />
+                <span>НАЗАД</span>
               </button>
             </div>
 
