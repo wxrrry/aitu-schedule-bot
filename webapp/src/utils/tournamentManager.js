@@ -48,7 +48,7 @@ export async function syncTournamentsFromApi() {
     if (data && Array.isArray(data.tournaments)) {
       const deletedIds = getDeletedTournamentIds();
       const serverTournaments = data.tournaments
-        .filter(t => !deletedIds.includes(t.id))
+        .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026')
         .map(t => {
         let rulesArr = t.rules;
         if (typeof rulesArr === 'string') {
@@ -135,7 +135,7 @@ export function getAllTournaments() {
         const missingSystem = DEFAULT_SYSTEM_TOURNAMENTS.filter(st => !cachedIds.has(st.id) && !deletedIds.includes(st.id));
 
         list = [...parsed, ...missingSystem]
-          .filter(t => !deletedIds.includes(t.id))
+          .filter(t => !deletedIds.includes(t.id) && t.id !== 'autumn_2026')
           .map(t => {
             const sys = DEFAULT_SYSTEM_TOURNAMENTS.find(s => s.id === t.id);
             if (sys) {
@@ -160,6 +160,7 @@ export function getAllTournaments() {
             }
             return t;
           });
+        saveAllTournaments(list);
         return list;
     }
   } catch (e) {

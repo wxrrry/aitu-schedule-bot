@@ -729,34 +729,6 @@ export const PRO_LEAGUE_S1_MATCHES = TOURNAMENT_MATCHES;
 // Реестр турниров колледжа (сетка доступна только внутри выбранного турнира)
 export const TOURNAMENTS_LIST = [
   {
-    id: "autumn_2026",
-    title: "AITU CS2 Autumn Cup",
-    subTitle: "Осенний кубок колледжа AITU",
-    type: "upcoming",
-    status: "ПРИЁМ ЗАЯВОК",
-    statusBadge: "bg-amber-500/10 border-amber-500/30 text-amber-400",
-    date: "Ноябрь 2026",
-    format: "Single Elimination · Best of 3 (5v5)",
-    teamsCount: "Регистрация открыта",
-    maxTeams: 8,
-    prizePool: "Кубок колледжа + Дипломы",
-    winner: null,
-    secondPlace: null,
-    thirdPlace: null,
-    bracket: {
-      isPending: true,
-      title: "СЕТКА ПЛЕЙ-ОФФ // АНОНС",
-      pendingMessage: "Сетка плей-офф осеннего кубка формируется после завершения регистрации команд. Капитаны могут подать заявку прямо сейчас!"
-    },
-    matches: [],
-    rules: [
-      "Формат турнира: Single Elimination (плей-офф на выбывание с матчем за 3-е место).",
-      "Формат матчей: Best of 3 (до двух побед по картам). Составы 5 на 5.",
-      "Серверы: Москва, выделенный сервер колледжа 128 tick.",
-      "Карты турнира: Mirage, Vertigo, Anubis, Inferno, Ancient, Nuke, Dust II."
-    ]
-  },
-  {
     id: "aitu_pro_league_s1",
     title: "AITU PRO LEAGUE SEASON 1",
     subTitle: "Первый официальный сезон лиги колледжа",
