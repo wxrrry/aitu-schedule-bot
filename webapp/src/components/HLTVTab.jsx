@@ -489,7 +489,7 @@ const compressImageFile = (file, maxWidth = 1280, quality = 0.82) => {
                     HLTV WORLD RANKING // AITU CS2
                   </span>
                   <span className="text-zinc-500 text-[9px]">
-                    Обновлено: 18 октября 2026 (по итогам AITU PRO LEAGUE SEASON 1)
+                    Обновлено: 11 октября 2026 (по итогам AITU PRO LEAGUE SEASON 1)
                   </span>
                 </div>
                 <span className="px-2 py-0.5 bg-zinc-900 border border-white/20 text-amber-300 font-bold uppercase text-[9px]">
