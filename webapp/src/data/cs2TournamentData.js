@@ -669,7 +669,7 @@ export const TOURNAMENT_MATCHES = [
 // Полная сетка AITU PRO LEAGUE SEASON 1 (Single Elimination по официальной схеме)
 export const OFFICIAL_BRACKET = {
   title: "AITU PRO LEAGUE S1 Playoffs",
-  date: "12.10.2026 · FastCup",
+  date: "18.10.2026 (Воскресенье) · FastCup",
   round1: [
     {
       matchId: "r1_m1",
@@ -735,7 +735,7 @@ export const TOURNAMENTS_LIST = [
     type: "past",
     status: "ЗАВЕРШЁН",
     statusBadge: "bg-zinc-800 border-white/20 text-zinc-300",
-    date: "12.10.2026 (FastCup)",
+    date: "18.10.2026 (Воскресенье)",
     format: "Single Elimination · Best of 3 (5v5)",
     teamsCount: "9 команд",
     winner: "LL TEAM 🏆",
