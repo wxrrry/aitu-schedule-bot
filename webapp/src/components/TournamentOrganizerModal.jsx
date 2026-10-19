@@ -65,11 +65,11 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
   const [newAvatar, setNewAvatar] = useState('🏆');
   const [newCustomAvatarUrl, setNewCustomAvatarUrl] = useState('');
   
-  // Призы
-  const [prize1st, setPrize1st] = useState('Кубок колледжа AITU + Золотые медали + 50 000 ₸');
-  const [prize2nd, setPrize2nd] = useState('Серебряные медали + Грамоты + 25 000 ₸');
-  const [prize3rd, setPrize3rd] = useState('Бронзовые медали + Грамоты');
-  const [prizeMvp, setPrizeMvp] = useState('Индивидуальная статуэтка MVP турнира');
+  // Призы (академические и спортивные награды колледжа)
+  const [prize1st, setPrize1st] = useState('Кубок колледжа AITU + Золотые медали');
+  const [prize2nd, setPrize2nd] = useState('Серебряные медали + Почётные грамоты');
+  const [prize3rd, setPrize3rd] = useState('Бронзовые медали');
+  const [prizeMvp, setPrizeMvp] = useState('Индивидуальная статуэтка MVP турнира + Фирменный мерч');
 
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [editingSeedTeamId, setEditingSeedTeamId] = useState(null);
@@ -599,14 +599,14 @@ export default function TournamentOrganizerModal({ isOpen, onClose, onTournament
                       setNewCustomAvatarUrl('');
                       triggerHaptic('light');
                     }}
-                    className={`p-2 border rounded-xs text-center transition-all cursor-pointer ${
+                    className={`h-11 border rounded-xs flex items-center justify-center transition-all cursor-pointer ${
                       newAvatar === av.icon && !newCustomAvatarUrl
-                        ? 'bg-amber-950/60 border-amber-400 text-amber-300 scale-105'
+                        ? 'bg-amber-950/60 border-amber-400 text-amber-300 scale-105 shadow-md'
                         : 'bg-black border-white/10 text-white hover:border-white/30'
                     }`}
+                    title={av.name}
                   >
-                    <div className="text-xl">{av.icon}</div>
-                    <div className="text-[8px] text-zinc-400 truncate mt-0.5">{av.name}</div>
+                    <span className="text-xl select-none">{av.icon}</span>
                   </button>
                 ))}
               </div>

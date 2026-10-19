@@ -303,17 +303,14 @@ export default function TeamRegistrationModal({ isOpen, onClose, tournament, pro
                             setCustomAvatarUrl('');
                             triggerHaptic('light');
                           }}
-                          className={`p-2 rounded-xs border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                          className={`h-11 rounded-xs border transition-all flex items-center justify-center cursor-pointer ${
                             isSelected
                               ? 'bg-zinc-800 border-amber-400 shadow-md scale-105'
                               : 'bg-black/60 border-white/10 hover:border-white/30'
                           }`}
                           title={preset.name}
                         >
-                          <span className="text-lg select-none">{preset.icon}</span>
-                          <span className="text-[8px] font-mono text-zinc-400 truncate max-w-full">
-                            {preset.name}
-                          </span>
+                          <span className="text-xl select-none">{preset.icon}</span>
                         </button>
                       );
                     })}
