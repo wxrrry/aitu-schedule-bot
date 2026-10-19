@@ -214,4 +214,102 @@ async def send_pair_reminder(bot: Bot, pair_num: int, target_courses: list[int] 
         legacy_subs.difference_update(dead_users)
         save_subscribers(legacy_subs)
 
+    # 2. Рассылка в привязанные беседы (с проверкой notify_pairs и notify_silent)
+    try:
+        from db.crud import get_all_chat_bindings
+        from aiogram import types
+        bindings = await get_all_chat_bindings()
+        chat_count = 0
+        for b in bindings:
+            if not getattr(b, "notify_pairs", True):
+                continue
+            c = get_course_from_group_name(b.group_name)
+            if target_courses is not None and c not in target_courses:
+                continue
+
+            bell_sched = get_bell_schedule(c)
+            time_info = bell_sched.get(pair_num, {})
+            time_range = time_info.get("range", "") if isinstance(time_info, dict) else str(time_info)
+            breakdown = time_info.get("breakdown", "") if isinstance(time_info, dict) else ""
+
+            if b.group_name not in group_cache:
+                lessons = await get_lessons_for_day(b.group_name, weekday, parity_code)
+                reps = await get_replacements_for_date_and_group(today, b.group_name)
+                group_cache[b.group_name] = {"lessons": lessons, "reps": reps}
+
+            b_data = group_cache[b.group_name]
+            pair_val = b_data["lessons"].get(pair_num)
+            replacement = b_data["reps"].get(pair_num)
+
+            if not pair_val and not replacement:
+                continue
+
+            if replacement and replacement.get("type") == "cancel":
+                reason = replacement.get("text") or replacement.get("subject") or "Занятие отменено"
+                orig_subj = html.escape(pair_val["subject"]) if pair_val else ""
+                chat_msg = (
+                    f"🔔 <b>Колокольчик беседы · {b.group_name}</b>\n"
+                    f"──────────────────────\n"
+                    f"<blockquote>"
+                    f"❌ {emoji_num} <b>{time_range} — ПАРА ОТМЕНЕНА!</b>\n"
+                    + (f"📚 <s>{orig_subj}</s>\n" if orig_subj else "")
+                    + f"💡 <i>{html.escape(reason)}</i>\n"
+                    f"🎉 Можно отдохнуть или заняться своими делами!"
+                    f"</blockquote>"
+                )
+            elif replacement and replacement.get("type") == "replace":
+                rep_subj = html.escape(replacement.get("subject") or replacement.get("text") or "Замена")
+                rep_room = html.escape(replacement.get("room") or (pair_val.get("room", "—") if pair_val else "—"))
+                rep_teacher = html.escape(replacement.get("teacher") or (pair_val.get("teacher", "—") if pair_val else "—"))
+                orig_note = f"\n▫️ <i>(по плану было: {html.escape(pair_val['subject'])})</i>" if pair_val else ""
+                breakdown_line = f"\n⏱ <i>{breakdown}</i>" if breakdown else ""
+                chat_msg = (
+                    f"🔔 <b>Через 10 минут начнётся {pair_num}-я пара (ЗАМЕНА)!</b>\n"
+                    f"──────────────────────\n"
+                    f"<blockquote>"
+                    f"⚠️ {emoji_num} <b>{time_range}</b> · <b>ЗАМЕНА В РАСПИСАНИИ</b>\n"
+                    f"📚 <b>{rep_subj}</b>\n"
+                    f"📍 Кабинет: <code>{rep_room}</code> · 👨‍🏫 <i>{rep_teacher}</i>\n"
+                    f"👥 Группа: <code>{b.group_name}</code>"
+                    f"{orig_note}"
+                    f"{breakdown_line}"
+                    f"</blockquote>\n"
+                    f"🏃‍♂️ <i>Успейте занять места в аудитории!</i>"
+                )
+            elif pair_val:
+                subject = html.escape(str(pair_val.get("subject", "Не указан")))
+                room = html.escape(str(pair_val.get("room", "—")))
+                teacher = html.escape(str(pair_val.get("teacher", "—")))
+                breakdown_line = f"\n⏱ <i>{breakdown}</i>" if breakdown else ""
+                chat_msg = (
+                    f"🔔 <b>Через 10 минут начнётся {pair_num}-я пара!</b>\n"
+                    f"──────────────────────\n"
+                    f"<blockquote>"
+                    f"{emoji_num} <b>{time_range}</b>\n"
+                    f"📚 <b>{subject}</b>\n"
+                    f"📍 Кабинет: <code>{room}</code> · 👨‍🏫 <i>{teacher}</i>\n"
+                    f"👥 Группа: <code>{b.group_name}</code>"
+                    f"{breakdown_line}"
+                    f"</blockquote>\n"
+                    f"🏃‍♂️ <i>Пора в аудиторию! Успешной пары!</i>"
+                )
+            else:
+                continue
+
+            silent = getattr(b, "notify_silent", False)
+            try:
+                await bot.send_message(
+                    chat_id=b.chat_id,
+                    text=chat_msg,
+                    disable_notification=silent,
+                    link_preview_options=types.LinkPreviewOptions(is_disabled=True)
+                )
+                chat_count += 1
+                await asyncio.sleep(0.05)
+            except Exception as e:
+                logger.debug(f"Ошибка отправки колокольчика в чат {b.chat_id}: {e}")
+        logger.info(f"Напоминание о {pair_num}-й паре отправлено в {chat_count} бесед.")
+    except Exception as e:
+        logger.error(f"Ошибка рассылки напоминаний по беседам: {e}")
+
     logger.info(f"Напоминание о {pair_num}-й паре успешно отправлено {success_count} студентам.")

@@ -169,13 +169,19 @@ async def get_user_by_username(username: str) -> User | None:
 
 
 async def update_user_group(user_id: int | str, group_name: str) -> bool:
-    """Обновляет академическую группу пользователя."""
+    """Обновляет академическую группу пользователя. Если сменилась группа — сбрасывает роль старосты/зама до student."""
     u_id = int(user_id)
+    canon_new = canonical_group_name(group_name) or group_name.strip()
     async with async_session() as session:
-        stmt = update(User).where(User.user_id == u_id).values(group_name=group_name)
-        res = await session.execute(stmt)
+        user = await session.get(User, u_id)
+        if not user:
+            return False
+        if user.group_name and not is_same_group(user.group_name, canon_new):
+            if user.role in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
+                user.role = UserRole.STUDENT.value
+        user.group_name = canon_new
         await session.commit()
-        return res.rowcount > 0
+        return True
 
 
 async def update_user_role(user_id: int | str, role: str) -> bool:
@@ -678,6 +684,45 @@ async def get_all_chat_bindings() -> list[ChatBinding]:
         stmt = select(ChatBinding)
         res = await session.execute(stmt)
         return list(res.scalars().all())
+
+
+async def get_chat_binding(chat_id: int | str) -> ChatBinding | None:
+    """Возвращает запись привязки конкретного чата по chat_id."""
+    try:
+        c_id = int(chat_id)
+    except (ValueError, TypeError):
+        return None
+    async with async_session() as session:
+        stmt = select(ChatBinding).where(ChatBinding.chat_id == c_id)
+        res = await session.execute(stmt)
+        return res.scalar_one_or_none()
+
+
+async def update_chat_notification_setting(chat_id: int | str, key: str, value: bool) -> bool:
+    """Обновляет статус конкретного типа оповещений для чата."""
+    valid_keys = {"notify_pairs", "notify_breaks", "notify_morning", "notify_midnight", "notify_silent"}
+    if key not in valid_keys:
+        return False
+    try:
+        c_id = int(chat_id)
+    except (ValueError, TypeError):
+        return False
+    async with async_session() as session:
+        stmt = update(ChatBinding).where(ChatBinding.chat_id == c_id).values(**{key: bool(value)})
+        res = await session.execute(stmt)
+        await session.commit()
+        return res.rowcount > 0
+
+
+async def toggle_chat_notification_setting(chat_id: int | str, key: str) -> bool:
+    """Переключает статус конкретного типа оповещений для чата и возвращает новое значение."""
+    binding = await get_chat_binding(chat_id)
+    if not binding:
+        return False
+    curr_val = getattr(binding, key, True)
+    new_val = not curr_val
+    await update_chat_notification_setting(chat_id, key, new_val)
+    return new_val
 
 
 # =============================================================

@@ -70,16 +70,34 @@ def format_starostat_menu_text(group_name: str, starosta_user, zam_user) -> str:
     )
 
 
-def get_starostat_menu_keyboard(group_name: str, starosta_user, zam_user) -> InlineKeyboardMarkup:
-    """Клавиатура управления старостатом группы."""
+def get_starostat_menu_keyboard(
+    group_name: str,
+    starosta_user,
+    zam_user,
+    viewer_user_id: int | None = None,
+    is_admin: bool = False
+) -> InlineKeyboardMarkup:
+    """Клавиатура управления старостатом группы с проверкой прав зрителя."""
     builder = InlineKeyboardBuilder()
+
+    is_privileged = is_admin
+    if viewer_user_id:
+        if starosta_user and starosta_user.user_id == viewer_user_id:
+            is_privileged = True
+        elif zam_user and zam_user.user_id == viewer_user_id:
+            is_privileged = True
 
     # Кнопка для старосты
     if starosta_user:
-        builder.row(
-            InlineKeyboardButton(text="👑 Переизбрать старосту", callback_data="starostat_pick_starosta"),
-            InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_starosta")
-        )
+        if is_privileged:
+            builder.row(
+                InlineKeyboardButton(text="👑 Переизбрать старосту", callback_data="starostat_pick_starosta"),
+                InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_starosta")
+            )
+        else:
+            builder.row(
+                InlineKeyboardButton(text="🔒 Староста назначен", callback_data="starostat_info_locked_starosta")
+            )
     else:
         builder.row(
             InlineKeyboardButton(text="👑 Выбрать старосту", callback_data="starostat_pick_starosta")
@@ -87,10 +105,15 @@ def get_starostat_menu_keyboard(group_name: str, starosta_user, zam_user) -> Inl
 
     # Кнопка для зама
     if zam_user:
-        builder.row(
-            InlineKeyboardButton(text="🎖 Переизбрать заместителя", callback_data="starostat_pick_zam"),
-            InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_zam")
-        )
+        if is_privileged:
+            builder.row(
+                InlineKeyboardButton(text="🎖 Переизбрать заместителя", callback_data="starostat_pick_zam"),
+                InlineKeyboardButton(text="❌ Снять", callback_data="starostat_demote_zam")
+            )
+        else:
+            builder.row(
+                InlineKeyboardButton(text="🔒 Заместитель назначен", callback_data="starostat_info_locked_zam")
+            )
     else:
         builder.row(
             InlineKeyboardButton(text="🎖 Выбрать заместителя", callback_data="starostat_pick_zam")

@@ -46,6 +46,18 @@ async def init_db():
     logger.info(f"Инициализация базы данных: {db_target}")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Проверяем и добавляем новые колонки в chat_bindings при их отсутствии
+        for col, col_type in [
+            ("notify_pairs", "BOOLEAN DEFAULT 1"),
+            ("notify_breaks", "BOOLEAN DEFAULT 1"),
+            ("notify_morning", "BOOLEAN DEFAULT 1"),
+            ("notify_midnight", "BOOLEAN DEFAULT 1"),
+            ("notify_silent", "BOOLEAN DEFAULT 0"),
+        ]:
+            try:
+                await conn.exec_driver_sql(f"ALTER TABLE chat_bindings ADD COLUMN {col} {col_type};")
+            except Exception:
+                pass
     logger.info("Таблицы базы данных успешно созданы/проверены.")
 
     # Импортируем и запускаем миграцию существующих данных

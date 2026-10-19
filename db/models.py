@@ -122,12 +122,17 @@ class ChatBinding(Base):
         nullable=False
     )
     bound_by_user_id: Mapped[int] = mapped_column(BigInteger, default=0)
+    notify_pairs: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_breaks: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_morning: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_midnight: Mapped[bool] = mapped_column(Boolean, default=True)
+    notify_silent: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     group: Mapped[Group] = relationship("Group", back_populates="chat_bindings")
 
     def __repr__(self) -> str:
-        return f"<ChatBinding chat={self.chat_id} ({self.chat_title}) -> group={self.group_name}>"
+        return f"<ChatBinding chat={self.chat_id} ({self.chat_title}) -> group={self.group_name} pairs={self.notify_pairs} breaks={self.notify_breaks}>"
 
 
 class Tournament(Base):

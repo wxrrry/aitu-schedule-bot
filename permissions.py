@@ -1,6 +1,6 @@
 import logging
 from config import ADMIN_IDS, ADMIN_ID
-from db.crud import get_user
+from db.crud import get_user, is_same_group
 from db.models import UserRole
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ async def is_starosta(user_id: int, group_name: str | None = None) -> bool:
     if not user or user.role != UserRole.STAROSTA.value:
         return False
     if group_name:
-        return (user.group_name or "").strip().lower() == group_name.strip().lower()
+        return is_same_group(user.group_name, group_name)
     return True
 
 
@@ -54,7 +54,7 @@ async def is_zam_starosty(user_id: int, group_name: str | None = None) -> bool:
     if not user or user.role != UserRole.ZAM_STAROSTY.value:
         return False
     if group_name:
-        return (user.group_name or "").strip().lower() == group_name.strip().lower()
+        return is_same_group(user.group_name, group_name)
     return True
 
 
@@ -70,7 +70,7 @@ async def is_starosta_or_zam(user_id: int, group_name: str | None = None) -> boo
     if user.role not in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
         return False
     if group_name:
-        return (user.group_name or "").strip().lower() == group_name.strip().lower()
+        return is_same_group(user.group_name, group_name)
     return True
 
 
