@@ -32,7 +32,7 @@ export default function HLTVTab() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [cyberTab, setCyberTab] = useState('home'); // 'home' | 'tournaments' | 'rankings' | 'maps' | 'stats' | 'compare'
-  const [rankingSubTab, setRankingSubTab] = useState('players'); // 'players' | 'teams'
+  const [rankingSubTab, setRankingSubTab] = useState('teams'); // 'teams' | 'players'
   const [playerSearch, setPlayerSearch] = useState('');
   const [playerSort, setPlayerSort] = useState('kills'); // 'kills', 'kd', 'hs'
 
@@ -303,16 +303,19 @@ export default function HLTVTab() {
         />
       )}
 
-      {/* 3. РЕЙТИНГ */}
-      {cyberTab === 'rankings' && (
+      {/* 3. РЕЙТИНГ (КОМАНДЫ И ИГРОКИ) */}
+      {(cyberTab === 'teams' || cyberTab === 'players' || cyberTab === 'rankings') && (
         <CyberRankingsTab
           sortedPlayersList={sortedPlayersList}
           playerSearch={playerSearch}
           setPlayerSearch={setPlayerSearch}
           playerSort={playerSort}
           setPlayerSort={setPlayerSort}
-          rankingSubTab={rankingSubTab}
-          setRankingSubTab={setRankingSubTab}
+          rankingSubTab={cyberTab === 'players' ? 'players' : cyberTab === 'teams' ? 'teams' : rankingSubTab}
+          setRankingSubTab={(sub) => {
+            setRankingSubTab(sub);
+            setCyberTab(sub);
+          }}
           onOpenPlayer={handleOpenPlayer}
           onOpenTeam={handleOpenTeam}
         />

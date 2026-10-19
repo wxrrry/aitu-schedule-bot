@@ -39,13 +39,13 @@ export default function CyberHomeTab({
       <div className="flex items-center justify-between gap-2 p-3 bg-[#111111] border border-[#212121] rounded-xl">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e81c5a] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#e81c5a]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0ea5e9] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0ea5e9]" />
           </span>
           <span className="text-[11px] font-black uppercase tracking-wider text-white">
             AITU CYBER LEAGUE
           </span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#e81c5a] font-bold uppercase">
+          <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#0ea5e9] font-bold uppercase">
             S1 PLAYOFFS
           </span>
         </div>
@@ -56,7 +56,7 @@ export default function CyberHomeTab({
               onOpenOrganizer();
               triggerHaptic('medium');
             }}
-            className="px-2.5 py-1 bg-[#181818] hover:bg-[#202020] border border-[#e81c5a]/40 text-[#e81c5a] hover:text-white text-[10px] uppercase font-bold flex items-center gap-1.5 rounded-md transition-all cursor-pointer"
+            className="px-2.5 py-1 bg-[#181818] hover:bg-[#202020] border border-[#0ea5e9]/40 text-[#0ea5e9] hover:text-white text-[10px] uppercase font-bold flex items-center gap-1.5 rounded-md transition-all cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
             <span>ОРГАНИЗАТОР</span>
@@ -66,10 +66,10 @@ export default function CyberHomeTab({
 
       {/* Hero Banner */}
       <div className="relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-[#141414] via-[#111111] to-[#0e0e0e] border border-[#212121] rounded-2xl shadow-xl space-y-3">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#e81c5a]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#0ea5e9]/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full bg-[#e81c5a]/15 border border-[#e81c5a]/40 text-[#e81c5a] text-[9px] font-extrabold uppercase tracking-widest">
+          <span className="px-2 py-0.5 rounded-full bg-[#0ea5e9]/15 border border-[#0ea5e9]/40 text-[#0ea5e9] text-[9px] font-extrabold uppercase tracking-widest">
             КИБЕРСПОРТ КОЛЛЕДЖА
           </span>
           <span className="text-[10px] text-zinc-500 font-mono">CS2 // FASTCUP</span>
@@ -87,18 +87,26 @@ export default function CyberHomeTab({
         <div className="flex items-center gap-2 pt-1 flex-wrap">
           <button
             onClick={() => onNavigate('tournaments')}
-            className="px-3.5 py-2 bg-[#e81c5a] hover:bg-[#ff2467] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 shadow-[0_4px_20px_rgba(232,28,90,0.35)] transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 shadow-[0_4px_20px_rgba(14,165,233,0.35)] transition-all cursor-pointer"
           >
             <Trophy className="w-3.5 h-3.5" />
             <span>СМОТРЕТЬ ТУРНИРЫ</span>
           </button>
 
           <button
-            onClick={() => onNavigate('rankings')}
+            onClick={() => onNavigate('teams')}
             className="px-3.5 py-2 bg-[#1b1b1b] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-200 font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Crosshair className="w-3.5 h-3.5 text-[#e81c5a]" />
-            <span>РЕЙТИНГ ИГРОКОВ</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#0ea5e9]" />
+            <span>РЕЙТИНГ КОМАНД</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('players')}
+            className="px-3.5 py-2 bg-[#1b1b1b] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-200 font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Crosshair className="w-3.5 h-3.5 text-[#0ea5e9]" />
+            <span>ТОП ИГРОКОВ</span>
           </button>
 
           <button
@@ -116,7 +124,7 @@ export default function CyberHomeTab({
         <div className="p-3 bg-[#111111] border border-[#212121] rounded-xl space-y-1">
           <div className="flex items-center justify-between text-zinc-500 text-[10px]">
             <span className="uppercase font-bold tracking-wider">СУММАРНЫЙ УРОН</span>
-            <Flame className="w-3.5 h-3.5 text-[#e81c5a]" />
+            <Flame className="w-3.5 h-3.5 text-[#0ea5e9]" />
           </div>
           <div className="text-lg font-black text-white font-mono">
             {CS2_LEAGUE_STATS.totalDamage.toLocaleString('ru-RU')} <span className="text-[10px] text-zinc-500 font-normal">HP</span>
@@ -127,7 +135,7 @@ export default function CyberHomeTab({
         <div className="p-3 bg-[#111111] border border-[#212121] rounded-xl space-y-1">
           <div className="flex items-center justify-between text-zinc-500 text-[10px]">
             <span className="uppercase font-bold tracking-wider">ВСЕГО КИЛЛОВ</span>
-            <Target className="w-3.5 h-3.5 text-[#e81c5a]" />
+            <Target className="w-3.5 h-3.5 text-[#0ea5e9]" />
           </div>
           <div className="text-lg font-black text-white font-mono">
             {CS2_LEAGUE_STATS.totalKills}
@@ -163,7 +171,7 @@ export default function CyberHomeTab({
         <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-3 shadow-lg relative overflow-hidden group">
           <div className="flex items-center justify-between border-b border-[#212121] pb-2 text-[10px]">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#e81c5a]" />
+              <span className="w-2 h-2 rounded-full bg-[#0ea5e9]" />
               <span className="text-white font-black uppercase tracking-wider">
                 МАТЧ ДНЯ // ГРАНД-ФИНАЛ
               </span>
@@ -181,7 +189,7 @@ export default function CyberHomeTab({
               className="flex-1 text-left cursor-pointer group/t1"
             >
               <div className="text-[9px] text-zinc-500 font-mono uppercase">СИД {grandFinalMatch.team1.seed}</div>
-              <div className="text-base sm:text-lg font-black text-white group-hover/t1:text-[#e81c5a] transition-colors truncate">
+              <div className="text-base sm:text-lg font-black text-white group-hover/t1:text-[#0ea5e9] transition-colors truncate">
                 {grandFinalMatch.team1.name}
               </div>
               <div className="text-[9px] text-zinc-400 font-mono">Вице-чемпион 🥈</div>
@@ -239,7 +247,7 @@ export default function CyberHomeTab({
 
             <button
               onClick={() => onOpenMatch(grandFinalMatch.id)}
-              className="px-3 py-1.5 bg-[#e81c5a]/15 hover:bg-[#e81c5a] border border-[#e81c5a]/50 text-[#e81c5a] hover:text-white font-bold uppercase text-[10px] rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-[#0ea5e9]/15 hover:bg-[#0ea5e9] border border-[#0ea5e9]/50 text-[#0ea5e9] hover:text-white font-bold uppercase text-[10px] rounded-lg transition-all flex items-center gap-1 cursor-pointer"
             >
               <span>РАЗОБРАТЬ МАТЧ</span>
               <ArrowRight className="w-3 h-3" />
@@ -252,12 +260,12 @@ export default function CyberHomeTab({
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1 text-[11px]">
           <span className="font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Crosshair className="w-3.5 h-3.5 text-[#e81c5a]" />
+            <Crosshair className="w-3.5 h-3.5 text-[#0ea5e9]" />
             <span>ТОП ИГРОКИ ПО КИЛЛАМ</span>
           </span>
           <button
             onClick={() => onNavigate('rankings')}
-            className="text-[10px] text-[#e81c5a] hover:text-[#ff2467] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+            className="text-[10px] text-[#0ea5e9] hover:text-[#38bdf8] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
           >
             <span>ВСЕ ИГРОКИ</span>
             <ChevronRight className="w-3 h-3" />
@@ -292,7 +300,7 @@ export default function CyberHomeTab({
                   </span>
                 </div>
 
-                <div className="font-black text-white text-xs sm:text-sm font-mono truncate group-hover:text-[#e81c5a] transition-colors">
+                <div className="font-black text-white text-xs sm:text-sm font-mono truncate group-hover:text-[#0ea5e9] transition-colors">
                   {player.nick}
                 </div>
 
@@ -313,7 +321,7 @@ export default function CyberHomeTab({
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1 text-[11px]">
           <span className="font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#e81c5a]" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#0ea5e9]" />
             <span>ПОСЛЕДНИЕ ТУРНИРНЫЕ БОИ</span>
           </span>
           <button
@@ -334,7 +342,7 @@ export default function CyberHomeTab({
             >
               <div className="min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#e81c5a] uppercase">
+                  <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#0ea5e9] uppercase">
                     {m.stage}
                   </span>
                   <span className="text-[9px] text-zinc-500 font-mono">{m.format}</span>

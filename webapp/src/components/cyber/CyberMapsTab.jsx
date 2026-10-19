@@ -18,7 +18,7 @@ export default function CyberMapsTab({ onOpenPlayer }) {
       {/* Header card */}
       <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#e81c5a] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
             <Map className="w-3.5 h-3.5" />
             <span>СОРЕВНОВАТЕЛЬНЫЙ МАППУЛ CS2</span>
           </span>
@@ -42,7 +42,7 @@ export default function CyberMapsTab({ onOpenPlayer }) {
               onClick={() => handleSelectMap(m.id)}
               className={`px-3 py-1.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                 isActive
-                  ? 'bg-[#e81c5a] text-white shadow-[0_2px_12px_rgba(232,28,90,0.4)] border border-[#ff2467]'
+                  ? 'bg-[#0ea5e9] text-white shadow-[0_2px_12px_rgba(14,165,233,0.4)] border border-[#38bdf8]'
                   : 'bg-[#141414] hover:bg-[#1c1c1c] text-zinc-400 hover:text-white border border-[#212121]'
               }`}
             >
@@ -59,7 +59,7 @@ export default function CyberMapsTab({ onOpenPlayer }) {
           <div className="flex items-center justify-between border-b border-[#212121] pb-3 flex-wrap gap-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-sm bg-[#181818] border border-[#2e2e2e] text-[#e81c5a] text-[9px] font-black uppercase tracking-widest">
+                <span className="px-2 py-0.5 rounded-sm bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] text-[9px] font-black uppercase tracking-widest">
                   {activeMap.status}
                 </span>
                 <span className="text-[10px] text-zinc-500 font-mono">
@@ -128,10 +128,10 @@ export default function CyberMapsTab({ onOpenPlayer }) {
             </div>
             <div 
               onClick={() => onOpenPlayer?.(activeMap.topPlayer)}
-              className="p-3 bg-[#141414] border border-[#212121] hover:border-[#e81c5a]/50 rounded-xl space-y-0.5 cursor-pointer transition-colors group"
+              className="p-3 bg-[#141414] border border-[#212121] hover:border-[#0ea5e9]/50 rounded-xl space-y-0.5 cursor-pointer transition-colors group"
             >
               <span className="text-[9px] text-zinc-500 uppercase block">MVP КАРТЫ</span>
-              <span className="text-xs font-black text-[#e81c5a] group-hover:text-[#ff2467] font-mono truncate block">
+              <span className="text-xs font-black text-[#0ea5e9] group-hover:text-[#38bdf8] font-mono truncate block">
                 {activeMap.topPlayer}
               </span>
             </div>
@@ -141,7 +141,7 @@ export default function CyberMapsTab({ onOpenPlayer }) {
           {activeMap.callouts && activeMap.callouts.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-[#212121]">
               <span className="text-[10px] text-white font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Target className="w-3.5 h-3.5 text-[#e81c5a]" />
+                <Target className="w-3.5 h-3.5 text-[#0ea5e9]" />
                 <span>ТАКТИЧЕСКИЙ РАЗБОР ЗОН КАРТЫ</span>
               </span>
 

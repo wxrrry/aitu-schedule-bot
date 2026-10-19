@@ -11,7 +11,7 @@ export default function CyberStatsTab({ onOpenPlayer, onOpenTeam }) {
       {/* Header */}
       <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#e81c5a] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
             <Activity className="w-3.5 h-3.5" />
             <span>АНАЛИТИКА КИБЕРСПОРТИВНОЙ ЛИГИ</span>
           </span>
@@ -34,7 +34,7 @@ export default function CyberStatsTab({ onOpenPlayer, onOpenTeam }) {
         </div>
         <div className="p-3 bg-[#111111] border border-[#212121] rounded-xl space-y-1">
           <span className="text-[9px] text-zinc-500 uppercase block font-bold">СУММАРНЫЙ УРОН</span>
-          <div className="text-xl font-black text-[#e81c5a] font-mono">
+          <div className="text-xl font-black text-[#0ea5e9] font-mono">
             {stats.totalDamage.toLocaleString('ru-RU')}
           </div>
           <span className="text-[9px] text-zinc-500 font-mono">HP нанесено</span>
@@ -120,7 +120,7 @@ export default function CyberStatsTab({ onOpenPlayer, onOpenTeam }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1 text-[11px]">
           <span className="font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-[#e81c5a]" />
+            <Users className="w-3.5 h-3.5 text-[#0ea5e9]" />
             <span>АКТИВНОСТЬ УЧЕБНЫХ ГРУПП</span>
           </span>
           <span className="text-[9px] text-zinc-500 font-mono">{stats.collegeGroups.length} ГРУПП</span>
@@ -144,7 +144,7 @@ export default function CyberStatsTab({ onOpenPlayer, onOpenTeam }) {
                     <span className="text-xs font-black text-white font-mono">
                       {g.group}
                     </span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#e81c5a] font-bold">
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-[#1b1b1b] border border-[#2e2e2e] text-[#0ea5e9] font-bold">
                       {g.playersCount} ИГРОКОВ
                     </span>
                   </div>

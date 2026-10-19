@@ -50,7 +50,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
             style={{ width: `${pct1}%` }}
           />
           <div 
-            className={`h-full transition-all duration-300 ${p2Wins ? 'bg-[#e81c5a]' : 'bg-zinc-700'}`}
+            className={`h-full transition-all duration-300 ${p2Wins ? 'bg-[#0ea5e9]' : 'bg-zinc-700'}`}
             style={{ width: `${pct2}%` }}
           />
         </div>
@@ -63,7 +63,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
       {/* Header */}
       <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#e81c5a] font-black uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
             <Swords className="w-3.5 h-3.5" />
             <span>ДУЭЛИ И СРАВНЕНИЕ HEAD-TO-HEAD</span>
           </span>
@@ -90,7 +90,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
               : 'text-zinc-400 hover:text-white'
           }`}
         >
-          <Crosshair className="w-3.5 h-3.5 text-[#e81c5a]" />
+          <Crosshair className="w-3.5 h-3.5 text-[#0ea5e9]" />
           <span>СРАВНИТЬ ИГРОКОВ</span>
         </button>
 
@@ -125,7 +125,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                   setPlayer1Nick(e.target.value);
                   triggerHaptic('light');
                 }}
-                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#e81c5a] focus:outline-none"
+                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#0ea5e9] focus:outline-none"
               >
                 {allPlayers.map((p) => (
                   <option key={p.nick} value={p.nick}>
@@ -145,7 +145,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                   setPlayer2Nick(e.target.value);
                   triggerHaptic('light');
                 }}
-                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#e81c5a] focus:outline-none"
+                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#0ea5e9] focus:outline-none"
               >
                 {allPlayers.map((p) => (
                   <option key={p.nick} value={p.nick}>
@@ -177,9 +177,9 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
             {/* Player 2 Card */}
             <div 
               onClick={() => onOpenPlayer?.(p2.nick)}
-              className="p-3.5 bg-[#111111] border border-[#e81c5a]/40 rounded-xl space-y-1.5 cursor-pointer hover:border-[#e81c5a]/70 transition-all text-center select-none"
+              className="p-3.5 bg-[#111111] border border-[#0ea5e9]/40 rounded-xl space-y-1.5 cursor-pointer hover:border-[#0ea5e9]/70 transition-all text-center select-none"
             >
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#e81c5a]/10 text-[#e81c5a] font-bold uppercase">
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#0ea5e9]/10 text-[#0ea5e9] font-bold uppercase">
                 {p2.team}
               </span>
               <div className="text-sm sm:text-base font-black text-white font-mono truncate">
@@ -218,7 +218,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                   setTeam1Name(e.target.value);
                   triggerHaptic('light');
                 }}
-                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#e81c5a] focus:outline-none"
+                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#0ea5e9] focus:outline-none"
               >
                 {allTeams.map((t) => (
                   <option key={t.name} value={t.name}>
@@ -238,7 +238,7 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
                   setTeam2Name(e.target.value);
                   triggerHaptic('light');
                 }}
-                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#e81c5a] focus:outline-none"
+                className="w-full bg-[#141414] border border-[#212121] text-white text-xs font-bold rounded-xl p-2.5 focus:border-[#0ea5e9] focus:outline-none"
               >
                 {allTeams.map((t) => (
                   <option key={t.name} value={t.name}>
@@ -268,9 +268,9 @@ export default function CyberCompareTab({ onOpenPlayer, onOpenTeam }) {
 
             <div 
               onClick={() => onOpenTeam?.(t2.name)}
-              className="p-3.5 bg-[#111111] border border-[#e81c5a]/40 rounded-xl space-y-1.5 cursor-pointer text-center select-none"
+              className="p-3.5 bg-[#111111] border border-[#0ea5e9]/40 rounded-xl space-y-1.5 cursor-pointer text-center select-none"
             >
-              <span className="text-[9px] font-black text-[#e81c5a] font-mono">
+              <span className="text-[9px] font-black text-[#0ea5e9] font-mono">
                 РАНГ #{t2.rank}
               </span>
               <div className="text-sm sm:text-base font-black text-white truncate">

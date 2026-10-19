@@ -920,7 +920,7 @@ export const CS2_MAP_POOL = [
     topPlayer: "wxrry",
     topPlayerTeam: "TRIQ",
     favWeapon: "AK-47",
-    color: "#e81c5a",
+    color: "#0ea5e9",
     description: "Самая популярная карта первого сезона лиги. Классический баланс с лёгким перевесом стороны спецназа (CT).",
     callouts: [
       { name: "A-Site (Плент А)", ctWin: "56%", tip: "Контроль Connector и Palace ключевой для выбивания плента." },

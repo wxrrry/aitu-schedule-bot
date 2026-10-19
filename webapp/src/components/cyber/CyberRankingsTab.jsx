@@ -1,5 +1,5 @@
-import React from 'react';
-import { Crosshair, Trophy, Search, Flame, ArrowRight, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Crosshair, Trophy, Search, Flame, ArrowRight, ChevronRight, Users, Zap, ExternalLink } from 'lucide-react';
 import { HLTV_TEAM_RANKINGS, CS2_PLAYERS } from '../../data/cs2TournamentData';
 import { triggerHaptic } from '../../utils/telegram';
 
@@ -9,30 +9,25 @@ export default function CyberRankingsTab({
   setPlayerSearch,
   playerSort,
   setPlayerSort,
-  rankingSubTab,
+  rankingSubTab = 'teams',
   setRankingSubTab,
   onOpenPlayer,
   onOpenTeam
 }) {
+  const [teamSearch, setTeamSearch] = useState('');
+
+  const filteredTeams = HLTV_TEAM_RANKINGS.filter(team => {
+    if (!teamSearch.trim()) return true;
+    const q = teamSearch.toLowerCase().trim();
+    const matchName = team.name.toLowerCase().includes(q);
+    const matchRoster = team.roster?.some(p => p.nick.toLowerCase().includes(q));
+    return matchName || matchRoster;
+  });
+
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Subtabs Switcher */}
       <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#111111] border border-[#212121] rounded-xl font-bold text-xs select-none">
-        <button
-          onClick={() => {
-            setRankingSubTab('players');
-            triggerHaptic('selection');
-          }}
-          className={`py-2 rounded-lg uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            rankingSubTab === 'players'
-              ? 'bg-[#1c1c22] text-white border border-white/10 shadow-sm'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <Crosshair className="w-3.5 h-3.5 text-[#e81c5a]" />
-          <span>ИГРОКИ ({sortedPlayersList.length})</span>
-        </button>
-
         <button
           onClick={() => {
             setRankingSubTab('teams');
@@ -40,23 +35,263 @@ export default function CyberRankingsTab({
           }}
           className={`py-2 rounded-lg uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             rankingSubTab === 'teams'
-              ? 'bg-[#1c1c22] text-white border border-white/10 shadow-sm'
+              ? 'bg-[#18202c] border border-[#0ea5e9]/50 text-white shadow-sm'
               : 'text-zinc-400 hover:text-white'
           }`}
         >
-          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-          <span>КОМАНДЫ ({HLTV_TEAM_RANKINGS.length})</span>
+          <Shield className="w-3.5 h-3.5 text-[#0ea5e9]" />
+          <span>РЕЙТИНГ КОМАНД HLTV ({HLTV_TEAM_RANKINGS.length})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setRankingSubTab('players');
+            triggerHaptic('selection');
+          }}
+          className={`py-2 rounded-lg uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            rankingSubTab === 'players'
+              ? 'bg-[#18202c] border border-[#0ea5e9]/50 text-white shadow-sm'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Crosshair className="w-3.5 h-3.5 text-[#0ea5e9]" />
+          <span>ТОП ИГРОКОВ ({sortedPlayersList.length})</span>
         </button>
       </div>
 
-      {/* 1. PLAYERS TAB */}
+      {/* 1. TEAMS TAB (HLTV WORLD RANKING) */}
+      {rankingSubTab === 'teams' && (
+        <div className="space-y-3.5">
+          {/* Header card */}
+          <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5" />
+                <span>HLTV WORLD RANKING // КОМАНДЫ КОЛЛЕДЖА</span>
+              </span>
+              <span className="text-zinc-500 font-mono">СЕЗОН 2026</span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+              МИРОВОЙ РЕЙТИНГ КОМАНД CS2
+            </h2>
+            <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+              <span>Обновлено: 11 октября 2026 (по итогам AITU PRO LEAGUE S1)</span>
+              <span className="px-2 py-0.5 rounded-md bg-[#181818] border border-[#2e2e2e] text-[#0ea5e9] font-bold">
+                {HLTV_TEAM_RANKINGS.length} КОМАНД
+              </span>
+            </div>
+          </div>
+
+          {/* Search Box for Teams */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={teamSearch}
+              onChange={(e) => setTeamSearch(e.target.value)}
+              placeholder="Поиск команды или игрока в ростере (LL TEAM, TRIQ, adaptive)..."
+              className="w-full bg-[#111111] border border-[#212121] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#0ea5e9] font-sans transition-colors"
+            />
+            {teamSearch && (
+              <button
+                onClick={() => setTeamSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Podium for TOP 3 Teams */}
+          {!teamSearch && HLTV_TEAM_RANKINGS.length >= 3 && (
+            <div className="grid grid-cols-3 gap-2">
+              {/* #2 Silver */}
+              <div
+                onClick={() => { onOpenTeam(HLTV_TEAM_RANKINGS[1]); triggerHaptic('selection'); }}
+                className="p-3 bg-[#111111] border border-white/20 hover:border-white/40 rounded-xl transition-all text-center space-y-1 cursor-pointer select-none group"
+              >
+                <div className="text-[10px] font-mono font-bold text-zinc-300">
+                  🥈 #2 СЕРЕБРО
+                </div>
+                <div className="font-black text-white text-xs sm:text-sm font-sans truncate group-hover:text-[#0ea5e9] transition-colors">
+                  {HLTV_TEAM_RANKINGS[1].name}
+                </div>
+                <div className="text-[9px] text-zinc-400 font-mono">
+                  {HLTV_TEAM_RANKINGS[1].status}
+                </div>
+                <div className="text-sm sm:text-base font-black text-white font-mono pt-0.5 border-t border-[#212121]">
+                  {HLTV_TEAM_RANKINGS[1].points} <span className="text-[9px] text-zinc-500 font-normal">pts</span>
+                </div>
+              </div>
+
+              {/* #1 Gold Champion */}
+              <div
+                onClick={() => { onOpenTeam(HLTV_TEAM_RANKINGS[0]); triggerHaptic('selection'); }}
+                className="p-3 bg-[#141414] border-2 border-amber-400/60 hover:border-amber-400 rounded-xl transition-all text-center space-y-1 cursor-pointer select-none group shadow-lg shadow-amber-500/10"
+              >
+                <div className="text-[10px] font-mono font-bold text-amber-300 flex items-center justify-center gap-1">
+                  <Trophy className="w-3 h-3 text-amber-400" />
+                  <span>🥇 #1 ЧЕМПИОН</span>
+                </div>
+                <div className="font-black text-white text-xs sm:text-sm font-sans truncate group-hover:text-amber-300 transition-colors">
+                  {HLTV_TEAM_RANKINGS[0].name}
+                </div>
+                <div className="text-[9px] text-amber-400/90 font-mono font-bold">
+                  {HLTV_TEAM_RANKINGS[0].status}
+                </div>
+                <div className="text-base sm:text-lg font-black text-amber-300 font-mono pt-0.5 border-t border-[#212121]">
+                  {HLTV_TEAM_RANKINGS[0].points} <span className="text-[9px] text-zinc-400 font-normal">pts</span>
+                </div>
+              </div>
+
+              {/* #3 Bronze */}
+              <div
+                onClick={() => { onOpenTeam(HLTV_TEAM_RANKINGS[2]); triggerHaptic('selection'); }}
+                className="p-3 bg-[#111111] border border-amber-800/50 hover:border-amber-600 rounded-xl transition-all text-center space-y-1 cursor-pointer select-none group"
+              >
+                <div className="text-[10px] font-mono font-bold text-amber-600">
+                  🥉 #3 БРОНЗА
+                </div>
+                <div className="font-black text-white text-xs sm:text-sm font-sans truncate group-hover:text-[#0ea5e9] transition-colors">
+                  {HLTV_TEAM_RANKINGS[2].name}
+                </div>
+                <div className="text-[9px] text-zinc-400 font-mono">
+                  {HLTV_TEAM_RANKINGS[2].status}
+                </div>
+                <div className="text-sm sm:text-base font-black text-white font-mono pt-0.5 border-t border-[#212121]">
+                  {HLTV_TEAM_RANKINGS[2].points} <span className="text-[9px] text-zinc-500 font-normal">pts</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Full Team List */}
+          <div className="space-y-2">
+            {filteredTeams.map(team => (
+              <div
+                key={team.rank}
+                className="p-3.5 bg-[#111111] border border-[#212121] hover:border-[#2e2e2e] rounded-xl transition-all space-y-2.5"
+              >
+                {/* Top row */}
+                <div 
+                  onClick={() => onOpenTeam(team)}
+                  className="flex items-center justify-between gap-2 cursor-pointer group/team"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 flex items-center justify-center font-black text-sm rounded-lg border shrink-0 ${
+                      team.rank === 1
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
+                        : team.rank === 2
+                        ? 'bg-zinc-800 text-white border-white/40'
+                        : team.rank === 3
+                        ? 'bg-amber-900/30 text-amber-500 border-amber-700/40'
+                        : 'bg-[#181818] text-zinc-400 border-[#2e2e2e]'
+                    }`}>
+                      #{team.rank}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-white text-sm font-sans tracking-tight truncate group-hover/team:text-[#0ea5e9] transition-colors">
+                          {team.name}
+                        </span>
+                        {team.trophy && <span className="text-xs">{team.trophy}</span>}
+                        <span className={`text-[10px] font-mono font-bold ${
+                          team.changeType === 'up'
+                            ? 'text-emerald-400'
+                            : team.changeType === 'down'
+                            ? 'text-rose-400'
+                            : 'text-zinc-500'
+                        }`}>
+                          ({team.change})
+                        </span>
+                      </div>
+                      <div className="text-[9px] text-zinc-500 uppercase tracking-wide font-mono">
+                        {team.status} · {team.record}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-black text-white font-mono">
+                      {team.points} <span className="text-[10px] text-zinc-500 font-normal">pts</span>
+                    </div>
+                    <span className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase tracking-wider rounded-xs ${team.badgeColor}`}>
+                      {team.rank === 1 ? 'ЧЕМПИОН' : team.rank === 2 ? 'ФИНАЛ' : team.rank === 3 ? 'БРОНЗА' : `ТОП ${team.rank}`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Points Bar */}
+                <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${
+                      team.rank === 1 
+                        ? 'bg-amber-400' 
+                        : team.rank === 2 
+                        ? 'bg-zinc-300' 
+                        : team.rank === 3 
+                        ? 'bg-amber-600' 
+                        : 'bg-[#0ea5e9]'
+                    }`}
+                    style={{ width: `${(team.points / 1000) * 100}%` }}
+                  />
+                </div>
+
+                {/* Lineup / Roster tags */}
+                <div className="pt-1 border-t border-[#212121] flex items-center justify-between gap-1.5 flex-wrap text-[10px]">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-zinc-500 text-[9px] uppercase font-mono mr-0.5">СОСТАВ:</span>
+                    {team.roster && team.roster.length > 0 ? (
+                      team.roster.map((player, pIdx) => {
+                        const hasFullProfile = Boolean(CS2_PLAYERS[player.nick]);
+                        return (
+                          <button
+                            key={pIdx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenPlayer(player.nick);
+                            }}
+                            className={`px-1.5 py-0.5 rounded-md border text-[9px] transition-colors ${
+                              hasFullProfile
+                                ? 'bg-[#181818] border-[#2e2e2e] text-zinc-200 hover:border-[#0ea5e9] hover:text-white cursor-pointer'
+                                : 'bg-[#141414] border-[#212121] text-zinc-400 hover:text-zinc-200 cursor-pointer'
+                            }`}
+                          >
+                            {player.nick}
+                            {player.isCaptain && <span className="text-amber-400 ml-0.5 font-bold">(C)</span>}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-mono italic">
+                        неизвестно
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => onOpenTeam(team)}
+                    className="px-2 py-0.5 bg-[#181818] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-300 hover:text-white font-mono text-[9px] uppercase font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>ОБЗОР</span>
+                    <ArrowRight className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 2. PLAYERS TAB (ТОП ИГРОКОВ) */}
       {rankingSubTab === 'players' && (
         <div className="space-y-3.5">
           {/* Header & Stats bar */}
           <div className="flex items-center justify-between px-1 flex-wrap gap-2">
             <div>
               <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-[#e81c5a]" />
+                <Flame className="w-3.5 h-3.5 text-[#0ea5e9]" />
                 <span>РЕЙТИНГ ИГРОКОВ ПО КИЛЛАМ</span>
               </h3>
               <span className="text-[9px] text-zinc-500 font-mono uppercase">
@@ -69,7 +304,7 @@ export default function CyberRankingsTab({
               <button
                 onClick={() => { setPlayerSort('kills'); triggerHaptic('light'); }}
                 className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'kills' ? 'bg-[#e81c5a] text-white' : 'text-zinc-400 hover:text-white'
+                  playerSort === 'kills' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 КИЛЛЫ
@@ -77,7 +312,7 @@ export default function CyberRankingsTab({
               <button
                 onClick={() => { setPlayerSort('kd'); triggerHaptic('light'); }}
                 className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'kd' ? 'bg-[#e81c5a] text-white' : 'text-zinc-400 hover:text-white'
+                  playerSort === 'kd' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 K/D
@@ -85,7 +320,7 @@ export default function CyberRankingsTab({
               <button
                 onClick={() => { setPlayerSort('hs'); triggerHaptic('light'); }}
                 className={`px-2 py-1 font-bold uppercase rounded-md transition-colors ${
-                  playerSort === 'hs' ? 'bg-[#e81c5a] text-white' : 'text-zinc-400 hover:text-white'
+                  playerSort === 'hs' ? 'bg-[#0ea5e9] text-white' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 HS%
@@ -101,7 +336,7 @@ export default function CyberRankingsTab({
               value={playerSearch}
               onChange={(e) => setPlayerSearch(e.target.value)}
               placeholder="Поиск по нику или команде (например: wxrry, TRIQ, adaptive)..."
-              className="w-full bg-[#111111] border border-[#212121] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#e81c5a] font-sans transition-colors"
+              className="w-full bg-[#111111] border border-[#212121] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#0ea5e9] font-sans transition-colors"
             />
             {playerSearch && (
               <button
@@ -221,7 +456,7 @@ export default function CyberRankingsTab({
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-white text-xs font-mono group-hover:text-[#e81c5a] transition-colors truncate">
+                        <span className="font-bold text-white text-xs font-mono group-hover:text-[#0ea5e9] transition-colors truncate">
                           {p.nick}
                         </span>
                         {p.isCaptain && (
@@ -293,143 +528,6 @@ export default function CyberRankingsTab({
                 Игроки по запросу «{playerSearch}» не найдены
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* 2. TEAMS TAB (HLTV WORLD RANKING) */}
-      {rankingSubTab === 'teams' && (
-        <div className="space-y-3">
-          {/* Header card */}
-          <div className="p-3.5 bg-[#111111] border border-[#212121] rounded-2xl flex items-center justify-between text-[10px]">
-            <div>
-              <span className="font-black text-white uppercase block">
-                HLTV WORLD RANKING // AITU CS2
-              </span>
-              <span className="text-zinc-500 text-[9px] font-mono">
-                Обновлено: 11 октября 2026 (по итогам AITU PRO LEAGUE SEASON 1)
-              </span>
-            </div>
-            <span className="px-2 py-0.5 bg-[#181818] border border-[#2e2e2e] text-amber-300 font-bold uppercase text-[9px] rounded-md">
-              {HLTV_TEAM_RANKINGS.length} КОМАНД
-            </span>
-          </div>
-
-          {/* Ranking List */}
-          <div className="space-y-2">
-            {HLTV_TEAM_RANKINGS.map(team => (
-              <div
-                key={team.rank}
-                className="p-3.5 bg-[#111111] border border-[#212121] hover:border-[#2e2e2e] rounded-xl transition-all space-y-2.5"
-              >
-                {/* Top row */}
-                <div 
-                  onClick={() => onOpenTeam(team)}
-                  className="flex items-center justify-between gap-2 cursor-pointer group/team"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 flex items-center justify-center font-black text-sm rounded-lg border shrink-0 ${
-                      team.rank === 1
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
-                        : team.rank === 2
-                        ? 'bg-zinc-800 text-white border-white/40'
-                        : team.rank === 3
-                        ? 'bg-amber-900/30 text-amber-500 border-amber-700/40'
-                        : 'bg-[#181818] text-zinc-400 border-[#2e2e2e]'
-                    }`}>
-                      #{team.rank}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-white text-sm font-sans tracking-tight truncate group-hover/team:text-[#e81c5a] transition-colors">
-                          {team.name}
-                        </span>
-                        {team.trophy && <span className="text-xs">{team.trophy}</span>}
-                        <span className={`text-[10px] font-mono font-bold ${
-                          team.changeType === 'up'
-                            ? 'text-emerald-400'
-                            : team.changeType === 'down'
-                            ? 'text-rose-400'
-                            : 'text-zinc-500'
-                        }`}>
-                          ({team.change})
-                        </span>
-                      </div>
-                      <div className="text-[9px] text-zinc-500 uppercase tracking-wide">
-                        {team.status} · {team.record}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-black text-white font-mono">
-                      {team.points} <span className="text-[10px] text-zinc-500 font-normal">pts</span>
-                    </div>
-                    <span className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase tracking-wider rounded-xs ${team.badgeColor}`}>
-                      {team.rank === 1 ? 'ЧЕМПИОН' : team.rank === 2 ? 'ФИНАЛ' : team.rank === 3 ? 'БРОНЗА' : `ТОП ${team.rank}`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress Points Bar */}
-                <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      team.rank === 1 
-                        ? 'bg-amber-400' 
-                        : team.rank === 2 
-                        ? 'bg-zinc-300' 
-                        : team.rank === 3 
-                        ? 'bg-amber-600' 
-                        : 'bg-[#e81c5a]'
-                    }`}
-                    style={{ width: `${(team.points / 1000) * 100}%` }}
-                  />
-                </div>
-
-                {/* Lineup / Roster tags */}
-                <div className="pt-1 border-t border-[#212121] flex items-center justify-between gap-1.5 flex-wrap text-[10px]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-zinc-500 text-[9px] uppercase font-mono mr-0.5">СОСТАВ:</span>
-                    {team.roster && team.roster.length > 0 ? (
-                      team.roster.map((player, pIdx) => {
-                        const hasFullProfile = Boolean(CS2_PLAYERS[player.nick]);
-                        return (
-                          <button
-                            key={pIdx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenPlayer(player.nick);
-                            }}
-                            className={`px-1.5 py-0.5 rounded-md border text-[9px] transition-colors ${
-                              hasFullProfile
-                                ? 'bg-[#181818] border-[#2e2e2e] text-zinc-200 hover:border-[#e81c5a] hover:text-white cursor-pointer'
-                                : 'bg-[#141414] border-[#212121] text-zinc-400 hover:text-zinc-200 cursor-pointer'
-                            }`}
-                          >
-                            {player.nick}
-                            {player.isCaptain && <span className="text-amber-400 ml-0.5 font-bold">(C)</span>}
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <span className="text-[10px] text-zinc-500 font-mono italic">
-                        неизвестно
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => onOpenTeam(team)}
-                    className="px-2 py-0.5 bg-[#181818] hover:bg-[#252525] border border-[#2e2e2e] text-zinc-300 hover:text-white font-mono text-[9px] uppercase font-bold rounded-md transition-all flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>ОБЗОР</span>
-                    <ArrowRight className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}

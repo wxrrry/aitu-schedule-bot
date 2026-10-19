@@ -67,7 +67,7 @@ export default function CyberTournamentsTab({
           {/* Header Banner */}
           <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-2">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-[#e81c5a] font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[#0ea5e9] font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5" />
                 <span>AITU CYBER LEAGUE // ТУРНИРЫ</span>
               </span>
@@ -87,7 +87,7 @@ export default function CyberTournamentsTab({
                     onOpenOrganizerModal();
                     triggerHaptic('medium');
                   }}
-                  className="px-3.5 py-2 bg-[#e81c5a] hover:bg-[#ff2467] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_2px_12px_rgba(232,28,90,0.35)]"
+                  className="px-3.5 py-2 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_2px_12px_rgba(14,165,233,0.35)]"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>СОЗДАТЬ ТУРНИР (ОРГ)</span>
@@ -108,7 +108,7 @@ export default function CyberTournamentsTab({
                     onOpenOrganizerModal();
                     triggerHaptic('light');
                   }}
-                  className="text-[10px] text-[#e81c5a] hover:text-[#ff2467] uppercase tracking-wider font-bold flex items-center gap-1 cursor-pointer"
+                  className="text-[10px] text-[#0ea5e9] hover:text-[#38bdf8] uppercase tracking-wider font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                   <span>СОЗДАТЬ ТУРНИР</span>
@@ -137,7 +137,7 @@ export default function CyberTournamentsTab({
                   </div>
 
                   <div onClick={() => handleOpenTournament(tourn)} className="cursor-pointer">
-                    <h3 className="text-base font-black text-white tracking-tight group-hover:text-[#e81c5a] transition-colors uppercase font-sans">
+                    <h3 className="text-base font-black text-white tracking-tight group-hover:text-[#0ea5e9] transition-colors uppercase font-sans">
                       {tourn.title}
                     </h3>
                     <p className="text-[11px] text-zinc-400 font-sans mt-0.5">
@@ -154,7 +154,7 @@ export default function CyberTournamentsTab({
                       </div>
                       <div className="w-full bg-[#111111] h-1.5 rounded-full overflow-hidden">
                         <div 
-                          className="bg-[#e81c5a] h-full transition-all"
+                          className="bg-[#0ea5e9] h-full transition-all"
                           style={{ width: `${Math.min(100, (slotsCount / maxSlots) * 100)}%` }}
                         />
                       </div>
@@ -190,7 +190,7 @@ export default function CyberTournamentsTab({
                           onOpenRegisterModal(tourn);
                           triggerHaptic('medium');
                         }}
-                        className="px-3 py-1.5 bg-[#e81c5a] hover:bg-[#ff2467] text-white font-bold font-mono text-[10px] uppercase tracking-wider rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold font-mono text-[10px] uppercase tracking-wider rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                         <span>ПОДАТЬ ЗАЯВКУ</span>
@@ -199,7 +199,7 @@ export default function CyberTournamentsTab({
 
                     <button
                       onClick={() => handleOpenTournament(tourn)}
-                      className="text-xs font-bold text-white group-hover:text-[#e81c5a] transition-colors uppercase tracking-wider text-[10px] flex items-center gap-1 ml-auto cursor-pointer"
+                      className="text-xs font-bold text-white group-hover:text-[#0ea5e9] transition-colors uppercase tracking-wider text-[10px] flex items-center gap-1 ml-auto cursor-pointer"
                     >
                       <span>{isUpcoming ? 'ОТКРЫТЬ ТУРНИР / СЕТКУ' : 'ОТКРЫТЬ СЕТКУ И МАТЧИ'}</span>
                       <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
@@ -302,7 +302,7 @@ export default function CyberTournamentsTab({
                       onOpenRegisterModal(selectedTournament);
                       triggerHaptic('medium');
                     }}
-                    className="px-4 py-2 bg-[#e81c5a] hover:bg-[#ff2467] text-white font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                    className="px-4 py-2 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-md"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>ЗАРЕГИСТРИРОВАТЬ КОМАНДУ</span>
@@ -322,7 +322,7 @@ export default function CyberTournamentsTab({
                               <div key={team.id || idx} className="p-2.5 bg-[#141414] border border-[#212121] rounded-xl space-y-1">
                                 <div className="flex items-center justify-between text-xs font-bold text-white">
                                   <span>{team.name}</span>
-                                  <span className="text-[9px] text-[#e81c5a] font-mono">СЛОТ #{idx + 1}</span>
+                                  <span className="text-[9px] text-[#0ea5e9] font-mono">СЛОТ #{idx + 1}</span>
                                 </div>
                                 <div className="text-[10px] text-zinc-400 font-mono">
                                   Капитан: {team.captainNick}
@@ -380,11 +380,11 @@ export default function CyberTournamentsTab({
                         }}
                         className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
                           selectedMatchId === match.id
-                            ? 'bg-[#1c1c22] text-white font-bold border-[#e81c5a] shadow-md'
+                            ? 'bg-[#1c1c22] text-white font-bold border-[#0ea5e9] shadow-md'
                             : 'bg-[#111111] border-[#212121] text-zinc-400 hover:border-[#2e2e2e] hover:text-white'
                         }`}
                       >
-                        <div className="text-[8px] uppercase tracking-wider opacity-70 mb-0.5 text-[#e81c5a]">
+                        <div className="text-[8px] uppercase tracking-wider opacity-70 mb-0.5 text-[#0ea5e9]">
                           {match.stage}
                         </div>
                         <div className="font-bold truncate text-[11px] text-white">
@@ -399,7 +399,7 @@ export default function CyberTournamentsTab({
                     <div className="p-4 bg-[#111111] border border-[#212121] rounded-2xl space-y-4">
                       {/* Meta */}
                       <div className="flex items-center justify-between border-b border-[#212121] pb-2 text-[10px] flex-wrap gap-2">
-                        <span className="text-[#e81c5a] uppercase font-bold tracking-wider">
+                        <span className="text-[#0ea5e9] uppercase font-bold tracking-wider">
                           {activeMatch.stage} · {activeMatch.format}
                         </span>
                         <div className="flex items-center gap-2">
@@ -429,10 +429,10 @@ export default function CyberTournamentsTab({
                           className="text-left space-y-1 group cursor-pointer hover:opacity-90 transition-opacity"
                         >
                           <div className="text-zinc-500 text-[10px] font-mono">СИД {activeMatch.team1.seed}</div>
-                          <h3 className="text-base sm:text-lg font-black text-white group-hover:text-[#e81c5a] tracking-tight transition-colors">
+                          <h3 className="text-base sm:text-lg font-black text-white group-hover:text-[#0ea5e9] tracking-tight transition-colors">
                             {activeMatch.team1.name}
                           </h3>
-                          <span className="text-[9px] text-[#e81c5a] font-mono uppercase tracking-wider block">
+                          <span className="text-[9px] text-[#0ea5e9] font-mono uppercase tracking-wider block">
                             ОБЗОР КОМАНДЫ →
                           </span>
                         </button>
@@ -453,10 +453,10 @@ export default function CyberTournamentsTab({
                           className="text-right space-y-1 group cursor-pointer hover:opacity-90 transition-opacity"
                         >
                           <div className="text-zinc-500 text-[10px] font-mono">СИД {activeMatch.team2.seed}</div>
-                          <h3 className="text-base sm:text-lg font-black text-white group-hover:text-[#e81c5a] tracking-tight transition-colors">
+                          <h3 className="text-base sm:text-lg font-black text-white group-hover:text-[#0ea5e9] tracking-tight transition-colors">
                             {activeMatch.team2.name}
                           </h3>
-                          <span className="text-[9px] text-[#e81c5a] font-mono uppercase tracking-wider block">
+                          <span className="text-[9px] text-[#0ea5e9] font-mono uppercase tracking-wider block">
                             ← ОБЗОР КОМАНДЫ
                           </span>
                         </button>
@@ -475,7 +475,7 @@ export default function CyberTournamentsTab({
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5 text-[#e81c5a]" />
+                              <Copy className="w-3.5 h-3.5 text-[#0ea5e9]" />
                               <span>СКОПИРОВАТЬ ИТОГ В ТЕЛЕГРАМ</span>
                             </>
                           )}
@@ -493,7 +493,7 @@ export default function CyberTournamentsTab({
                               }
                               triggerHaptic('light');
                             }}
-                            className="px-2.5 py-1.5 bg-[#e81c5a] hover:bg-[#ff2467] text-white font-bold uppercase rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ml-auto"
+                            className="px-2.5 py-1.5 bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-bold uppercase rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer ml-auto"
                           >
                             <Award className="w-3.5 h-3.5" />
                             <span>{editingScoreMatchId === activeMatch.id ? 'ЗАКРЫТЬ ФОРМУ' : '⚡ ВНЕСТИ СЧЁТ И СЕТКУ'}</span>
@@ -503,9 +503,9 @@ export default function CyberTournamentsTab({
 
                       {/* Score Confirmation Form */}
                       {editingScoreMatchId === activeMatch.id && (
-                        <div className="p-3 bg-[#181818] border border-[#e81c5a]/40 rounded-xl space-y-3 animate-fadeIn">
+                        <div className="p-3 bg-[#181818] border border-[#0ea5e9]/40 rounded-xl space-y-3 animate-fadeIn">
                           <div className="flex items-center justify-between text-[10px] border-b border-[#2e2e2e] pb-1.5">
-                            <span className="font-bold text-[#e81c5a] uppercase flex items-center gap-1">
+                            <span className="font-bold text-[#0ea5e9] uppercase flex items-center gap-1">
                               <Crosshair className="w-3.5 h-3.5" />
                               <span>ФИКСАЦИЯ СЧЁТА И ПРОДВИЖЕНИЕ ПО СЕТКЕ</span>
                             </span>
@@ -556,7 +556,7 @@ export default function CyberTournamentsTab({
                                     setScoreTeam2(p.s2);
                                     triggerHaptic('light');
                                   }}
-                                  className="px-2 py-0.5 bg-[#141414] border border-[#2e2e2e] hover:border-[#e81c5a] text-zinc-300 text-[10px] font-bold rounded-md cursor-pointer"
+                                  className="px-2 py-0.5 bg-[#141414] border border-[#2e2e2e] hover:border-[#0ea5e9] text-zinc-300 text-[10px] font-bold rounded-md cursor-pointer"
                                 >
                                   {p.s1}:{p.s2}
                                 </button>
@@ -569,7 +569,7 @@ export default function CyberTournamentsTab({
                                 СКРИНШОТ ИТОГОВ ТАБЛО (SCOREBOARD):
                               </span>
                               <label className="flex items-center justify-center gap-2 p-2 bg-[#141414] border border-dashed border-[#2e2e2e] hover:border-white/50 text-zinc-300 text-[10px] rounded-lg cursor-pointer">
-                                <Upload className="w-3.5 h-3.5 text-[#e81c5a]" />
+                                <Upload className="w-3.5 h-3.5 text-[#0ea5e9]" />
                                 <span>{scoreScreenshot ? '✓ СКРИНШОТ ВЫБРАН (НАЖМИТЕ ДЛЯ СМЕНЫ)' : 'ВЫБРАТЬ ИЗОБРАЖЕНИЕ СКРИНШОТА'}</span>
                                 <input type="file" accept="image/*" onChange={handleScreenshotFile} className="hidden" />
                               </label>
@@ -675,7 +675,7 @@ export default function CyberTournamentsTab({
                           <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 border-b border-[#212121] pb-1">
                             <button
                               onClick={() => onOpenTeam(activeMatch.team1.name)}
-                              className="hover:text-[#e81c5a] transition-colors uppercase font-mono flex items-center gap-1 cursor-pointer"
+                              className="hover:text-[#0ea5e9] transition-colors uppercase font-mono flex items-center gap-1 cursor-pointer"
                             >
                               <span>{activeMatch.team1.name} (РОСТЕР)</span>
                               <span className="text-[9px] text-zinc-500 font-normal">→ ОБЗОР</span>
@@ -691,7 +691,7 @@ export default function CyberTournamentsTab({
                               >
                                 <div className="flex items-center gap-2">
                                   <span className="text-[9px] text-zinc-600 font-mono">0{idx + 1}</span>
-                                  <span className="font-bold text-white group-hover:text-[#e81c5a] transition-colors font-mono">
+                                  <span className="font-bold text-white group-hover:text-[#0ea5e9] transition-colors font-mono">
                                     {p.nick}
                                   </span>
                                   {p.isCaptain && (
@@ -714,7 +714,7 @@ export default function CyberTournamentsTab({
                           <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 border-b border-[#212121] pb-1">
                             <button
                               onClick={() => onOpenTeam(activeMatch.team2.name)}
-                              className="hover:text-[#e81c5a] transition-colors uppercase font-mono flex items-center gap-1 cursor-pointer"
+                              className="hover:text-[#0ea5e9] transition-colors uppercase font-mono flex items-center gap-1 cursor-pointer"
                             >
                               <span>{activeMatch.team2.name} (РОСТЕР)</span>
                               <span className="text-[9px] text-zinc-500 font-normal">→ ОБЗОР</span>
@@ -730,7 +730,7 @@ export default function CyberTournamentsTab({
                               >
                                 <div className="flex items-center gap-2">
                                   <span className="text-[9px] text-zinc-600 font-mono">0{idx + 1}</span>
-                                  <span className="font-bold text-white group-hover:text-[#e81c5a] transition-colors font-mono">
+                                  <span className="font-bold text-white group-hover:text-[#0ea5e9] transition-colors font-mono">
                                     {p.nick}
                                   </span>
                                   {p.isCaptain && (
