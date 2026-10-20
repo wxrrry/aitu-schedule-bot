@@ -2104,9 +2104,14 @@ async def handle_starostat_self_assign(call: types.CallbackQuery):
         await call.answer(f"⛔️ {reason}", show_alert=True)
         return
 
+    if role == "zam_starosty" and user and user.role == "starosta":
+        await call.answer("Вы уже являетесь старостой группы! Нельзя одновременно быть старостой и заместителем.", show_alert=True)
+        return
+
     success, msg = await assign_group_officer(grp, role, user_id)
     role_name = "старостой" if role == "starosta" else "заместителем старосты"
     if success:
+        logger.info(f"Самоназначение офицера в группе {grp}: пользователь {user_id} стал {role}")
         await call.answer(f"Вы успешно назначены {role_name} группы {grp}! 🎉", show_alert=True)
     else:
         await call.answer(f"Ошибка: {msg}", show_alert=True)
@@ -2205,15 +2210,25 @@ async def handle_starostat_officer_input(message: types.Message, state: FSMConte
     if not target_user:
         await message.answer(
             f"❌ Пользователь «{html.escape(raw_val)}» не найден в базе данных бота.\n\n"
-            f"Попросите студента сначала написать /start боту, затем отправьте его @username ещё раз (или отправьте /cancel для отмены)."
+            f"Попросите студента сначала написать /start боту, затем отправьте его @username, имя профиля или Telegram ID ещё раз (или отправьте /cancel для отмены)."
         )
         return
+
+    officers = await get_group_officers(grp)
+    if role == "zam_starosty" and officers.get("starosta") and officers["starosta"].user_id == target_user.user_id:
+        await message.answer("❌ Этот студент уже является старостой группы. Он не может одновременно быть старостой и заместителем.")
+        return
+
+    if role == "starosta" and officers.get("zam_starosty") and officers["zam_starosty"].user_id == target_user.user_id:
+        # Освобождаем слот зама при повышении до старосты
+        await demote_group_officer(grp, "zam_starosty")
 
     success, msg = await assign_group_officer(grp, role, target_user.user_id)
     await state.clear()
     if success:
         role_name = "старостой" if role == "starosta" else "заместителем старосты"
         name_str = f"@{target_user.username}" if target_user.username else (target_user.full_name or str(target_user.user_id))
+        logger.info(f"Назначен {role_name} группы {grp}: {target_user.user_id} ({name_str})")
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(text="👥 К старостату группы", callback_data="starostat_menu"))
         await message.answer(
@@ -3799,13 +3814,13 @@ async def main():
             replace_existing=True
         )
         
-        # Расписание 2: по будням в 07:30:00 (утреннее напоминание о 1-й паре и сводка)
+        # Расписание 2: по будням в 08:00:00 (утреннее напоминание о 1-й паре и сводка)
         scheduler.add_job(
             send_morning_alert,
             trigger="cron",
             day_of_week="mon-fri",
-            hour=7,
-            minute=30,
+            hour=8,
+            minute=0,
             second=0,
             id="morning_alert_job",
             replace_existing=True

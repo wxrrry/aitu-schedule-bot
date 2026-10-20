@@ -13,7 +13,8 @@ async def safe_send_message(
     text: str,
     reply_markup: types.InlineKeyboardMarkup | types.ReplyKeyboardMarkup | None = None,
     parse_mode: str = "HTML",
-    disable_web_page_preview: bool = True
+    disable_web_page_preview: bool = True,
+    disable_notification: bool = False
 ) -> bool:
     """
     Безопасная отправка одного сообщения с соблюдением требований Telegram API:
@@ -31,7 +32,8 @@ async def safe_send_message(
                 text=text,
                 parse_mode=parse_mode,
                 reply_markup=reply_markup,
-                link_preview_options=link_preview
+                link_preview_options=link_preview,
+                disable_notification=disable_notification
             )
             return True
         except TelegramRetryAfter as e:

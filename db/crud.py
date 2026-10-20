@@ -160,16 +160,41 @@ async def get_user(user_id: int | str) -> User | None:
 
 
 async def get_user_by_username(username: str) -> User | None:
-    """Возвращает пользователя по username (без @)."""
+    """Возвращает пользователя по username (без @) или точному имени / ID."""
     clean_username = username.lstrip("@").strip()
+    if not clean_username:
+        return None
     async with async_session() as session:
+        # 1. Поиск по Telegram username (без учета регистра)
         stmt = select(User).where(User.username.ilike(clean_username))
         res = await session.execute(stmt)
-        return res.scalar_one_or_none()
+        user = res.scalar_one_or_none()
+        if user:
+            return user
+
+        # 2. Поиск по имени пользователя full_name
+        stmt2 = select(User).where(func.lower(User.full_name) == clean_username.lower())
+        res2 = await session.execute(stmt2)
+        user2 = res2.scalar_one_or_none()
+        if user2:
+            return user2
+
+        # 3. Если передан числовой ID в строковом формате
+        if clean_username.isdigit():
+            stmt3 = select(User).where(User.user_id == int(clean_username))
+            res3 = await session.execute(stmt3)
+            return res3.scalar_one_or_none()
+
+        return None
 
 
 async def update_user_group(user_id: int | str, group_name: str) -> bool:
-    """Обновляет академическую группу пользователя. Если староста переходит в другую группу, его роль сбрасывается на student."""
+    """
+    Обновляет академическую группу пользователя.
+    Роль старосты/заместителя сбрасывается на student ТОЛЬКО при реальном переходе
+    в другую академическую группу. При первоначальном выборе группы или нормализации
+    названия той же группы роль надёжно сохраняется.
+    """
     u_id = int(user_id)
     canon = canonical_group_name(group_name) or group_name.strip()
     async with async_session() as session:
@@ -177,10 +202,17 @@ async def update_user_group(user_id: int | str, group_name: str) -> bool:
         user = user_res.scalar_one_or_none()
         if not user:
             return False
-        if user.group_name != canon:
-            user.group_name = canon
-            if user.role in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
+
+        # Если группа реально меняется на другую (и ранее уже была установлена)
+        if not is_same_group(user.group_name, canon):
+            if user.group_name and user.role in (UserRole.STAROSTA.value, UserRole.ZAM_STAROSTY.value):
+                logger.info(f"Сброс роли офицера для пользователя {u_id}: смена группы с {user.group_name} на {canon}")
                 user.role = UserRole.STUDENT.value
+            user.group_name = canon
+        elif user.group_name != canon:
+            # Та же группа, просто нормализация регистра/написания
+            user.group_name = canon
+
         await session.commit()
         return True
 
@@ -788,15 +820,18 @@ async def assign_group_officer(group_name: str, officer_role: str, new_user_id: 
         curr_res = await session.execute(curr_stmt)
         old_officers = curr_res.scalars().all()
         for old in old_officers:
+            logger.info(f"Смена руководства {canon_grp}: пользователь {old.user_id} освобождён от роли {officer_role}")
             old.role = UserRole.STUDENT.value
 
         await session.commit()
+        logger.info(f"Назначен офицер {canon_grp}: роль={officer_role}, user_id={new_user_id}")
         return True, "Успешно назначено."
 
 
 async def demote_group_officer(group_name: str, officer_role: str) -> bool:
     """Снимает старосту или заместителя группы, возвращая им роль student."""
     variants = get_group_variants(group_name)
+    canon_grp = canonical_group_name(group_name) or str(group_name)
     async with async_session() as session:
         stmt = update(User).where(
             and_(
@@ -806,6 +841,7 @@ async def demote_group_officer(group_name: str, officer_role: str) -> bool:
         ).values(role=UserRole.STUDENT.value)
         res = await session.execute(stmt)
         await session.commit()
+        logger.info(f"Снят офицер группы {canon_grp}: роль={officer_role}, затронуто записей: {res.rowcount}")
         return res.rowcount > 0
 
 
