@@ -608,7 +608,7 @@ export default function ProfileModal({
                   {/* Morning Alert */}
                   <div className="flex items-center justify-between p-2 bg-black/40 border border-white/5 font-sans">
                     <div>
-                      <div className="font-medium text-white text-[11px]">Утренняя сводка в 07:30</div>
+                      <div className="font-medium text-white text-[11px]">Утренняя сводка в 08:00</div>
                       <div className="text-[9px] text-zinc-500 font-mono">Расписание на сегодня и статус 1-й пары</div>
                     </div>
                     <button
