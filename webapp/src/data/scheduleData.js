@@ -361,10 +361,13 @@ export const RAW_SCHEDULE = {
       teacher: "Смирнова Анастасия Владимировна"
     },
     4: {
-      split: false,
-      subject: "Иностранный язык",
-      room: "каб. 515",
-      teacher: "Клещева Елена Георгиевна"
+      split: true,
+      chislitel: {
+        subject: "Иностранный язык",
+        room: "каб. 515",
+        teacher: "Клещева Елена Георгиевна"
+      },
+      znamenatel: null
     }
   },
   2: { // Среда
