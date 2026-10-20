@@ -393,10 +393,13 @@ SCHEDULE = {
             "teacher": "Смирнова Анастасия Владимировна"
         },
         4: {
-            "split": False,
-            "subject": "Иностранный язык",
-            "room": "515",
-            "teacher": "Клещева Елена Георгиевна"
+            "split": True,
+            "chislitel": None,
+            "znamenatel": {
+                "subject": "Иностранный язык",
+                "room": "515",
+                "teacher": "Клещева Елена Георгиевна"
+            }
         }
     },
     2: {  # Среда
