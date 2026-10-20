@@ -394,12 +394,12 @@ SCHEDULE = {
         },
         4: {
             "split": True,
-            "chislitel": None,
-            "znamenatel": {
+            "chislitel": {
                 "subject": "Иностранный язык",
                 "room": "515",
                 "teacher": "Клещева Елена Георгиевна"
-            }
+            },
+            "znamenatel": None
         }
     },
     2: {  # Среда

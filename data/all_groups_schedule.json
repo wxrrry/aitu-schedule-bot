@@ -6040,12 +6040,12 @@
         },
         "4": {
           "split": true,
-          "chislitel": null,
-          "znamenatel": {
+          "chislitel": {
             "subject": "Иностранный язык в профессиональной деятельности",
             "room": "515",
             "teacher": "Клещева Е.Г."
-          }
+          },
+          "znamenatel": null
         }
       },
       "2": {
