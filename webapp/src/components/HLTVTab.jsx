@@ -290,9 +290,19 @@ export default function HLTVTab() {
           onOpenPlayer={handleOpenPlayer}
           onOpenTeam={handleOpenTeam}
           onOpenMatch={handleOpenMatch}
-          onOpenRegister={() => setIsRegisterModalOpen(true)}
+          onOpenRegister={() => {
+            const activeTourn = tournamentsList.find(t => t.type === 'upcoming' || t.status === 'ПРИЁМ ЗАЯВОК');
+            if (activeTourn) {
+              setRegisterTournament(activeTourn);
+              setIsRegisterModalOpen(true);
+            } else {
+              alert("На данный момент нет турниров с открытой регистрацией. AITU Pro League Season 1 завершён. Ожидайте анонса следующего сезона!");
+              triggerHaptic('warning');
+            }
+          }}
           onOpenOrganizer={() => setIsOrganizerModalOpen(true)}
           canOrganize={canOrganize}
+          hasActiveRegistration={tournamentsList.some(t => t.type === 'upcoming' || t.status === 'ПРИЁМ ЗАЯВОК')}
         />
       )}
 

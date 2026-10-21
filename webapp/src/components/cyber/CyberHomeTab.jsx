@@ -10,6 +10,7 @@ import {
   ShieldCheck, 
   Settings, 
   Plus, 
+  Lock,
   ExternalLink 
 } from 'lucide-react';
 import { CS2_PLAYERS, TOURNAMENT_MATCHES, CS2_LEAGUE_STATS } from '../../data/cs2TournamentData';
@@ -22,7 +23,8 @@ export default function CyberHomeTab({
   onOpenMatch, 
   onOpenRegister, 
   onOpenOrganizer, 
-  canOrganize 
+  canOrganize,
+  hasActiveRegistration
 }) {
   const topPlayers = [
     CS2_PLAYERS["t0ma999"] || { nick: "t0ma999", team: "LL TEAM", totalKills: 120, kdRatio: "1.54" },
@@ -109,13 +111,27 @@ export default function CyberHomeTab({
             <span>ТОП ИГРОКОВ</span>
           </button>
 
-          <button
-            onClick={() => onOpenRegister()}
-            className="px-3 py-2 bg-transparent hover:bg-white/[0.05] border border-white/10 text-zinc-300 font-bold text-xs uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>ПОДАТЬ ЗАЯВКУ</span>
-          </button>
+          {hasActiveRegistration ? (
+            <button
+              onClick={() => onOpenRegister()}
+              className="px-3 py-2 bg-[#0ea5e9]/20 hover:bg-[#0ea5e9]/30 border border-[#0ea5e9]/50 text-white font-bold text-xs uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#0ea5e9]" />
+              <span>ПОДАТЬ ЗАЯВКУ</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                alert("На данный момент нет турниров с открытой регистрацией. AITU Pro League Season 1 уже завершён. Регистрация на следующий сезон откроется с официальным анонсом!");
+                triggerHaptic('warning');
+              }}
+              className="px-3 py-2 bg-[#16161a] hover:bg-[#1c1c22] border border-white/10 text-zinc-400 hover:text-zinc-200 font-bold text-xs uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              title="Регистрация закрыта (нет активных турниров)"
+            >
+              <Lock className="w-3.5 h-3.5 text-zinc-500" />
+              <span>РЕГИСТРАЦИЯ ЗАКРЫТА</span>
+            </button>
+          )}
         </div>
       </div>
 

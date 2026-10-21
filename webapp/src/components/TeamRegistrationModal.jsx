@@ -15,6 +15,7 @@ import {
   Crown, 
   Crosshair,
   UserCheck,
+  Lock,
   Image as ImageIcon
 } from 'lucide-react';
 import { useTelegramBackButton, triggerHaptic } from '../utils/telegram';
@@ -63,9 +64,17 @@ export default function TeamRegistrationModal({ isOpen, onClose, tournament, pro
 
   if (!isOpen || !tournament) return null;
 
+  const isClosed = tournament?.status === 'ЗАВЕРШЁН' || tournament?.type === 'past';
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
+
+    if (isClosed) {
+      setError('Регистрация на данный турнир уже закрыта');
+      triggerHaptic('error');
+      return;
+    }
 
     if (!teamName.trim()) {
       setError('Укажите название команды');
@@ -230,9 +239,30 @@ export default function TeamRegistrationModal({ isOpen, onClose, tournament, pro
             </div>
             <button
               onClick={onClose}
-              className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors"
+              className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer"
             >
               ВЕРНУТЬСЯ К ТУРНИРУ
+            </button>
+          </div>
+        ) : isClosed ? (
+          <div className="p-6 bg-black border border-amber-500/30 text-center space-y-3 font-mono animate-fadeIn">
+            <div className="w-12 h-12 mx-auto rounded-full bg-amber-950/40 border border-amber-500/50 flex items-center justify-center text-amber-400">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                РЕГИСТРАЦИЯ ЗАКРЫТА
+              </h4>
+              <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
+                Турнир <span className="text-white font-medium">«{tournament.title}»</span> уже завершён. Подача заявок на прошедший сезон недоступна. Ожидайте анонса следующего турнира AITU!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer"
+            >
+              ПОНЯТНО
             </button>
           </div>
         ) : (
