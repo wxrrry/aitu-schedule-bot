@@ -110,6 +110,8 @@ from keyboards import (
     main_keyboard,
     schedule_keyboard,
     services_keyboard,
+    get_support_keyboard,
+    get_support_cancel_keyboard,
     get_days_inline_keyboard,
     get_back_to_days_keyboard,
     get_day_nav_keyboard,
@@ -191,6 +193,14 @@ class StarostaUIState(StatesGroup):
     waiting_cancel_custom_reason = State()
     waiting_zam_custom_date = State()
     waiting_zam_details = State()
+
+
+class SupportState(StatesGroup):
+    waiting_message = State()
+
+
+class SupportReplyState(StatesGroup):
+    waiting_reply = State()
 
 
 
@@ -976,6 +986,170 @@ async def handle_back_to_main(message: types.Message):
         "Выберите действие или откройте нужную папку:",
         reply_markup=main_keyboard
     )
+
+
+# -------------------------------------------------------------
+# Раздел: Поддержка и обратная связь (сообщения об ошибках / багах)
+# -------------------------------------------------------------
+@dp.message(Command("support", "bug", "report", ignore_case=True))
+@dp.message(F.text.in_(["💬 Поддержка / Ошибка", "💬 Поддержка", "Поддержка", "🆘 Поддержка", "сообщить об ошибке"]))
+async def handle_support_entry(message: types.Message, state: FSMContext):
+    await state.clear()
+    text = (
+        "💬 <b>Служба поддержки и обратной связи</b>\n"
+        "──────────────────────\n"
+        "Заметили ошибку в расписании, неверный кабинет или предмет, баг в боте или есть предложение?\n\n"
+        "✍️ Нажмите кнопку ниже, чтобы <b>отправить обращение разработчикам</b>, "
+        "или опишите проблему подробно прямо в ответном сообщении.\n\n"
+        "<i>Сообщение будет мгновенно передано разработчикам бота.</i>"
+    )
+    await message.answer(text, reply_markup=get_support_keyboard())
+
+
+@dp.callback_query(F.data == "support_start")
+async def handle_support_start(call: types.CallbackQuery, state: FSMContext):
+    await state.set_state(SupportState.waiting_message)
+    text = (
+        "📝 <b>Опишите вашу проблему или ошибку:</b>\n"
+        "──────────────────────\n"
+        "Укажите:\n"
+        "▫️ Какая ошибка произошла или что не так в расписании\n"
+        "▫️ Вашу группу, день и номер пары\n"
+        "▫️ При необходимости можно <b>прикрепить скриншот</b>\n\n"
+        "<i>Для отмены нажмите кнопку ниже:</i>"
+    )
+    try:
+        await call.message.edit_text(text, reply_markup=get_support_cancel_keyboard())
+    except Exception:
+        await call.message.answer(text, reply_markup=get_support_cancel_keyboard())
+    await call.answer()
+
+
+@dp.callback_query(F.data == "support_cancel")
+async def handle_support_cancel(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await call.answer("Обращение отменено ℹ️")
+    try:
+        await call.message.edit_text("ℹ️ Обращение в поддержку отменено.\nВы можете вернуться в главное меню в любой момент.", reply_markup=None)
+    except Exception:
+        pass
+
+
+@dp.message(SupportState.waiting_message)
+async def handle_support_message_received(message: types.Message, state: FSMContext):
+    if message.text in ("◀️ Главное меню", "◀️ Назад", "/cancel"):
+        await state.clear()
+        await message.answer("ℹ️ Ввод обращения отменён.", reply_markup=main_keyboard)
+        return
+
+    user_id = message.from_user.id
+    full_name = html.escape(message.from_user.full_name or "Без имени")
+    username_str = f"@{message.from_user.username}" if message.from_user.username else "<i>нет username</i>"
+    user_obj = await get_user(user_id)
+    grp = user_obj.group_name if user_obj and user_obj.group_name else "Не выбрана"
+    now_str = datetime.now(BOT_TZ).strftime("%d.%m.%Y %H:%M")
+
+    msg_body = html.escape(message.text or message.caption or "(Пользователь отправил медиафайл без текста)")
+
+    admin_report = (
+        "🚨 <b>НОВОЕ ОБРАЩЕНИЕ В ПОДДЕРЖКУ!</b>\n"
+        "──────────────────────\n"
+        f"👤 <b>От:</b> {full_name} ({username_str}) [<code>{user_id}</code>]\n"
+        f"👥 <b>Группа:</b> <code>{grp}</code>\n"
+        f"📅 <b>Время:</b> <code>{now_str}</code>\n\n"
+        f"💬 <b>Текст обращения:</b>\n"
+        f"<blockquote>{msg_body}</blockquote>"
+    )
+    admin_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✉️ Ответить пользователю", callback_data=f"support_reply_{user_id}")]
+    ])
+
+    # Рассылаем разработчикам / главным администраторам
+    superadmins = set(ADMIN_IDS) | {1019252177, 792569339}
+    sent_any = False
+    for adm_id in superadmins:
+        try:
+            if message.photo:
+                await bot.send_photo(chat_id=adm_id, photo=message.photo[-1].file_id, caption=admin_report, reply_markup=admin_kb)
+            elif message.document:
+                await bot.send_document(chat_id=adm_id, document=message.document.file_id, caption=admin_report, reply_markup=admin_kb)
+            else:
+                await bot.send_message(chat_id=adm_id, text=admin_report, reply_markup=admin_kb)
+            sent_any = True
+        except Exception as e:
+            logger.warning(f"Не удалось доставить баг-репорт админу {adm_id}: {e}")
+
+    await state.clear()
+    await message.answer(
+        "✅ <b>Ваше обращение принято и отправлено разработчикам!</b>\n"
+        "──────────────────────\n"
+        "Спасибо за обратную связь. Мы внимательно изучим информацию и при необходимости свяжемся с вами в ответном сообщении.\n\n"
+        "<i>Благодаря вам бот становится точнее и удобнее! 🤝</i>",
+        reply_markup=main_keyboard
+    )
+
+
+@dp.callback_query(F.data.startswith("support_reply_"))
+async def handle_support_reply_click(call: types.CallbackQuery, state: FSMContext):
+    user_id = call.from_user.id
+    if not await is_admin(user_id):
+        await call.answer("⛔️ Отвечать на обращения могут только администраторы бота.", show_alert=True)
+        return
+
+    try:
+        target_uid = int(call.data.replace("support_reply_", ""))
+    except ValueError:
+        await call.answer("Некорректный ID пользователя", show_alert=True)
+        return
+
+    await state.set_state(SupportReplyState.waiting_reply)
+    await state.update_data(target_uid=target_uid)
+    await call.message.answer(
+        f"✍️ <b>Ответ пользователю</b> [<code>{target_uid}</code>]:\n\n"
+        f"Введите текст ответа (он будет отправлен пользователю от имени бота):\n\n"
+        f"<i>Для отмены нажмите кнопку ниже:</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="support_reply_cancel")]])
+    )
+    await call.answer()
+
+
+@dp.callback_query(F.data == "support_reply_cancel")
+async def handle_support_reply_cancel(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await call.answer("Ответ отменён")
+    try:
+        await call.message.edit_text("ℹ️ Ответ пользователю отменён.")
+    except Exception:
+        pass
+
+
+@dp.message(SupportReplyState.waiting_reply)
+async def handle_support_reply_send(message: types.Message, state: FSMContext):
+    if not await is_admin(message.from_user.id):
+        await state.clear()
+        return
+
+    data = await state.get_data()
+    target_uid = data.get("target_uid")
+    if not target_uid:
+        await state.clear()
+        await message.answer("⚠️ Пользователь для ответа не найден.")
+        return
+
+    reply_text = (
+        "📩 <b>Ответ от службы поддержки / разработчиков бота:</b>\n"
+        "──────────────────────\n"
+        f"<blockquote>{html.escape(message.text or '')}</blockquote>\n\n"
+        "<i>Если у вас остались вопросы, вы всегда можете написать в «💬 Поддержка / Ошибка».</i>"
+    )
+
+    try:
+        await bot.send_message(chat_id=target_uid, text=reply_text)
+        await message.answer(f"✅ <b>Ответ успешно доставлен пользователю [<code>{target_uid}</code>]!</b>")
+    except Exception as e:
+        await message.answer(f"❌ <b>Не удалось доставить сообщение пользователю [<code>{target_uid}</code>]:</b>\n<code>{e}</code>")
+
+    await state.clear()
 
 
 @dp.message(Command("week"))

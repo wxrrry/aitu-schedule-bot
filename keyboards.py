@@ -19,6 +19,9 @@ main_keyboard = ReplyKeyboardMarkup(
         [
             KeyboardButton(text="🗓 Расписание 📂"),
             KeyboardButton(text="🛠 Полезное 📂")
+        ],
+        [
+            KeyboardButton(text="💬 Поддержка / Ошибка")
         ]
     ],
     resize_keyboard=True,
@@ -66,6 +69,7 @@ services_keyboard = ReplyKeyboardMarkup(
             KeyboardButton(text="📥 В календарь")
         ],
         [
+            KeyboardButton(text="💬 Поддержка / Ошибка"),
             KeyboardButton(text="◀️ Главное меню")
         ]
     ],
@@ -73,6 +77,31 @@ services_keyboard = ReplyKeyboardMarkup(
     is_persistent=True,
     input_field_placeholder="Раздел: Полезное..."
 )
+
+def get_support_keyboard() -> InlineKeyboardMarkup:
+    """Инлайн-кнопки для экрана поддержки."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✍️ Сообщить об ошибке / баге", callback_data="support_start")
+            ],
+            [
+                InlineKeyboardButton(text="◀️ В главное меню", callback_data="support_cancel")
+            ]
+        ]
+    )
+
+
+def get_support_cancel_keyboard() -> InlineKeyboardMarkup:
+    """Инлайн-кнопка отмены ввода обращения."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="❌ Отменить обращение", callback_data="support_cancel")
+            ]
+        ]
+    )
+
 
 def get_moodle_keyboard() -> InlineKeyboardMarkup:
     """Инлайн-кнопки для СДО Moodle и скачивания макета титульного листа."""
