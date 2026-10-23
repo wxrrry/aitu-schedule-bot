@@ -65,11 +65,10 @@ services_keyboard = ReplyKeyboardMarkup(
             KeyboardButton(text="👨‍🏫 Преподаватели")
         ],
         [
-            KeyboardButton(text="📍 Поиск кабинета"),
-            KeyboardButton(text="📥 В календарь")
+            KeyboardButton(text="📥 В календарь"),
+            KeyboardButton(text="💬 Поддержка / Ошибка")
         ],
         [
-            KeyboardButton(text="💬 Поддержка / Ошибка"),
             KeyboardButton(text="◀️ Главное меню")
         ]
     ],
