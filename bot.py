@@ -20,7 +20,7 @@ import html
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS, WEBAPP_URL
+from config import BOT_TOKEN, CHAT_ID, BOT_TZ, ADMIN_ID, ADMIN_IDS, WEBAPP_URL, CONTROLLER_BOT_TOKEN
 from schedule_data import (
     SCHEDULE,
     DAYS_RU,
@@ -1064,20 +1064,40 @@ async def handle_support_message_received(message: types.Message, state: FSMCont
         [InlineKeyboardButton(text="✉️ Ответить пользователю", callback_data=f"support_reply_{user_id}")]
     ])
 
-    # Рассылаем разработчикам / главным администраторам
+    # Рассылаем разработчикам / главным администраторам В БОТ-КОНТРОЛЛЕР
     superadmins = set(ADMIN_IDS) | {1019252177, 792569339}
     sent_any = False
-    for adm_id in superadmins:
+
+    # Используем бота-контроллера, чтобы уведомление упало именно в админ-бота!
+    dispatch_bot = bot
+    close_dispatch = False
+    if CONTROLLER_BOT_TOKEN:
         try:
-            if message.photo:
-                await bot.send_photo(chat_id=adm_id, photo=message.photo[-1].file_id, caption=admin_report, reply_markup=admin_kb)
-            elif message.document:
-                await bot.send_document(chat_id=adm_id, document=message.document.file_id, caption=admin_report, reply_markup=admin_kb)
-            else:
-                await bot.send_message(chat_id=adm_id, text=admin_report, reply_markup=admin_kb)
-            sent_any = True
+            dispatch_bot = Bot(token=CONTROLLER_BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+            close_dispatch = True
         except Exception as e:
-            logger.warning(f"Не удалось доставить баг-репорт админу {adm_id}: {e}")
+            logger.warning(f"Не удалось инициализировать бота-контроллера для отправки тикета: {e}")
+            dispatch_bot = bot
+            close_dispatch = False
+
+    try:
+        for adm_id in superadmins:
+            try:
+                if message.photo:
+                    await dispatch_bot.send_photo(chat_id=adm_id, photo=message.photo[-1].file_id, caption=admin_report, reply_markup=admin_kb)
+                elif message.document:
+                    await dispatch_bot.send_document(chat_id=adm_id, document=message.document.file_id, caption=admin_report, reply_markup=admin_kb)
+                else:
+                    await dispatch_bot.send_message(chat_id=adm_id, text=admin_report, reply_markup=admin_kb)
+                sent_any = True
+            except Exception as e:
+                logger.warning(f"Не удалось доставить баг-репорт админу {adm_id}: {e}")
+    finally:
+        if close_dispatch:
+            try:
+                await dispatch_bot.session.close()
+            except Exception:
+                pass
 
     await state.clear()
     await message.answer(

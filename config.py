@@ -47,3 +47,25 @@ else:
 
 # URL для Telegram WebApp (Mini App)
 WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip()
+
+# Токен бота-контроллера (для пересылки тикетов поддержки в админ-бота)
+CONTROLLER_BOT_TOKEN = os.getenv("CONTROLLER_BOT_TOKEN", "").strip()
+if not CONTROLLER_BOT_TOKEN:
+    from pathlib import Path
+    controller_env_candidates = [
+        Path(__file__).resolve().parent.parent / "aitu-schedule-controller" / ".env",
+        Path("/opt/aitu-schedule-controller/.env"),
+        Path("/opt/aitu-controller/.env"),
+    ]
+    for c_env in controller_env_candidates:
+        if c_env.exists():
+            try:
+                with open(c_env, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("CONTROLLER_BOT_TOKEN="):
+                            CONTROLLER_BOT_TOKEN = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+                if CONTROLLER_BOT_TOKEN:
+                    break
+            except Exception:
+                pass
