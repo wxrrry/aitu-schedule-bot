@@ -202,6 +202,12 @@ def get_user_settings_keyboard(
     if is_starosta or is_admin:
         buttons.append([
             InlineKeyboardButton(
+                text="💬 Оповещения в беседах",
+                callback_data="manage_bound_chats"
+            )
+        ])
+        buttons.append([
+            InlineKeyboardButton(
                 text="⭐️ Панель старосты",
                 callback_data="open_starosta_panel"
             )
@@ -243,7 +249,35 @@ def format_chat_settings_text(
     )
 
 
-def get_chat_settings_keyboard(chat_id: int, binding = None) -> InlineKeyboardMarkup:
+def get_bound_chats_list_keyboard(
+    chats: list,
+    is_admin: bool = False,
+    group_name: str | None = None
+) -> InlineKeyboardMarkup:
+    """Генерирует инлайн-список привязанных бесед для выбора старостой/админом в ЛС."""
+    buttons = []
+    for c in chats:
+        c_title = getattr(c, "chat_title", "") or "Беседа"
+        c_grp = getattr(c, "group_name", "") or (group_name or "")
+        c_id = getattr(c, "chat_id", 0)
+        label = f"💬 {c_title}" + (f" ({c_grp})" if is_admin else "")
+        buttons.append([
+            InlineKeyboardButton(
+                text=label,
+                callback_data=f"select_chat_set_{c_id}"
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(
+            text="◀️ Назад в настройки",
+            callback_data="starosta_back_to_settings"
+        )
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_chat_settings_keyboard(chat_id: int, binding = None, from_pm: bool = False) -> InlineKeyboardMarkup:
     """Генерирует инлайн-клавиатуру с тумблерами оповещений для беседы."""
     icon_f = "✅" if getattr(binding, "notify_five_min_breaks", True) else "❌"
     icon_10 = "✅" if getattr(binding, "notify_10min", True) else "❌"
@@ -254,14 +288,8 @@ def get_chat_settings_keyboard(chat_id: int, binding = None) -> InlineKeyboardMa
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"{icon_f} Звонки на пятиминутки",
-                callback_data=f"toggle_chat_set_{chat_id}_notify_five_min_breaks"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=f"{icon_10} Колокольчик за 10 мин",
-                callback_data=f"toggle_chat_set_{chat_id}_notify_10min"
+                text=f"{icon_mid} Полночная рассылка (00:00)",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_midnight"
             )
         ],
         [
@@ -272,8 +300,14 @@ def get_chat_settings_keyboard(chat_id: int, binding = None) -> InlineKeyboardMa
         ],
         [
             InlineKeyboardButton(
-                text=f"{icon_mid} Полночная рассылка (00:00)",
-                callback_data=f"toggle_chat_set_{chat_id}_notify_midnight"
+                text=f"{icon_10} Колокольчик за 10 мин",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_10min"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"{icon_f} Звонки на пятиминутки",
+                callback_data=f"toggle_chat_set_{chat_id}_notify_five_min_breaks"
             )
         ],
         [
@@ -283,5 +317,13 @@ def get_chat_settings_keyboard(chat_id: int, binding = None) -> InlineKeyboardMa
             )
         ]
     ]
+
+    if from_pm:
+        buttons.append([
+            InlineKeyboardButton(
+                text="◀️ Назад к списку бесед",
+                callback_data="manage_bound_chats"
+            )
+        ])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)

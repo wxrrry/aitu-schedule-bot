@@ -155,7 +155,8 @@ from user_settings import (
     get_users_with_setting,
     load_all_settings,
     format_chat_settings_text,
-    get_chat_settings_keyboard
+    get_chat_settings_keyboard,
+    get_bound_chats_list_keyboard
 )
 from lectures import (
     get_all_lectures,
@@ -1764,6 +1765,86 @@ async def handle_chat_settings_command(message: types.Message):
     await handle_user_settings(message)
 
 
+@dp.callback_query(F.data == "manage_bound_chats")
+async def handle_manage_bound_chats(call: types.CallbackQuery):
+    """Показывает список привязанных бесед старосте или администратору для настройки уведомлений."""
+    user_id = call.from_user.id
+    is_bot_adm = await is_admin(user_id)
+    user = await get_user(user_id)
+    grp = user.group_name if user and user.group_name else "9ПО-43к"
+    is_officer = await is_starosta_or_zam(user_id, grp)
+
+    if not (is_bot_adm or is_officer):
+        await call.answer("⛔️ Настройка бесед доступна только старосте группы и администраторам.", show_alert=True)
+        return
+
+    if is_bot_adm:
+        chats = await get_all_chat_bindings()
+        header = "🛡 <b>Все привязанные беседы колледжа</b>"
+    else:
+        chats = await get_chats_for_group(grp)
+        header = f"💬 <b>Привязанные беседы группы <code>{grp}</code></b>"
+
+    if not chats:
+        text = (
+            f"{header}\n"
+            "──────────────────────\n"
+            "К вашей группе пока не привязана ни одна Telegram-беседа.\n\n"
+            "📌 <b>Как подключить беседу:</b>\n"
+            "1. Добавьте бота в групповой чат вашей группы.\n"
+            f"2. Отправьте в беседе команду: <code>/bind {grp}</code>\n"
+            "3. Беседа привяжется, и вы сможете в 1 клик настраивать здесь все её уведомления!"
+        )
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад в настройки", callback_data="starosta_back_to_settings")]]
+        )
+    else:
+        text = (
+            f"{header}\n"
+            "──────────────────────\n"
+            "Выберите беседу для настройки автоматических оповещений:\n"
+            "<i>(00:00, 08:00, звонки за 10 мин, пятиминутки, замены)</i>"
+        )
+        kb = get_bound_chats_list_keyboard(chats, is_admin=is_bot_adm, group_name=grp)
+
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("select_chat_set_"))
+async def handle_select_chat_set(call: types.CallbackQuery):
+    """Открывает экран настроек уведомлений конкретной беседы в ЛС."""
+    user_id = call.from_user.id
+    try:
+        chat_id = int(call.data.replace("select_chat_set_", ""))
+    except ValueError:
+        await call.answer("Некорректный ID беседы", show_alert=True)
+        return
+
+    binding = await get_chat_binding(chat_id)
+    if not binding:
+        await call.answer("Беседа не найдена в базе данных.", show_alert=True)
+        return
+
+    is_bot_adm = await is_admin(user_id)
+    is_officer = await is_starosta_or_zam(user_id, binding.group_name)
+
+    if not (is_bot_adm or is_officer):
+        await call.answer("⛔️ Отказано в доступе к управлению этой беседой.", show_alert=True)
+        return
+
+    text = format_chat_settings_text(chat_id, binding.chat_title, binding.group_name, binding=binding)
+    kb = get_chat_settings_keyboard(chat_id, binding=binding, from_pm=True)
+    try:
+        await call.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await call.message.answer(text, reply_markup=kb)
+    await call.answer()
+
+
 @dp.callback_query(F.data.startswith("toggle_chat_set_"))
 async def handle_toggle_chat_setting(call: types.CallbackQuery):
     """Переключение тумблеров системных оповещений беседы (пятиминутки, 10 мин звонок, утро, полночь, замены)."""
@@ -1789,21 +1870,30 @@ async def handle_toggle_chat_setting(call: types.CallbackQuery):
     user_id = call.from_user.id
     is_bot_adm = await is_admin(user_id)
     is_officer = await is_starosta_or_zam(user_id, binding.group_name)
+    is_pm = call.message.chat.type == "private" if call.message and call.message.chat else False
 
-    is_chat_adm = False
-    try:
-        chat_member = await call.bot.get_chat_member(chat_id, user_id)
-        if chat_member.status in ("creator", "administrator"):
-            is_chat_adm = True
-    except Exception:
-        pass
+    if is_pm:
+        if not (is_bot_adm or is_officer):
+            await call.answer(
+                "⛔️ Изменять настройки оповещений беседы могут только администраторы бота или староста/зам группы.",
+                show_alert=True
+            )
+            return
+    else:
+        is_chat_adm = False
+        try:
+            chat_member = await call.bot.get_chat_member(chat_id, user_id)
+            if chat_member.status in ("creator", "administrator"):
+                is_chat_adm = True
+        except Exception:
+            pass
 
-    if not (is_bot_adm or is_officer or is_chat_adm):
-        await call.answer(
-            "⛔️ Изменять настройки оповещений беседы могут только администраторы чата или староста/зам группы.",
-            show_alert=True
-        )
-        return
+        if not (is_bot_adm or is_officer or is_chat_adm):
+            await call.answer(
+                "⛔️ Изменять настройки оповещений беседы могут только администраторы чата или староста/зам группы.",
+                show_alert=True
+            )
+            return
 
     new_val = await toggle_chat_notification_setting(chat_id, setting_key)
     titles = {
@@ -1818,9 +1908,9 @@ async def handle_toggle_chat_setting(call: types.CallbackQuery):
     await call.answer(f"{title}: {state_str}")
 
     updated_binding = await get_chat_binding(chat_id)
-    chat_title = call.message.chat.title if call.message and call.message.chat else "Беседа"
+    chat_title = updated_binding.chat_title or (call.message.chat.title if not is_pm and call.message and call.message.chat else "Беседа")
     text = format_chat_settings_text(chat_id, chat_title, updated_binding.group_name, binding=updated_binding)
-    kb = get_chat_settings_keyboard(chat_id, binding=updated_binding)
+    kb = get_chat_settings_keyboard(chat_id, binding=updated_binding, from_pm=is_pm)
     try:
         await call.message.edit_text(text, reply_markup=kb)
     except TelegramBadRequest as e:
@@ -2273,7 +2363,7 @@ async def handle_starosta_panel(event: types.Message | types.CallbackQuery, stat
         await event.answer(text, reply_markup=kb)
 
 
-@dp.callback_query(F.data == "starosta_back_to_settings")
+@dp.callback_query(F.data.in_(["starosta_back_to_settings", "open_user_settings"]))
 async def handle_starosta_back(call: types.CallbackQuery, state: FSMContext | None = None):
     if state:
         await state.clear()

@@ -153,7 +153,10 @@ def get_starosta_dashboard_keyboard(group_name: str) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="📋 Активные замены", callback_data="st_ui_list_zam")
     )
     builder.row(
-        InlineKeyboardButton(text="💬 Привязать беседу группы", callback_data="starosta_bind_info")
+        InlineKeyboardButton(text="💬 Оповещения в беседах", callback_data="manage_bound_chats")
+    )
+    builder.row(
+        InlineKeyboardButton(text="ℹ️ Как привязать беседу", callback_data="starosta_bind_info")
     )
     builder.row(
         InlineKeyboardButton(text="◀️ В настройки", callback_data="starosta_back_to_settings")
