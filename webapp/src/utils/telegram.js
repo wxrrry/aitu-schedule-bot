@@ -157,44 +157,32 @@ export const cloudStorage = {
 export function isInsideTelegram() {
   if (typeof window === 'undefined') return true;
 
-  // 1. Проверяем URL параметры (query и hash)
-  try {
-    const searchParams = new URLSearchParams(window.location.search);
-    // Возможность предпросмотра или запуск из бота через tg=1 / from=bot
-    if (
-      searchParams.get('preview') === '1' ||
-      searchParams.get('dev') === '1' ||
-      searchParams.get('tg') === '1' ||
-      searchParams.get('from') === 'bot'
-    ) {
-      return true;
-    }
-    if (
-      searchParams.has('tgWebAppPlatform') ||
-      searchParams.has('tgWebAppData') ||
-      searchParams.has('tgWebAppVersion') ||
-      searchParams.has('tgWebAppThemeParams')
-    ) {
-      return true;
-    }
+  // 1. Проверяем Telegram WebApp SDK объект
+  const webApp = window.Telegram?.WebApp;
 
-    if (
-      window.location.hash.includes('tgWebAppData=') ||
-      window.location.hash.includes('tgWebAppPlatform=') ||
-      window.location.hash.includes('tgWebAppThemeParams=')
-    ) {
-      return true;
-    }
-  } catch (e) {
-    // ignore
+  // В реальном клиенте Telegram всегда есть непустая строка initData
+  if (webApp && typeof webApp.initData === 'string' && webApp.initData.trim().length > 0) {
+    return true;
+  }
+
+  // initDataUnsafe содержит данные пользователя, чата или запроса
+  if (
+    webApp?.initDataUnsafe &&
+    (webApp.initDataUnsafe.user || webApp.initDataUnsafe.query_id || webApp.initDataUnsafe.start_param)
+  ) {
+    return true;
+  }
+
+  // Платформа Telegram (ios, android, tdesktop, macos, web, weba, webk) не должна быть unknown
+  if (webApp?.platform && webApp.platform !== 'unknown') {
+    return true;
   }
 
   // 2. Нативные мосты Telegram WebView (Android, Desktop, iOS)
   try {
     if (
       typeof window.TelegramWebviewProxy !== 'undefined' ||
-      typeof window.TelegramGameProxy !== 'undefined' ||
-      (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('Telegram'))
+      typeof window.TelegramGameProxy !== 'undefined'
     ) {
       return true;
     }
@@ -202,37 +190,19 @@ export function isInsideTelegram() {
     // ignore
   }
 
-  // 3. Если WebApp запущен во фрейме Telegram Web
+  // 3. Проверяем наличие параметров Telegram в hash URL (Telegram всегда передает их при открытии)
   try {
-    if (window.parent && window.parent !== window) {
+    const hash = window.location.hash || '';
+    if (
+      hash.includes('tgWebAppData=') ||
+      hash.includes('tgWebAppPlatform=') ||
+      hash.includes('tgWebAppThemeParams=')
+    ) {
       return true;
     }
   } catch (e) {
     // ignore
   }
 
-  // 4. Telegram WebApp SDK объект
-  const webApp = window.Telegram?.WebApp;
-  if (!webApp) return false;
-
-  // В реальном клиенте Telegram передается непустая строка initData
-  if (typeof webApp.initData === 'string' && webApp.initData.trim().length > 0) {
-    return true;
-  }
-
-  // initDataUnsafe содержит данные пользователя, чата или запроса
-  if (
-    webApp.initDataUnsafe &&
-    (webApp.initDataUnsafe.user || webApp.initDataUnsafe.query_id || webApp.initDataUnsafe.start_param)
-  ) {
-    return true;
-  }
-
-  // Платформа Telegram (ios, android, tdesktop, macos, web, weba) не равна 'unknown'
-  if (webApp.platform && webApp.platform !== 'unknown') {
-    return true;
-  }
-
   return false;
 }
-

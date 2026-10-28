@@ -80,14 +80,7 @@ export default function TelegramOnlyGuard() {
             </ol>
           </div>
 
-          <div className="pt-2 text-center">
-            <a 
-              href="?preview=1" 
-              className="text-[11px] text-zinc-500 hover:text-zinc-300 underline font-mono transition-colors"
-            >
-              Продолжить в браузере (демо-режим)
-            </a>
-          </div>
+          
         </div>
 
       </main>
