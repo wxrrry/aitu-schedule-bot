@@ -157,52 +157,32 @@ export const cloudStorage = {
 export function isInsideTelegram() {
   if (typeof window === 'undefined') return true;
 
-  // 1. Проверяем Telegram WebApp SDK объект
   const webApp = window.Telegram?.WebApp;
 
-  // В реальном клиенте Telegram всегда есть непустая строка initData
+  // 1. В реальном клиенте Telegram всегда есть непустая строка initData
   if (webApp && typeof webApp.initData === 'string' && webApp.initData.trim().length > 0) {
     return true;
   }
 
-  // initDataUnsafe содержит данные пользователя, чата или запроса
+  // 2. initDataUnsafe содержит данные пользователя, чата или запроса
   if (
     webApp?.initDataUnsafe &&
-    (webApp.initDataUnsafe.user || webApp.initDataUnsafe.query_id || webApp.initDataUnsafe.start_param)
+    Boolean(webApp.initDataUnsafe.user || webApp.initDataUnsafe.query_id || webApp.initDataUnsafe.start_param)
   ) {
     return true;
   }
 
-  // Платформа Telegram (ios, android, tdesktop, macos, web, weba, webk) не должна быть unknown
-  if (webApp?.platform && webApp.platform !== 'unknown') {
-    return true;
-  }
-
-  // 2. Нативные мосты Telegram WebView (Android, Desktop, iOS)
-  try {
-    if (
-      typeof window.TelegramWebviewProxy !== 'undefined' ||
-      typeof window.TelegramGameProxy !== 'undefined'
-    ) {
-      return true;
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // 3. Проверяем наличие параметров Telegram в hash URL (Telegram всегда передает их при открытии)
+  // 3. Telegram всегда передает данные сессии в hash URL (#tgWebAppData=...)
   try {
     const hash = window.location.hash || '';
-    if (
-      hash.includes('tgWebAppData=') ||
-      hash.includes('tgWebAppPlatform=') ||
-      hash.includes('tgWebAppThemeParams=')
-    ) {
+    if (hash.includes('tgWebAppData=')) {
       return true;
     }
   } catch (e) {
     // ignore
   }
 
+  // Если открыто в обычном браузере вне Telegram
   return false;
 }
+
