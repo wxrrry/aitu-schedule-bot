@@ -6085,10 +6085,13 @@
           "teacher": "Щербакова М.А."
         },
         "4": {
-          "split": false,
-          "subject": "Психология общения",
-          "room": "609",
-          "teacher": "Ерошкина М.Ю."
+          "split": true,
+          "chislitel": null,
+          "znamenatel": {
+            "subject": "Психология общения",
+            "room": "609",
+            "teacher": "Ерошкина М.Ю."
+          }
         }
       },
       "4": {
