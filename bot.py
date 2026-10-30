@@ -271,12 +271,13 @@ except Exception as e:
 scheduler = AsyncIOScheduler(timezone=BOT_TZ)
 bot: Bot | None = None
 
-# Регистрация Middlewares (Anti-Flood throttling и Database Session / User Tracking)
-from middlewares import ThrottlingMiddleware, DbSessionMiddleware
+# Регистрация Middlewares (Anti-Flood throttling, Database Session / User Tracking, Auto-Delete Command Messages)
+from middlewares import ThrottlingMiddleware, DbSessionMiddleware, CleanCommandsMiddleware
 dp.message.middleware(ThrottlingMiddleware(rate_limit=0.35))
 dp.callback_query.middleware(ThrottlingMiddleware(rate_limit=0.35))
 dp.message.middleware(DbSessionMiddleware())
 dp.callback_query.middleware(DbSessionMiddleware())
+dp.message.middleware(CleanCommandsMiddleware())
 
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 WELCOME_IMG = os.path.join(ASSETS_DIR, "welcome.jpg")
@@ -892,7 +893,7 @@ async def handle_webapp_command(message: types.Message):
 
 
 @dp.message(Command("now"))
-@dp.message(F.text == "⚡️ Какая пара сейчас?")
+@dp.message(F.text.casefold().in_(["⚡️ какая пара сейчас?", "какая пара сейчас?", "какая пара сейчас", "пара сейчас", "сейчас"]))
 async def handle_now(message: types.Message):
     grp = await resolve_target_group(message.chat, message.from_user)
     text = await get_formatted_now_status(group_name=grp)
@@ -924,7 +925,7 @@ async def handle_refresh_now_callback(call: types.CallbackQuery):
 
 
 @dp.message(Command("today"))
-@dp.message(F.text == "📅 Сегодня")
+@dp.message(F.text.casefold().in_(["📅 сегодня", "сегодня", "расписание на сегодня", "расписание сегодня"]))
 async def handle_today(message: types.Message):
     now = datetime.now(BOT_TZ)
     current_time_str = now.strftime("%H:%M")
@@ -935,7 +936,7 @@ async def handle_today(message: types.Message):
 
 
 @dp.message(Command("tomorrow"))
-@dp.message(F.text == "🔜 Завтра")
+@dp.message(F.text.casefold().in_(["🔜 завтра", "завтра", "расписание на завтра", "расписание завтра"]))
 async def handle_tomorrow(message: types.Message):
     tomorrow = datetime.now(BOT_TZ).date() + timedelta(days=1)
     grp = await resolve_target_group(message.chat, message.from_user)
@@ -1173,7 +1174,7 @@ async def handle_support_reply_send(message: types.Message, state: FSMContext):
 
 
 @dp.message(Command("week"))
-@dp.message(F.text == "🗓 Текущая неделя")
+@dp.message(F.text.casefold().in_(["🗓 текущая неделя", "текущая неделя", "неделя", "расписание на неделю"]))
 async def handle_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     monday = today - timedelta(days=today.weekday())
@@ -1183,7 +1184,7 @@ async def handle_week(message: types.Message):
 
 
 @dp.message(Command("next_week"))
-@dp.message(F.text == "⏭ След. неделя")
+@dp.message(F.text.casefold().in_(["⏭ след. неделя", "след. неделя", "след неделя", "следующая неделя"]))
 async def handle_next_week(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     next_monday = today - timedelta(days=today.weekday()) + timedelta(days=7)
@@ -1193,7 +1194,7 @@ async def handle_next_week(message: types.Message):
 
 
 @dp.message(Command("days"))
-@dp.message(F.text == "📆 Выбрать день")
+@dp.message(F.text.casefold().in_(["📆 выбрать день", "выбрать день", "дни недели", "дни"]))
 async def handle_choose_day(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     curr_parity, parity_name = get_week_parity(today)
@@ -1263,7 +1264,7 @@ async def handle_back_to_days_callback(call: types.CallbackQuery):
 
 
 @dp.message(Command("parity"))
-@dp.message(F.text == "🏷 Чётность недели")
+@dp.message(F.text.casefold().in_(["🏷 чётность недели", "чётность недели", "четность недели", "чётность", "четность"]))
 async def handle_parity(message: types.Message):
     today = datetime.now(BOT_TZ).date()
     code, name = get_week_parity(today)
@@ -1275,7 +1276,7 @@ async def handle_parity(message: types.Message):
 
 
 @dp.message(Command("bells"))
-@dp.message(F.text == "🔔 Звонки")
+@dp.message(F.text.casefold().in_(["🔔 звонки", "звонки", "расписание звонков"]))
 async def handle_bells(message: types.Message):
     target_group = await resolve_target_group(message.chat, message.from_user)
     course = get_course_from_group_name(target_group)
