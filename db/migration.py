@@ -113,7 +113,7 @@ async def run_data_migrations():
 
         # 2.1 Гарантированное удаление ошибочной первой пары в числитель пятницы для 9ПО-43к (если присутствовала в БД)
         try:
-            from sqlalchemy import delete, and_, or_
+            from sqlalchemy import delete, update, and_, or_
             del_stmt = delete(Lesson).where(
                 and_(
                     or_(Lesson.group_name == "9ПО-43к", Lesson.group_name == "9ПО-43К"),
@@ -128,6 +128,60 @@ async def run_data_migrations():
                 logger.info(f"Удалена ошибочная 1-я пара в числитель пятницы для 9ПО-43к (удалено записей: {res_del.rowcount}).")
         except Exception as e_clean:
             logger.warning(f"Ошибка при проверке/очистке 1-й пары пятницы для 9ПО-43к: {e_clean}")
+
+        # 2.2 Гарантированная синхронизация пар понедельника и вторника для 9ПО-43к
+        try:
+            from sqlalchemy import delete, update, and_, or_
+            # Удаление тестовых записей
+            await session.execute(
+                delete(Lesson).where(
+                    or_(
+                        Lesson.group_name == "9ПО-43К",
+                        Lesson.subject.like("%Архитектура ПО%")
+                    )
+                )
+            )
+            # Вторник 4-я пара: только по числителю
+            await session.execute(
+                update(Lesson)
+                .where(
+                    and_(
+                        Lesson.group_name == "9ПО-43к",
+                        Lesson.weekday == 1,
+                        Lesson.pair_num == 4
+                    )
+                )
+                .values(parity="chislitel")
+            )
+            # Понедельник 1-я пара: числитель каб. 305, знаменатель каб. С/з
+            await session.execute(
+                update(Lesson)
+                .where(
+                    and_(
+                        Lesson.group_name == "9ПО-43к",
+                        Lesson.weekday == 0,
+                        Lesson.pair_num == 1,
+                        Lesson.parity == "chislitel"
+                    )
+                )
+                .values(room="305")
+            )
+            await session.execute(
+                update(Lesson)
+                .where(
+                    and_(
+                        Lesson.group_name == "9ПО-43к",
+                        Lesson.weekday == 0,
+                        Lesson.pair_num == 1,
+                        Lesson.parity == "znamenatel"
+                    )
+                )
+                .values(room="С/з")
+            )
+            await session.commit()
+            logger.info("Расписание 9ПО-43к (понедельник 1 пара и вторник 4 пара) успешно синхронизировано.")
+        except Exception as e_sync:
+            logger.warning(f"Ошибка при синхронизации расписания 9ПО-43к: {e_sync}")
 
         # 3. Миграция замен из zameny.json
         zameny_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "zameny.json")
