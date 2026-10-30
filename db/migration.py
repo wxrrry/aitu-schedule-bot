@@ -126,6 +126,28 @@ async def run_data_migrations():
             if res_del.rowcount > 0:
                 await session.commit()
                 logger.info(f"Удалена ошибочная 1-я пара в числитель пятницы для 9ПО-43к (удалено записей: {res_del.rowcount}).")
+
+            # Проверяем наличие пары 1 в знаменатель пятницы (Экономика отрасли)
+            res_z = await session.execute(
+                select(Lesson).where(
+                    or_(Lesson.group_name == "9ПО-43к", Lesson.group_name == "9ПО-43К"),
+                    Lesson.weekday == 4,
+                    Lesson.pair_num == 1,
+                    Lesson.parity == "znamenatel"
+                )
+            )
+            if not res_z.scalar_one_or_none():
+                session.add(Lesson(
+                    group_name="9ПО-43к",
+                    weekday=4,
+                    pair_num=1,
+                    parity="znamenatel",
+                    subject="Экономика отрасли",
+                    room="711",
+                    teacher="Петрова Елена Александровна"
+                ))
+                await session.commit()
+                logger.info("Добавлена пара 1 в знаменатель пятницы для 9ПО-43к (Экономика отрасли, каб. 711).")
         except Exception as e_clean:
             logger.warning(f"Ошибка при проверке/очистке 1-й пары пятницы для 9ПО-43к: {e_clean}")
 
