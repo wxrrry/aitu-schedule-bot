@@ -6099,10 +6099,13 @@
       },
       "4": {
         "1": {
-          "split": false,
-          "subject": "Экономика отрасли",
-          "room": "711",
-          "teacher": "Петрова Е.А."
+          "split": true,
+          "chislitel": null,
+          "znamenatel": {
+            "subject": "Экономика отрасли",
+            "room": "711",
+            "teacher": "Петрова Е.А."
+          }
         },
         "2": {
           "split": false,

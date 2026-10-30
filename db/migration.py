@@ -111,6 +111,24 @@ async def run_data_migrations():
             await session.commit()
             logger.info(f"Миграция расписания завершена: {total_migrated_groups} новых групп, {total_migrated_lessons} занятий.")
 
+        # 2.1 Гарантированное удаление ошибочной первой пары в числитель пятницы для 9ПО-43к (если присутствовала в БД)
+        try:
+            from sqlalchemy import delete, and_, or_
+            del_stmt = delete(Lesson).where(
+                and_(
+                    or_(Lesson.group_name == "9ПО-43к", Lesson.group_name == "9ПО-43К"),
+                    Lesson.weekday == 4,
+                    Lesson.pair_num == 1,
+                    Lesson.parity.in_(["both", "chislitel"])
+                )
+            )
+            res_del = await session.execute(del_stmt)
+            if res_del.rowcount > 0:
+                await session.commit()
+                logger.info(f"Удалена ошибочная 1-я пара в числитель пятницы для 9ПО-43к (удалено записей: {res_del.rowcount}).")
+        except Exception as e_clean:
+            logger.warning(f"Ошибка при проверке/очистке 1-й пары пятницы для 9ПО-43к: {e_clean}")
+
         # 3. Миграция замен из zameny.json
         zameny_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "zameny.json")
         if os.path.exists(zameny_file):
