@@ -96,6 +96,32 @@ def get_users_with_setting(key: str) -> set[int]:
     return result
 
 
+def load_all_settings() -> dict:
+    """Совместимость: возвращает словарь настроек пользователей из SQLite."""
+    db_path = _get_db_path()
+    res = {}
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path, timeout=5)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT user_id, remind_10min, morning_alert, five_min_breaks FROM users")
+            rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                res[str(r["user_id"])] = {
+                    "remind_10min": bool(r["remind_10min"]),
+                    "morning_alert": bool(r["morning_alert"]),
+                    "five_min_breaks": bool(r["five_min_breaks"])
+                }
+        except Exception:
+            pass
+    return res
+
+def save_all_settings(data: dict) -> bool:
+    return True
+
+
 def format_user_settings_text(
     user_id: int,
     user_name: str = "",
