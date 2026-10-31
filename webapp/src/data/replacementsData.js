@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/api";
 // Хранилище и утилиты для системы замен пар
 // Совместимо со структурой замен Telegram-бота AITU и REST API /api/replacements
 
@@ -25,7 +26,7 @@ export const getStoredReplacements = () => {
 export const fetchReplacementsFromApi = async (groupName = '') => {
   try {
     const url = `/api/replacements?group=${encodeURIComponent(groupName || '')}`;
-    const res = await fetch(url);
+    const res = await apiFetch(url);
     if (!res.ok) {
       return getStoredReplacements();
     }
@@ -94,7 +95,7 @@ export const saveCustomReplacement = (dateKey, pairNum, replacementOrType, maybe
 
   // Синхронизация с сервером
   const currentGroup = repObj.group || localStorage.getItem('aitu_selected_group') || '';
-  fetch('/api/replacements', {
+  apiFetch('/api/replacements', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -143,7 +144,7 @@ export const removeCustomReplacement = (dateKey, pairNum, replacementId = null) 
   }
 
   if (repId) {
-    fetch(`/api/replacements/${repId}`, {
+    apiFetch(`/api/replacements/${repId}`, {
       method: 'DELETE'
     }).catch((err) => {
       console.warn('Failed to delete replacement on server', err);

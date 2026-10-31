@@ -5,6 +5,7 @@ import ScheduleTab from './components/ScheduleTab';
 import ErrorBoundary from './components/ErrorBoundary';
 import TelegramOnlyGuard from './components/TelegramOnlyGuard';
 import { getInitialUserProfile, saveUserProfile, syncProfileFromCloud, isSuperAdmin } from './utils/userProfile';
+import { apiFetch } from "./utils/api";
 import { isInsideTelegram } from './utils/telegram';
 
 // Динамический импорт (Code Splitting) для ускорения первичной загрузки в Telegram WebView
@@ -71,7 +72,7 @@ export default function App() {
     // Синхронизация роли и настроек напрямую из базы данных SQLite бэкенда
     const uid = profile?.id;
     if (uid) {
-      fetch(`/api/profile?user_id=${uid}`)
+      apiFetch(`/api/profile?user_id=${uid}`)
         .then(res => res.ok ? res.json() : null)
         .then(serverData => {
           if (serverData && serverData.role) {

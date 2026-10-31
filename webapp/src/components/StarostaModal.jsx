@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/api";
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
@@ -127,7 +128,7 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
     if (!currentGroup) return;
     try {
       setDeadlinesLoading(true);
-      const res = await fetch(`/api/tasks?group=${encodeURIComponent(currentGroup)}`);
+      const res = await apiFetch(`/api/tasks?group=${encodeURIComponent(currentGroup)}`);
       if (res.ok) {
         const data = await res.json();
         const grp = (data.tasks || []).filter(t => t.is_group);
@@ -159,7 +160,7 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
         text: deadlineSubject.trim() ? `[${deadlineSubject.trim()}] ${full}` : full,
         is_done: false
       };
-      const res = await fetch('/api/tasks', {
+      const res = await apiFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -177,7 +178,7 @@ export default function StarostaModal({ isOpen, onClose, profile }) {
 
   const handleDeleteGroupDeadline = async (id) => {
     try {
-      const res = await fetch(`/api/tasks/${id}?user_id=0`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/tasks/${id}?user_id=0`, { method: 'DELETE' });
       if (res.ok) {
         triggerHaptic('light');
         setGroupDeadlines(prev => prev.filter(t => t.id !== id));

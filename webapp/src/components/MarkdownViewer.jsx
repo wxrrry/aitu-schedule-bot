@@ -21,7 +21,7 @@ import {
   GitBranch
 } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
-import MermaidBlock from './MermaidBlock';
+const MermaidBlock = React.lazy(() => import('./MermaidBlock'));
 
 // Map callout types to their styling, icon, and title
 const CALLOUT_CONFIG = {
@@ -390,7 +390,9 @@ export default function MarkdownViewer({ content, searchQuery = '' }) {
       const rawCode = codeLines.join('\n');
       if (lang?.toLowerCase() === 'mermaid') {
         elements.push(
-          <MermaidBlock key={`mermaid-${i}`} code={rawCode} />
+          <React.Suspense fallback={<div className="my-3 p-4 rounded-xl border border-white/10 bg-zinc-900/60 text-xs text-zinc-400 animate-pulse text-center">Загрузка диаграммы Mermaid...</div>}>
+            <MermaidBlock key={`mermaid-${i}`} code={rawCode} />
+          </React.Suspense>
         );
       } else {
         elements.push(

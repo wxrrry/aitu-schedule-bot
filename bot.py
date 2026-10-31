@@ -4086,7 +4086,8 @@ async def main():
         http_runner = await start_http_server()
         
         # Запуск фонового анти-сна для Render
-        keep_alive_task = asyncio.create_task(render_keep_alive())
+        if os.getenv("RENDER") or os.getenv("KOYEB"):
+            keep_alive_task = asyncio.create_task(render_keep_alive())
         
         # Расписание 1: ежедневно в 00:00:00 (подробное расписание на день)
         scheduler.add_job(
@@ -4268,6 +4269,13 @@ async def main():
             await http_runner.cleanup()
         if bot and bot.session:
             await bot.session.close()
+
+        try:
+            from db.database import engine
+            await engine.dispose()
+            logger.info("Пул подключений SQLAlchemy к БД успешно освобожден.")
+        except Exception as ee:
+            logger.debug(f"Ошибка закрытия engine: {ee}")
 
         # Очистка PID и статуса
         try:

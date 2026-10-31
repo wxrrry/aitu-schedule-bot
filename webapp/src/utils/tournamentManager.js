@@ -1,3 +1,4 @@
+import { apiFetch } from "./api";
 // Менеджер турниров колледжа: регистрация команд, организация, генерация сеток и скоринг с полной поддержкой базы данных
 import { OFFICIAL_BRACKET, TOURNAMENT_MATCHES, TOURNAMENTS_LIST } from '../data/cs2TournamentData';
 import { sendDataToBot } from './telegram';
@@ -54,7 +55,7 @@ const DEFAULT_SYSTEM_TOURNAMENTS = [
 // Синхронизация турниров и команд напрямую из базы данных
 export async function syncTournamentsFromApi() {
   try {
-    const res = await fetch(`${API_BASE}/api/tournaments`);
+    const res = await apiFetch(`${API_BASE}/api/tournaments`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data && Array.isArray(data.tournaments)) {
@@ -275,7 +276,7 @@ export function registerTeamForTournament(tournamentId, form) {
   }
 
   // Сохраняем команду в базу данных на VPS
-  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+  apiFetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -326,7 +327,7 @@ export function updateTeamRegistration(tournamentId, teamId, patch) {
   }
 
   // Обновляем в БД на VPS
-  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+  apiFetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -401,7 +402,7 @@ export function createNewTournament(tournamentData) {
   saveAllTournaments(updated);
 
   // Сохраняем в базу данных PostgreSQL на VPS
-  fetch(`${API_BASE}/api/tournaments`, {
+  apiFetch(`${API_BASE}/api/tournaments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -694,7 +695,7 @@ export function updateTournament(tournamentId, patch) {
     saveAllTournaments(tournaments);
 
     // Сохраняем изменения в БД на VPS
-    fetch(`${API_BASE}/api/tournaments`, {
+    apiFetch(`${API_BASE}/api/tournaments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -725,7 +726,7 @@ export function deleteTournament(tournamentId) {
   }
 
   // Удаляем турнир из базы данных на VPS
-  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}`, {
+  apiFetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}`, {
     method: 'DELETE'
   }).catch(err => console.warn("Failed to delete tournament from DB:", err));
 
@@ -755,7 +756,7 @@ export function deleteTournamentRegistration(tournamentId, teamId) {
   }
 
   // Удаляем команду из базы данных на VPS
-  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams/${encodeURIComponent(teamId)}`, {
+  apiFetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams/${encodeURIComponent(teamId)}`, {
     method: 'DELETE'
   }).catch(err => console.warn("Failed to delete team from DB:", err));
 
@@ -813,7 +814,7 @@ export function saveTeamWithAvatar(tournamentId, teamData) {
   }
 
   // Сохраняем команду в базу данных PostgreSQL на VPS
-  fetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
+  apiFetch(`${API_BASE}/api/tournaments/${encodeURIComponent(tournamentId)}/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -867,7 +868,7 @@ export function importAllTournamentData(jsonString) {
       }
       // Также синхронизируем импортированные турниры в БД
       data.tournaments.forEach(t => {
-        fetch(`${API_BASE}/api/tournaments`, {
+        apiFetch(`${API_BASE}/api/tournaments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(t)

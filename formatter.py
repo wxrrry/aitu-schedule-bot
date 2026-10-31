@@ -48,7 +48,7 @@ def format_day_schedule(
     if custom_replacements is not None:
         replacements = custom_replacements
     else:
-        replacements = get_replacements_for_date(target_date)
+        replacements = get_replacements_for_date(target_date, group_name=target_group)
     
     rep_notice = ""
     if replacements:
@@ -232,7 +232,7 @@ def format_week_schedule(
         if custom_week_replacements is not None:
             day_replacements = custom_week_replacements.get(day_idx, {})
         else:
-            day_replacements = get_replacements_for_date(curr_date)
+            day_replacements = get_replacements_for_date(curr_date, group_name=target_group)
 
         all_nums = sorted(list(set(day_pairs.keys()) | set(day_replacements.keys())))
         if not all_nums:

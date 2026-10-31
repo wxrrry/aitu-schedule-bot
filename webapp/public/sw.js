@@ -1,5 +1,5 @@
 // AITU Network Service Worker (Офлайн-кэш для колледжа)
-const CACHE_NAME = 'aitu-hub-v2.2';
+const CACHE_NAME = 'aitu-hub-v3.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

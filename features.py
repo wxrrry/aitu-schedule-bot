@@ -402,11 +402,61 @@ async def get_formatted_now_status(group_name: str | None = None, now_dt: dateti
 # -------------------------------------------------------------
 # База данных преподавателей
 # -------------------------------------------------------------
-def get_teachers_data() -> dict[str, dict]:
+def get_teachers_data(group_name: str | None = None) -> dict[str, dict]:
     """
-    Собирает сводные данные по всем преподавателям из SCHEDULE.
+    Собирает сводные данные по всем преподавателям из базы данных SQLite колледжа (все группы).
     """
+    db_path = os.path.join(os.path.dirname(__file__), "schedule_bot.db")
     teachers: dict[str, dict] = {}
+    if os.path.exists(db_path):
+        try:
+            import sqlite3
+            conn = sqlite3.connect(db_path, timeout=5)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            if group_name:
+                cur.execute(
+                    "SELECT group_name, weekday, pair_num, parity, subject, room, teacher FROM lessons "
+                    "WHERE group_name = ? AND teacher IS NOT NULL AND teacher != '—' AND teacher != ''",
+                    (group_name,)
+                )
+            else:
+                cur.execute(
+                    "SELECT group_name, weekday, pair_num, parity, subject, room, teacher FROM lessons "
+                    "WHERE teacher IS NOT NULL AND teacher != '—' AND teacher != ''"
+                )
+            rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                t_name = str(r["teacher"]).strip()
+                if not t_name or t_name == "—":
+                    continue
+                if t_name not in teachers:
+                    teachers[t_name] = {
+                        "subjects": set(),
+                        "rooms": set(),
+                        "lessons": []
+                    }
+                subj = r["subject"] or "Не указан"
+                room = r["room"] or "—"
+                teachers[t_name]["subjects"].add(subj)
+                teachers[t_name]["rooms"].add(room)
+                w_idx = r["weekday"]
+                p_num = r["pair_num"]
+                teachers[t_name]["lessons"].append({
+                    "day": DAYS_RU[w_idx] if 0 <= w_idx < len(DAYS_RU) else f"День {w_idx}",
+                    "day_idx": w_idx,
+                    "pair_num": p_num,
+                    "time": BELL_SCHEDULE.get(p_num, {}).get("range", "—"),
+                    "parity": "Числитель 🔺" if r["parity"] == "chislitel" else ("Знаменатель 🔻" if r["parity"] == "znamenatel" else "Каждую неделю"),
+                    "room": room,
+                    "subject": subj,
+                    "group": r["group_name"]
+                })
+            if teachers:
+                return teachers
+        except Exception as e:
+            logger.debug(f"SQLite get_teachers_data error: {e}")
 
     for day_idx in range(5):
         day_name = DAYS_RU[day_idx]
@@ -514,11 +564,64 @@ def get_teacher_detail_text(teacher_idx: int) -> str:
 # -------------------------------------------------------------
 # Поиск по кабинетам
 # -------------------------------------------------------------
-def search_room_schedule(room_query: str) -> str:
-    """Ищет все пары, проходящие в указанном кабинете."""
+def search_room_schedule(room_query: str, target_group: str | None = None) -> str:
+    """Ищет все пары, проходящие в указанном кабинете по всем группам колледжа из SQLite."""
     clean_query = room_query.strip().lower()
     if not clean_query:
         return "Укажите номер кабинета, например: <code>/room 305</code>"
+
+    db_path = os.path.join(os.path.dirname(__file__), "schedule_bot.db")
+    found_db = []
+    if os.path.exists(db_path):
+        try:
+            import sqlite3
+            conn = sqlite3.connect(db_path, timeout=5)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT group_name, weekday, pair_num, parity, subject, room, teacher FROM lessons "
+                "WHERE lower(room) LIKE ? ORDER BY weekday, pair_num, group_name",
+                (f"%{clean_query}%",)
+            )
+            rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                p_num = r["pair_num"]
+                w_idx = r["weekday"]
+                found_db.append({
+                    "group": r["group_name"],
+                    "day": DAYS_RU[w_idx] if 0 <= w_idx < len(DAYS_RU) else f"День {w_idx}",
+                    "day_idx": w_idx,
+                    "pair_num": p_num,
+                    "time": BELL_SCHEDULE.get(p_num, {}).get("range", "—"),
+                    "parity": "🔺 Числитель" if r["parity"] == "chislitel" else ("🔻 Знаменатель" if r["parity"] == "znamenatel" else "Каждую неделю"),
+                    "room": r["room"],
+                    "subject": r["subject"],
+                    "teacher": r["teacher"]
+                })
+        except Exception as e:
+            logger.debug(f"SQLite room search error: {e}")
+
+    if found_db:
+        lines = [
+            f"📍 <b>Расписание в кабинете:</b> <code>{html.escape(room_query.upper())}</code>\n"
+            f"🏛 <b>Колледж AITU:</b> Найдено занятий: {len(found_db)}\n"
+            "──────────────────────\n"
+        ]
+        target_matches = [x for x in found_db if target_group and x["group"] == target_group]
+        items_to_show = target_matches if target_matches else found_db
+        for item in items_to_show[:25]:
+            lines.append(
+                f"<blockquote>"
+                f"📌 <b>{item['day']}</b> · {item['pair_num']} пара (<b>{item['time']}</b>)\n"
+                f"👥 Группа: <code>{item['group']}</code> · 📍 Каб: <code>{html.escape(item['room'] or '')}</code>\n"
+                f"📚 <b>{html.escape(item['subject'] or '')}</b>\n"
+                f"👨‍🏫 {html.escape(item['teacher'] or '—')} · <i>{item['parity']}</i>"
+                f"</blockquote>"
+            )
+        if len(items_to_show) > 25:
+            lines.append(f"\n<i>...и еще {len(items_to_show) - 25} занятий.</i>")
+        return "\n".join(lines)
 
     found = []
     for day_idx in range(5):

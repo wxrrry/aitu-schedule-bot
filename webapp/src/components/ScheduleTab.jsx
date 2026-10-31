@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/api";
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { 
   DEFAULT_GROUP,
@@ -224,7 +225,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
     if (userId || selectedGroup) {
       const uParam = userId ? `user_id=${userId}` : 'user_id=0';
       const gParam = selectedGroup ? `&group=${encodeURIComponent(selectedGroup)}` : '';
-      fetch(`/api/tasks?${uParam}${gParam}`)
+      apiFetch(`/api/tasks?${uParam}${gParam}`)
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data?.tasks && Array.isArray(data.tasks)) {
@@ -300,7 +301,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
     const userId = profile?.telegramId || profile?.id;
     if (userId) {
-      fetch('/api/tasks', {
+      apiFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -342,7 +343,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
     const userId = profile?.telegramId || profile?.id;
     if (userId && targetTask) {
-      fetch('/api/tasks', {
+      apiFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -368,7 +369,7 @@ export default function ScheduleTab({ profile, onUpdateProfile, onOpenProfile })
 
     const userId = profile?.telegramId || profile?.id;
     if (userId && /^\d+$/.test(taskId)) {
-      fetch(`/api/tasks/${taskId}?user_id=${userId}`, {
+      apiFetch(`/api/tasks/${taskId}?user_id=${userId}`, {
         method: 'DELETE'
       }).catch(e => console.warn('Offline task delete', e));
     }

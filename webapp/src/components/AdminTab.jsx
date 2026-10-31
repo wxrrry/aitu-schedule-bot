@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/api";
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
@@ -70,7 +71,7 @@ export default function AdminTab({ profile }) {
   const fetchSystemMetrics = async () => {
     setIsLoadingMetrics(true);
     try {
-      const res = await fetch('/api/admin/system');
+      const res = await apiFetch('/api/admin/system');
       if (res.ok) {
         const data = await res.json();
         setSystemMetrics(data);
@@ -98,7 +99,7 @@ export default function AdminTab({ profile }) {
     for (const ep of endpoints) {
       const start = performance.now();
       try {
-        const res = await fetch(ep.path);
+        const res = await apiFetch(ep.path);
         const latency = Math.round(performance.now() - start);
         results.push({
           name: ep.name,

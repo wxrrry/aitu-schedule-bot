@@ -64,6 +64,94 @@ async def cors_middleware(request: web.Request, handler):
     return response
 
 
+
+import hmac
+import hashlib
+import urllib.parse
+from config import BOT_TOKEN, ADMIN_IDS
+from permissions import is_superadmin
+from db.crud import get_user, canonical_group_name
+
+def verify_telegram_init_data(init_data_str: str) -> dict | None:
+    """
+    Проверяет криптографическую подпись HMAC-SHA256 строки Telegram WebApp initData.
+    """
+    if not init_data_str or not BOT_TOKEN:
+        return None
+    try:
+        parsed = dict(urllib.parse.parse_qsl(init_data_str, keep_blank_values=True))
+        received_hash = parsed.pop("hash", None)
+        if not received_hash:
+            return None
+        
+        data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
+        secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode("utf-8"), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), hashlib.sha256).hexdigest()
+        
+        if not hmac.compare_digest(received_hash, calculated_hash):
+            return None
+        
+        auth_date = int(parsed.get("auth_date", 0))
+        # Срок жизни сессии - до 7 дней для Telegram Mini App
+        if auth_date and (time.time() - auth_date > 86400 * 7):
+            logger.warning("Telegram initData expired")
+            return None
+        
+        user_raw = parsed.get("user")
+        if user_raw:
+            parsed["user_obj"] = json.loads(user_raw)
+        else:
+            parsed["user_obj"] = {}
+        return parsed
+    except Exception as e:
+        logger.warning(f"Error parsing Telegram initData: {e}")
+        return None
+
+async def get_authenticated_user(request: web.Request) -> dict | None:
+    """
+    Извлекает и верифицирует данные пользователя из Authorization заголовка или параметров запроса.
+    """
+    init_data = ""
+    auth_header = request.headers.get("Authorization", "").strip()
+    if auth_header.startswith("tma "):
+        init_data = auth_header[4:].strip()
+    elif auth_header.startswith("Bearer "):
+        init_data = auth_header[7:].strip()
+    elif "X-Telegram-Init-Data" in request.headers:
+        init_data = request.headers.get("X-Telegram-Init-Data", "").strip()
+    elif "initData" in request.query:
+        init_data = request.query.get("initData", "").strip()
+    
+    if not init_data:
+        return None
+    
+    verified_data = verify_telegram_init_data(init_data)
+    if not verified_data:
+        return None
+    
+    user_info = verified_data.get("user_obj", {})
+    user_id = user_info.get("id")
+    if not user_id:
+        return None
+    
+    user_db = await get_user(int(user_id))
+    is_super = is_superadmin(user_id)
+    is_adm = is_super or (user_db and user_db.role in ("admin", "superadmin"))
+    
+    current_role = "superadmin" if is_super else (user_db.role if user_db else "student")
+    user_group = user_db.group_name if user_db else None
+
+    return {
+        "user_id": int(user_id),
+        "username": user_info.get("username", "") or (user_db.username if user_db else ""),
+        "full_name": f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip() or (user_db.full_name if user_db else ""),
+        "role": current_role,
+        "group": user_group,
+        "is_admin": is_adm,
+        "is_superadmin": is_super
+    }
+
+
 # --- Handlers ---
 
 async def handle_health(request: web.Request):
@@ -156,6 +244,15 @@ async def handle_replacements_get(request: web.Request):
 
 
 async def handle_replacement_create(request: web.Request):
+    auth_user = await get_authenticated_user(request)
+    if not auth_user:
+        return web.json_response({"error": "Unauthorized: valid Telegram session required"}, status=401)
+    
+    is_adm = auth_user.get("is_admin", False)
+    role = auth_user.get("role", "student")
+    if not is_adm and role not in ("starosta", "zam_starosty"):
+        return web.json_response({"error": "Forbidden: only starosta or admin can manage replacements"}, status=403)
+
     try:
         data = await request.json()
     except Exception:
@@ -170,14 +267,19 @@ async def handle_replacement_create(request: web.Request):
     except Exception:
         d_obj = date.today()
 
+    group_name = data.get("group")
+    if not is_adm:
+        user_grp = auth_user.get("group")
+        if not user_grp or canonical_group_name(user_grp) != canonical_group_name(group_name):
+            return web.json_response({"error": f"Forbidden: you can only publish replacements for your group {user_grp}"}, status=403)
+
     pair_num = int(data.get("pair_num", 1))
     action_type = data.get("action_type", "replace")
     subject = data.get("subject", "")
     room = data.get("room", "—")
     teacher = data.get("teacher", "—")
     raw_text = data.get("raw_text", "")
-    group_name = data.get("group")
-    created_by = int(data.get("created_by", 0))
+    created_by = auth_user["user_id"]
 
     rep = await add_replacement_record(
         target_date=d_obj,
@@ -215,6 +317,15 @@ async def handle_replacement_create(request: web.Request):
 
 
 async def handle_replacement_delete(request: web.Request):
+    auth_user = await get_authenticated_user(request)
+    if not auth_user:
+        return web.json_response({"error": "Unauthorized: valid Telegram session required"}, status=401)
+    
+    is_adm = auth_user.get("is_admin", False)
+    role = auth_user.get("role", "student")
+    if not is_adm and role not in ("starosta", "zam_starosty"):
+        return web.json_response({"error": "Forbidden: only starosta or admin can delete replacements"}, status=403)
+
     rep_id = request.match_info.get("id", "").strip()
     if not rep_id.isdigit():
         return web.json_response({"error": "Valid integer ID required"}, status=400)
@@ -316,6 +427,9 @@ async def handle_tournaments_list(request: web.Request):
 
 
 async def handle_tournament_save(request: web.Request):
+    auth_user = await get_authenticated_user(request)
+    if not auth_user or (not auth_user.get("is_admin") and auth_user.get("role") != "organizer"):
+        return web.json_response({"error": "Forbidden: organizer or admin role required"}, status=403)
     try:
         data = await request.json()
     except Exception:
@@ -355,6 +469,9 @@ async def handle_tournament_get(request: web.Request):
 
 
 async def handle_tournament_delete(request: web.Request):
+    auth_user = await get_authenticated_user(request)
+    if not auth_user or (not auth_user.get("is_admin") and auth_user.get("role") != "organizer"):
+        return web.json_response({"error": "Forbidden: organizer or admin role required"}, status=403)
     t_id = request.match_info.get("id", "").strip()
     success = await delete_tournament(t_id)
     if success:
@@ -405,6 +522,10 @@ async def handle_profile_get(request: web.Request):
 
 
 async def handle_profile_save(request: web.Request):
+    auth_user = await get_authenticated_user(request)
+    if not auth_user:
+        return web.json_response({"error": "Unauthorized: valid Telegram session required"}, status=401)
+
     try:
         data = await request.json()
     except Exception:
@@ -413,6 +534,14 @@ async def handle_profile_save(request: web.Request):
     user_id = data.get("user_id")
     if not user_id:
         return web.json_response({"error": "user_id is required"}, status=400)
+
+    try:
+        target_uid = int(user_id)
+    except Exception:
+        return web.json_response({"error": "invalid user_id"}, status=400)
+
+    if not auth_user.get("is_admin") and target_uid != auth_user["user_id"]:
+        return web.json_response({"error": "Forbidden: cannot modify other user's profile"}, status=403)
 
     user, _ = await get_or_create_user(
         int(user_id),
@@ -437,6 +566,10 @@ async def handle_admin_system(request: web.Request):
     Эндпоинт мониторинга сервера и служб контроллера для админ-панели Mini App.
     Возвращает загрузку CPU, RAM, диска, статус служб и доступность API.
     """
+    auth_user = await get_authenticated_user(request)
+    if not auth_user or not auth_user.get("is_admin"):
+        return web.json_response({"error": "Forbidden: admin access required"}, status=403)
+
     now_ts = time.time()
     
     # 1. Метрики системы
@@ -485,7 +618,7 @@ async def handle_admin_system(request: web.Request):
             return "active"
 
     bot_status = await check_service("aitu-bot.service")
-    caddy_status = await check_service("caddy.service")
+    nginx_status = await check_service("nginx.service")
     controller_status = await check_service("aitu-controller.service")
 
     # 3. База данных
@@ -512,7 +645,7 @@ async def handle_admin_system(request: web.Request):
             "source": "CPU",
             "message": f"Пиковая загрузка процессора: {cpu_usage}%"
         })
-    for srv_name, srv_st in [("Telegram Bot", bot_status), ("Caddy Proxy", caddy_status), ("Supervisor Controller", controller_status)]:
+    for srv_name, srv_st in [("Telegram Bot", bot_status), ("Nginx Proxy", nginx_status), ("Supervisor Controller", controller_status)]:
         if srv_st not in ("active", "running"):
             alerts.append({
                 "level": "critical",
@@ -539,7 +672,7 @@ async def handle_admin_system(request: web.Request):
         },
         "services": [
             { "id": "bot", "name": "AITU Schedule Bot", "unit": "aitu-bot.service", "status": bot_status, "role": "Основной бот расписания" },
-            { "id": "caddy", "name": "Caddy Web Server", "unit": "caddy.service", "status": caddy_status, "role": "HTTPS Reverse Proxy / Static" },
+            { "id": "nginx", "name": "Nginx Web Server", "unit": "nginx.service", "status": nginx_status, "role": "HTTPS Reverse Proxy / Static" },
             { "id": "controller", "name": "Supervisor Controller", "unit": "aitu-controller.service", "status": controller_status, "role": "Сторожевой таймер и аудитор" },
             { "id": "db", "name": "PostgreSQL Database", "unit": "aitu-postgres", "status": db_status, "role": "Реляционное хранилище данных" }
         ],

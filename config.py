@@ -25,8 +25,7 @@ except Exception:
 ANCHOR_PARITY = os.getenv("ANCHOR_PARITY", "chislitel").strip().lower()
 
 # Администраторы бота: список ID через запятую (задаются в .env: ADMIN_IDS=12345678,87654321)
-DEFAULT_SUPERADMIN_IDS: set[int] = {1019252177, 792569339}
-ADMIN_IDS: set[int] = set(DEFAULT_SUPERADMIN_IDS)
+ADMIN_IDS: set[int] = set()
 
 raw_admin_ids = os.getenv("ADMIN_IDS", "").strip()
 if raw_admin_ids:

@@ -45,76 +45,21 @@ export const KNOWN_ADMIN_IDS = SUPERADMIN_IDS;
 
 export function isSuperAdmin(userId, role) {
   if (role === 'superadmin') return true;
-  if (typeof window !== 'undefined') {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const urlUid = params.get('user_id') || params.get('uid');
-      if (urlUid && SUPERADMIN_IDS.length > 0 && SUPERADMIN_IDS.includes(Number(urlUid))) {
-        return true;
-      }
-      if (params.get('admin') === 'controller' || params.get('admin') === '1' || params.get('role') === 'superadmin') {
-        return true;
-      }
-      const startParam = tg?.initDataUnsafe?.start_param || '';
-      if (startParam.includes('role_superadmin') || startParam.includes('admin_controller')) {
-        return true;
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
   if (!userId || SUPERADMIN_IDS.length === 0) return false;
   return SUPERADMIN_IDS.includes(Number(userId));
 }
 
-// Извлечение привязанной роли из параметров Telegram (например ?role=starosta или startapp=..._role_starosta)
+// Роли студентов и старост валидируются исключительно сервером по Telegram initData
 export function getVerifiedRoleFromParams(userId) {
   if (isSuperAdmin(userId)) {
     return 'superadmin';
   }
-
-  if (typeof window === 'undefined') return null;
-
-  // 1. Проверяем start_param
-  const startParam = tg?.initDataUnsafe?.start_param || '';
-  if (startParam.includes('role_')) {
-    const parts = startParam.split('role_');
-    if (parts[1]) {
-      const r = parts[1].split('_')[0].toLowerCase();
-      if (['student', 'starosta', 'zam_starosty', 'organizer', 'admin', 'superadmin'].includes(r)) {
-        return r;
-      }
-    }
-  }
-
-  // 2. Проверяем URL search params
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get('role');
-    if (r && ['student', 'starosta', 'zam_starosty', 'organizer', 'admin', 'superadmin'].includes(r.toLowerCase())) {
-      return r.toLowerCase();
-    }
-  } catch (e) {
-    // Ignore query parsing errors
-  }
-
   return null;
 }
 
 export function isOrganizer(userId, role) {
   if (role === 'organizer' || role === 'admin' || role === 'superadmin') return true;
   if (isSuperAdmin(userId, role)) return true;
-  if (typeof window !== 'undefined') {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('role') === 'organizer' || params.get('organizer') === '1') return true;
-      const startParam = tg?.initDataUnsafe?.start_param || '';
-      if (startParam.includes('role_organizer') || startParam.includes('organizer')) return true;
-      if (localStorage.getItem('aitu_organizer_mode') === 'true') return true;
-    } catch (e) {
-      // ignore
-    }
-  }
   return false;
 }
 

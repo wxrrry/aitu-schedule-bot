@@ -1,12 +1,10 @@
 import os
 import json
 import logging
+import sqlite3
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 logger = logging.getLogger(__name__)
-
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "user_settings.json")
-SUBS_FILE = os.path.join(os.path.dirname(__file__), "subscribers.json")
 
 # Настройки по умолчанию для каждого пользователя
 DEFAULT_SETTINGS = {
@@ -15,102 +13,86 @@ DEFAULT_SETTINGS = {
     "five_min_breaks": False,  # Оповещения о пятиминутках внутри пары в ЛС
 }
 
+def _get_db_path() -> str:
+    from db.database import DB_PATH
+    return DB_PATH
 
-def load_all_settings() -> dict[str, dict]:
-    """Загружает словарь настроек всех пользователей."""
-    if not os.path.exists(SETTINGS_FILE):
-        return {}
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict):
-                return data
-            return {}
-    except Exception as e:
-        logger.error(f"Ошибка чтения {SETTINGS_FILE}: {e}")
-        return {}
-
-
-def save_all_settings(data: dict[str, dict]) -> bool:
-    """Сохраняет словарь настроек всех пользователей."""
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception as e:
-        logger.error(f"Ошибка записи {SETTINGS_FILE}: {e}")
-        return False
-
-
-def get_user_settings(user_id: int) -> dict:
-    """Получает настройки конкретного пользователя с fallback на дефолты."""
-    all_data = load_all_settings()
-    uid = str(user_id)
-    user_data = all_data.get(uid, {})
+def get_user_settings(user_id: int, user_obj=None) -> dict:
+    """Получает настройки конкретного пользователя из базы данных SQLite с fallback на дефолты."""
+    if user_obj is not None:
+        return {
+            "remind_10min": getattr(user_obj, "remind_10min", True),
+            "morning_alert": getattr(user_obj, "morning_alert", False),
+            "five_min_breaks": getattr(user_obj, "five_min_breaks", False)
+        }
     
-    # Синхронизация со старым subscribers.json
-    if "remind_10min" not in user_data:
+    db_path = _get_db_path()
+    if os.path.exists(db_path):
         try:
-            if os.path.exists(SUBS_FILE):
-                with open(SUBS_FILE, "r", encoding="utf-8") as sf:
-                    subs_list = json.load(sf).get("users", [])
-                    user_data["remind_10min"] = user_id in subs_list
-        except Exception:
-            pass
+            conn = sqlite3.connect(db_path, timeout=5)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT remind_10min, morning_alert, five_min_breaks FROM users WHERE user_id = ?", (user_id,))
+            row = cur.fetchone()
+            conn.close()
+            if row:
+                return {
+                    "remind_10min": bool(row["remind_10min"]),
+                    "morning_alert": bool(row["morning_alert"]),
+                    "five_min_breaks": bool(row["five_min_breaks"])
+                }
+        except Exception as e:
+            logger.debug(f"SQLite read user_settings error: {e}")
 
-    merged = dict(DEFAULT_SETTINGS)
-    merged.update(user_data)
-    return merged
-
+    return dict(DEFAULT_SETTINGS)
 
 def set_user_setting(user_id: int, key: str, value: bool) -> bool:
-    """Устанавливает конкретную настройку для пользователя."""
-    all_data = load_all_settings()
-    uid = str(user_id)
-    if uid not in all_data:
-        all_data[uid] = dict(DEFAULT_SETTINGS)
-    all_data[uid][key] = bool(value)
-    success = save_all_settings(all_data)
+    """Устанавливает конкретную настройку для пользователя в базе данных SQLite."""
+    if key not in DEFAULT_SETTINGS:
+        return False
 
-    # Синхронизация с subscribers.json для обратной совместимости
-    if key == "remind_10min":
+    db_path = _get_db_path()
+    if os.path.exists(db_path):
         try:
-            subs = set()
-            if os.path.exists(SUBS_FILE):
-                with open(SUBS_FILE, "r", encoding="utf-8") as sf:
-                    subs = set(json.load(sf).get("users", []))
-            if value:
-                subs.add(user_id)
-            else:
-                subs.discard(user_id)
-            with open(SUBS_FILE, "w", encoding="utf-8") as sf:
-                json.dump({"users": sorted(list(subs))}, sf, indent=2)
+            conn = sqlite3.connect(db_path, timeout=5)
+            cur = conn.cursor()
+            val_int = 1 if value else 0
+            cur.execute(f"UPDATE users SET {key} = ?, updated_at = datetime('now') WHERE user_id = ?", (val_int, user_id))
+            if cur.rowcount == 0:
+                cur.execute(
+                    f"INSERT INTO users (user_id, {key}, created_at, updated_at) VALUES (?, ?, datetime('now'), datetime('now'))",
+                    (user_id, val_int)
+                )
+            conn.commit()
+            conn.close()
+            return True
         except Exception as e:
-            logger.error(f"Ошибка синхронизации subscribers.json: {e}")
-
-    return success
-
+            logger.error(f"SQLite write user_setting error: {e}")
+    return False
 
 def toggle_user_setting(user_id: int, key: str) -> bool:
-    """Инвертирует булеву настройку пользователя и возвращает новое значение."""
+    """Инвертирует булеву настройку пользователя и сохраняет в SQLite."""
     settings = get_user_settings(user_id)
     curr_val = settings.get(key, DEFAULT_SETTINGS.get(key, False))
     new_val = not curr_val
     set_user_setting(user_id, key, new_val)
     return new_val
 
-
 def get_users_with_setting(key: str) -> set[int]:
     """Возвращает множество user_id, у которых включена указанная настройка."""
-    all_data = load_all_settings()
+    db_path = _get_db_path()
     result = set()
-    for uid_str, u_settings in all_data.items():
+    if os.path.exists(db_path):
         try:
-            uid = int(uid_str)
-            if u_settings.get(key, DEFAULT_SETTINGS.get(key, False)):
-                result.add(uid)
-        except ValueError:
-            continue
+            conn = sqlite3.connect(db_path, timeout=5)
+            cur = conn.cursor()
+            cur.execute(f"SELECT user_id FROM users WHERE {key} = 1")
+            rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                result.add(r[0])
+        except Exception as e:
+            logger.debug(f"SQLite get_users_with_setting error: {e}")
     return result
 
 

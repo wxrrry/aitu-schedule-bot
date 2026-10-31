@@ -498,6 +498,38 @@ async def find_teacher_lessons(teacher_query: str, weekday: int | None = None, p
         ]
 
 
+async def find_room_lessons(room_query: str, weekday: int | None = None, parity: str | None = None) -> list[dict]:
+    """Ищет занятия в указанном кабинете по всей базе данных всех 51 групп колледжа."""
+    clean = room_query.strip().lower()
+    if not clean:
+        return []
+
+    async with async_session() as session:
+        stmt = select(Lesson).where(
+            func.lower(Lesson.room).contains(clean)
+        )
+        if weekday is not None:
+            stmt = stmt.where(Lesson.weekday == weekday)
+        if parity is not None:
+            stmt = stmt.where(or_(Lesson.parity == parity, Lesson.parity == 'all', Lesson.parity.is_(None)))
+        
+        stmt = stmt.order_by(Lesson.weekday, Lesson.pair_num)
+        res = await session.execute(stmt)
+        lessons = res.scalars().all()
+        return [
+            {
+                "group_name": l.group_name,
+                "weekday": l.weekday,
+                "pair_num": l.pair_num,
+                "parity": l.parity,
+                "subject": l.subject,
+                "room": l.room,
+                "teacher": l.teacher
+            }
+            for l in lessons
+        ]
+
+
 # =============================================================
 # REPLACEMENTS CRUD
 # =============================================================
