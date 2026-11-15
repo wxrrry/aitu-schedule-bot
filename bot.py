@@ -204,11 +204,16 @@ class SupportReplyState(StatesGroup):
 
 
 
-async def resolve_target_group(chat: types.Chat | None = None, user: types.User | None = None) -> str:
+async def resolve_target_group(
+    chat: types.Chat | None = None,
+    user: types.User | None = None,
+    allow_default: bool = True
+) -> str | None:
     """
     Определяет целевую учебную группу:
     - Если сообщение из группы/супергруппы -> привязанная к чату группа.
     - Если личные сообщения -> группа пользователя из БД (по умолчанию 9ПО-43к).
+    - Если группа не выбрана и allow_default=False -> None.
     """
     if chat and chat.type in ("group", "supergroup"):
         bound_grp = await get_chat_group(chat.id)
@@ -218,7 +223,7 @@ async def resolve_target_group(chat: types.Chat | None = None, user: types.User 
         db_user = await get_user(user.id)
         if db_user and db_user.group_name:
             return db_user.group_name
-    return "9ПО-43к"
+    return "9ПО-43к" if allow_default else None
 
 
 async def register_bot_commands(bot_instance: Bot):
@@ -895,7 +900,15 @@ async def handle_webapp_command(message: types.Message):
 @dp.message(Command("now"))
 @dp.message(F.text.casefold().in_(["⚡️ какая пара сейчас?", "какая пара сейчас?", "какая пара сейчас", "пара сейчас", "сейчас"]))
 async def handle_now(message: types.Message):
-    grp = await resolve_target_group(message.chat, message.from_user)
+    grp = await resolve_target_group(message.chat, message.from_user, allow_default=False)
+    if not grp:
+        courses_kb = get_courses_keyboard()
+        await message.answer(
+            "👥 <b>Учебная группа не выбрана!</b>\n\n"
+            "Пожалуйста, выберите ваш <b>курс</b> и группу, чтобы бот мог показывать текущую пару:",
+            reply_markup=courses_kb
+        )
+        return
     text = await get_formatted_now_status(group_name=grp)
     refresh_kb = types.InlineKeyboardMarkup(
         inline_keyboard=[
@@ -907,7 +920,16 @@ async def handle_now(message: types.Message):
 
 @dp.callback_query(F.data == "refresh_now")
 async def handle_refresh_now_callback(call: types.CallbackQuery):
-    grp = await resolve_target_group(call.message.chat, call.from_user)
+    grp = await resolve_target_group(call.message.chat, call.from_user, allow_default=False)
+    if not grp:
+        courses_kb = get_courses_keyboard()
+        await call.message.answer(
+            "👥 <b>Учебная группа не выбрана!</b>\n\n"
+            "Пожалуйста, выберите ваш <b>курс</b> и группу:",
+            reply_markup=courses_kb
+        )
+        await call.answer()
+        return
     text = await get_formatted_now_status(group_name=grp)
     refresh_kb = types.InlineKeyboardMarkup(
         inline_keyboard=[
@@ -4254,7 +4276,7 @@ async def main():
                 logger.warning(f"Не удалось настроить MenuButtonWebApp: {e}")
 
         # Удаляем вебхуки если были, и запускаем опрос
-        await bot.delete_webhook(drop_pending_updates=True)
+        await bot.delete_webhook(drop_pending_updates=False)
         await dp.start_polling(
             bot,
             allowed_updates=["message", "inline_query", "callback_query"]

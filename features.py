@@ -17,6 +17,7 @@ from schedule_data import (
     get_bell_schedule,
     get_bell_times,
     get_course_lunch_info,
+    get_schedule_for_group,
 )
 from replacements import get_replacements_for_date
 
@@ -30,7 +31,8 @@ def get_progress_bar(percentage: float, length: int = 10) -> str:
 def get_now_status(
     now_dt: datetime | None = None,
     group_name: str | None = None,
-    custom_pairs: dict[int, dict] | None = None
+    custom_pairs: dict[int, dict] | None = None,
+    custom_replacements: dict[int, dict] | None = None,
 ) -> str:
     """
     Определяет текущий статус занятий:
@@ -71,7 +73,7 @@ def get_now_status(
     if custom_pairs is not None:
         today_pairs = custom_pairs
     else:
-        day_schedule = SCHEDULE.get(weekday, {})
+        day_schedule = get_schedule_for_group(target_group).get(weekday, {})
         # Собираем актуальные пары на сегодня
         today_pairs = {}
         for num in sorted(day_schedule.keys()):
@@ -130,7 +132,10 @@ def get_now_status(
             f"👉 Нажмите <b>«🔜 Завтра»</b>, чтобы посмотреть расписание на наступающий день."
         )
 
-    today_reps = get_replacements_for_date(now_dt.date())
+    if custom_replacements is not None:
+        today_reps = custom_replacements
+    else:
+        today_reps = get_replacements_for_date(now_dt.date(), group_name=target_group)
 
     # Проверяем, идёт ли сейчас пара
     for num, (start_m, end_m, start_s, end_s) in intervals.items():
@@ -378,24 +383,37 @@ async def get_formatted_now_status(group_name: str | None = None, now_dt: dateti
     db_pairs = await get_lessons_for_day(target_group, weekday, parity_code)
     db_reps = await get_replacements_for_date_and_group(now_dt.date(), target_group)
 
-    if not db_pairs and target_group == GROUP_NAME:
-        return get_now_status(now_dt=now_dt, group_name=target_group)
+    if not db_pairs:
+        fallback_sched = get_schedule_for_group(target_group).get(weekday, {})
+        if fallback_sched:
+            today_pairs = {}
+            for num in sorted(fallback_sched.keys()):
+                pair = fallback_sched[num]
+                if pair.get("split"):
+                    info = pair["chislitel"] if parity_code == "chislitel" else pair["znamenatel"]
+                else:
+                    info = pair
+                if info:
+                    today_pairs[num] = info
+            return get_now_status(
+                now_dt=now_dt,
+                group_name=target_group,
+                custom_pairs=today_pairs,
+                custom_replacements=db_reps
+            )
+        return get_now_status(
+            now_dt=now_dt,
+            group_name=target_group,
+            custom_pairs={},
+            custom_replacements=db_reps
+        )
 
-    actual_pairs = {}
-    for num, lesson_data in db_pairs.items():
-        rep = db_reps.get(num)
-        if rep and rep.get("type") == "cancel":
-            continue
-        elif rep and rep.get("type") == "replace":
-            actual_pairs[num] = {
-                "subject": rep.get("subject") or rep.get("text") or lesson_data["subject"],
-                "room": rep.get("room") or lesson_data["room"],
-                "teacher": rep.get("teacher") or lesson_data["teacher"]
-            }
-        else:
-            actual_pairs[num] = lesson_data
-
-    return get_now_status(now_dt=now_dt, group_name=target_group, custom_pairs=actual_pairs)
+    return get_now_status(
+        now_dt=now_dt,
+        group_name=target_group,
+        custom_pairs=db_pairs,
+        custom_replacements=db_reps
+    )
 
 
 

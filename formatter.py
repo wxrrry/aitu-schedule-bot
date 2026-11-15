@@ -391,7 +391,7 @@ def format_morning_alert(
     if custom_replacements is not None:
         replacements = custom_replacements
     else:
-        replacements = get_replacements_for_date(today_date)
+        replacements = get_replacements_for_date(today_date, group_name=target_group)
 
     rep_badge = ""
     if replacements:
@@ -400,7 +400,7 @@ def format_morning_alert(
     if custom_pairs is not None:
         day_pairs = custom_pairs
     else:
-        day_pairs = SCHEDULE.get(weekday, {})
+        day_pairs = get_schedule_for_group(target_group).get(weekday, {})
 
     all_nums = sorted(list(set(day_pairs.keys()) | set(replacements.keys())))
     first_pair_num = None
